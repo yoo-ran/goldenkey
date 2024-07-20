@@ -1,0 +1,32 @@
+on:
+  push:
+    branches: [ main ]
+name: 🚀 Deploy website on push
+jobs:
+  web-deploy:
+    name: 🎉 Deploy
+    runs-on: ubuntu-latest
+    steps:
+    - name: 🚚 Get latest code
+      uses: actions/checkout@v4
+
+    - name: Use Node.js 21
+      uses: actions/setup-node@v2
+      with:
+        node-version: '21'
+      
+    - name: 🔨 Build Project
+      env:
+        CI: ""
+      run: |
+        npm install
+        npm run build
+    
+    - name: 📂 Sync files
+      uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      with:
+        server: yoorankim.com
+        username: u909776080
+        password: ${{ secrets.FTP_DEPLOY }}
+        local-dir: build/
+        server-dir: goldkey/
