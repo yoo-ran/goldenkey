@@ -1,0 +1,40 @@
+.carousel-container {
+    transition: transform 1s ease-in-out, opacity 1s ease-in-out;
+  }
+  
+  .slide{
+    transition: transform 1s ease-in-out, display 1s ease-in-out;
+  }
+
+  
+  .slide:nth-child(1) {
+    /* Styles for the first slide */
+    transform: translateX(0%);
+  }
+  
+  .slide:nth-child(2) {
+    /* Styles for the second slide */
+    transform: translateX(100%);
+  }
+  
+  .slide:nth-child(3) {
+    /* Styles for the third slide */
+    transform: translateX(200%);
+    z-index:10
+  }
+
+  .slide:nth-child(3) .info{
+    display:block;
+  }
+
+  .slide:nth-child(3) .bg{
+    opacity:0.3
+  }
+  
+  .slide:nth-child(4) {
+    /* Styles for the fourth slide */
+    transform: translateX(300%);
+  }
+  
+  /* Add more nth-child styles as needed */
+  

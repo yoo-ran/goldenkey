@@ -1,0 +1,48 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Do+Hyeon&display=swap');
+
+*{margin:0; padding:0}
+li{list-style:none}
+a{text-decoration:none}
+
+body {
+    font-family: "DM Sans", sans-serif;
+}
+
+#root {
+  @apply flexCol;
+
+}
+
+main{
+    @apply flexCol;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+@layer base {
+    h1 {
+      @apply text-2xl font-bold;
+      
+    }
+    h2 {
+      @apply text-xl font-bold;
+    }
+
+  }
+
+  @layer components {
+    .flexCol {
+        display:flex;
+        flex-direction:column;
+        justify-content:center;
+        align-items:center;
+    }
+    .flexRow {
+        display:flex;
+        justify-content:center;
+        align-items:center;
+    }
+  }
