@@ -4,40 +4,65 @@ import { useNavigate } from 'react-router-dom';
 
 
 function Login(){
-    const [email,setEmail] = useState("")
-    const [pw, setPw] = useState("")
+    const [formData, setFormData] = useState({ email: '', pw: '' });
     const navigate = useNavigate();
+    const [isLogin, setIsLogin] = useState(true);
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prevState => ({ ...prevState, [name]: value }));
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const res = await axios.post("http://localhost:8000/login", { email, pw });
-            if (res.status == 200) {
-                localStorage.setItem('user', JSON.stringify(res.data)); // Store user data in localStorage
+            const { email, pw } = formData;
+            const response = await axios.post('http://localhost:8000/login', { email, pw });
+            if (response.status === 200) {
+                localStorage.setItem('user', JSON.stringify(response.data));
                 navigate('/user-page');
             } else {
-                console.log("Invalid credentials");
+                console.log('Invalid credentials');
             }
-        } catch (err) {
-            console.log(err);
+        } catch (error) {
+            console.error('Error during login:', error.response ? error.response.data : error.message);
         }
-    }
+    };
+
+    const toggleForm = () => {
+        setIsLogin(prevState => !prevState);
+    };
+
 
     return (
         <div>
-            <div>
-                <form onSubmit={handleSubmit}>
-                    <div>
-                        <label htmlFor='email'>Email</label>
-                        <input type="email" placeholder='Email' onChange={e => setEmail(e.target.value)}/>
-                    </div>
-                    <div>
-                        <label htmlFor='password'>Password</label>
-                        <input type="password" placeholder='Password' onChange={e => setPw(e.target.value)}/>
-                    </div>
-                    <button>Login</button>
-                </form>
-            </div>
+            <form onSubmit={handleSubmit}>
+                <div>
+                    <label htmlFor="email">Email</label>
+                    <input
+                        type="email"
+                        name="email"
+                        placeholder="Email"
+                        value={formData.email}
+                        onChange={handleChange}
+                    />
+                </div>
+                <div>
+                    <label htmlFor="pw">Password</label>
+                    <input
+                        type="password"
+                        name="pw"
+                        placeholder="Password"
+                        value={formData.pw}
+                        onChange={handleChange}
+                    />
+                </div>
+                <button type="submit">Login</button>
+            </form>
+            {!isLogin && <Signup />}
+            <button onClick={toggleForm}>
+                {isLogin ? 'Go to Signup' : 'Go to Login'}
+            </button>
         </div>
     )
 }

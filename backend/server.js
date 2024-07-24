@@ -15,7 +15,8 @@ app.use(session({
     secret: 'sessionKey', // Change this to a secure random string
     resave: false,
     saveUninitialized: true,
-    cookie: { secure: false } // Set secure: true if using HTTPS
+    cookie: { secure: false }, // Set secure: true if using HTTPS
+
 }));
 
 
@@ -24,33 +25,35 @@ const db = mysql.createConnection({
     user:"root",
     password:"root",
     database:"userlists",
-    port: "8889"
+    port: "8000"
 })
 
 app.post('/login', async (req, res) => {
-    const { email, pw } = req.body;
-
-    const query = 'SELECT * FROM users WHERE email = ?';
-    db.query(query, [email], async (err, results) => {
-        if (err) {
-            console.error('Error fetching user:', err);
-            return res.status(500).send('Error fetching user');
-        }
-
-        if (results.length > 0) {
-            const user = results[0];
-            const match = await bcrypt.compare(pw, user.password);
-
-            if (match) {
-                req.session.userId = user.id; // Store userId in session
-                res.status(200).send(user);
+    try {
+        const { email, pw } = req.body;
+        const query = 'SELECT * FROM users WHERE email = ?';
+        db.query(query, [email], async (err, results) => {
+            if (err) {
+                console.error('Error fetching user:', err);
+                return res.status(500).send('Error fetching user');
+            }
+            if (results.length > 0) {
+                const user = results[0];
+                const match = await bcrypt.compare(pw, user.password);
+                if (match) {
+                    req.session.userId = user.id;
+                    res.status(200).send(user);
+                } else {
+                    res.status(401).send('Invalid credentials');
+                }
             } else {
                 res.status(401).send('Invalid credentials');
             }
-        } else {
-            res.status(401).send('Invalid credentials');
-        }
-    });
+        });
+    } catch (error) {
+        console.error('Unexpected error:', error);
+        res.status(500).send('Server error');
+    }
 });
 
 
