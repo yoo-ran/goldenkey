@@ -5,9 +5,14 @@ const mysql = require("mysql");
 const cors =  require('cors');
 const bcrypt = require('bcrypt');
 
+const corsOptions = {
+    origin: 'http://localhost:5173', // Update to match your frontend's URL
+    credentials: true,
+};
+
 const app = express()
 app.use(express.json())
-app.use(cors())
+app.use(cors(corsOptions));
 app.use(bodyParser.json());
 
 
@@ -20,12 +25,13 @@ app.use(session({
 }));
 
 
-const db = mysql.createConnection({
+const db = mysql.createPool({
+    connectionLimit : 10,
     host: "localhost",
     user:"root",
     password:"root",
     database:"userlists",
-    port: "8000"
+    port: "8889"
 })
 
 app.post('/login', async (req, res) => {
