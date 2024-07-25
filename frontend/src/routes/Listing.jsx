@@ -20,6 +20,7 @@ const Listing = () => {
         const fetchProperties = async () => {
             try {
                 const response = await axios.get('http://localhost:8000/listing');
+                console.log(response);
                 setProperties(response.data);
             } catch (error) {
                 console.error('Error fetching properties:', error);
