@@ -10,20 +10,17 @@ const corsOptions = {
     credentials: true,
 };
 
-const app = express()
-app.use(express.json())
+const app = express();
+app.use(express.json());
 app.use(cors(corsOptions));
 app.use(bodyParser.json());
-
 
 app.use(session({
     secret: 'sessionKey', // Change this to a secure random string
     resave: false,
     saveUninitialized: true,
     cookie: { secure: false }, // Set secure: true if using HTTPS
-
 }));
-
 
 const db = mysql.createPool({
     connectionLimit : 10,
@@ -32,7 +29,7 @@ const db = mysql.createPool({
     password:"root",
     database:"userlists",
     port: "8889"
-})
+});
 
 app.post('/login', async (req, res) => {
     try {
@@ -62,8 +59,6 @@ app.post('/login', async (req, res) => {
     }
 });
 
-
-
 app.put('/update-user', (req, res) => {
     const { id, fname, email } = req.body; // Assume user id is part of the request body
     console.log( req.body);
@@ -79,14 +74,11 @@ app.put('/update-user', (req, res) => {
 });
 
 app.post('/logout', (req, res) => {
-    // Perform any cleanup tasks, such as invalidating the session
-    // For example, destroy the session or delete the session data from the database
     req.session.destroy((err) => {
         if (err) {
             console.error('Error destroying session:', err);
             return res.status(500).send('Error logging out');
         }
-        // Session destroyed successfully
         res.status(200).send('Logged out successfully');
     });
 });
@@ -126,13 +118,15 @@ app.get('/listing', (req, res) => {
     });
 });
 
+// Authentication check endpoint
+app.get('/auth/check', (req, res) => {
+    if (req.session.userId) {
+        res.status(200).json({ loggedIn: true, userId: req.session.userId });
+    } else {
+        res.status(401).json({ loggedIn: false });
+    }
+});
 
-
-app.listen(8000,()=>{
-    console.log("Listening");
-})
-
-
-
-
-
+app.listen(8000, () => {
+    console.log("Listening on port 8000");
+});
