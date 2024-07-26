@@ -18,12 +18,18 @@ const User = () => {
 
 
     return (
-        <div>
-            <h1>Welcome, {user.fname}</h1>
+        <div className='flexCol items-start gap-y-20  w-1/2 h-screen'>
+            <h1>Welcome, <span className='capitalize text-yellow'>{user.fname}</span></h1>
             {/* Display user data */}
-            <Edit user={user} setUser={setUser} />
-            <Logout onLogout={handleLogout} />
-            <Delete onDelete={handleDelete} user={user}/>
+            <div className='border-2 border-yellow rounded-xl p-4'>
+                <Edit user={user} setUser={setUser} />
+            </div>
+            <div className='border-2 border-yellow rounded-xl p-4'>
+                <Logout onLogout={handleLogout} />
+            </div>
+            <div className='border-2 border-yellow rounded-xl p-4'>
+                <Delete onDelete={handleDelete} user={user}/>
+            </div>
 
         </div>
     );

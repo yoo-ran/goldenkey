@@ -28,10 +28,12 @@ const Logout = ({ onLogout }) => {
     };
 
     return (
-        <div>
-            <h2>Logout</h2>
+        <div className='flexCol items-end gap-y-7'>
+            <h2 className='w-full'>Logout</h2>
             <p>Are you sure you want to log out?</p>
-            <button onClick={handleLogout} disabled={isLoggingOut}>
+            <button 
+                className='hover:bg-yellow transition-all bg-navy text-white border border-lightPurple lg:px-6 lg:py-2 rounded-full'
+                onClick={handleLogout} disabled={isLoggingOut}>
                 {isLoggingOut ? "Logging out..." : "Logout"}
             </button>
         </div>

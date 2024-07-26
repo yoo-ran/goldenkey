@@ -12,6 +12,8 @@ import Favorite from './routes/Favorite';
 import Listing from './routes/Listing';
 import PropertyDetail from './routes/Detail';
 
+
+
 import "./index.css"
 
 
@@ -21,7 +23,10 @@ const App = () => {
             <Header/>
             <Routes>
                 <Route path="/" element={<Home />} />
-                <Route path="/login" element={<Login />} />
+                <Route path="/login" 
+                    element={  <Login />}
+
+                />
                 <Route path="/user-page" element={<User  />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/delete" element={<Delete />} />

@@ -46,12 +46,6 @@ const Home = () => {
 
     return (
         <main className='gap-y-32'>
-            <h1>Welcome to Our App</h1>
-            {isLogin ? <Login /> : <Signup />}
-            <button onClick={toggleForm}>
-                {isLogin ? 'Go to Signup' : 'Go to Login'}
-            </button>
-
             {/* Banner */}
             <section className='w-full'>
                 <article

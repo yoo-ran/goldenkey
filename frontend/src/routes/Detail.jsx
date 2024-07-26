@@ -61,13 +61,13 @@ const PropertyDetail = () => {
 
             {/* Image Display */}
             <section 
-                className='grid items-stretch grid-cols-12 grid-rows-2 gap-x-4 gap-y-4 h-96 w-10/12'>
+                className='grid grid-cols-12 grid-rows-2 gap-x-4  gap-y-4 h-96 w-10/12 '>
                 {imageUrls.map((url, index) => (
                     <img
                         key={index}
                         src={url}
                         alt={`Listing ${propertyData.pId}`}
-                        className={`col-span-${index === 0 ? '8 row-span-2' : index === 1 ? '3' : index === 2 ? '2' : index===3 ? "2":"3"} object-center w-full h-full object-cover rounded-xl`}
+                        className={`${index === 0 ? 'col-span-7	row-span-2' : index === 1 ? 'col-span-3' : index === 2 ? 'col-span-2' : index===3 ? "col-span-2":"col-span-3"} object-center w-full h-full object-cover rounded-xl`}
                     />
                 ))}
             </section>

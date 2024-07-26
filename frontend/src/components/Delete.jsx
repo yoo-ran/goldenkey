@@ -27,10 +27,12 @@ const Delete = ({ onDelete, user }) => {
     };
 
     return (
-        <div>
-            <h2>Delete Account</h2>
-            <p>Are you sure you want to delete your account? This action cannot be undone.</p>
-            <button onClick={handleDeleteAccount} disabled={isDeleting}>
+        <div className='flexCol items-end gap-y-7'>
+            <h2 className='w-full'>Delete Account</h2>
+            <p>Are you sure you want to delete your account? <br/> This action cannot be undone.</p>
+            <button
+                className='hover:bg-yellow transition-all bg-navy text-white border border-lightPurple lg:px-6 lg:py-2 rounded-full'
+                onClick={handleDeleteAccount} disabled={isDeleting}>
                 {isDeleting ? "Deleting account..." : "Delete Account"}
             </button>
         </div>

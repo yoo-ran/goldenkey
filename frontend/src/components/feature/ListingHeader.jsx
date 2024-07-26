@@ -24,7 +24,7 @@ const ListingHeader = ({ onSendType }) => {
             </section>
 
             {/* Filter */}
-            <section className='mb-20'>
+            {/* <section className='mb-20'>
                 <article>
                     <select name="cars" className='border rounded-full px-3'>
                         <option value="sale">For Sale</option>
@@ -33,7 +33,7 @@ const ListingHeader = ({ onSendType }) => {
                         <option value="audi">Audi</option>
                     </select>
                 </article>
-            </section>
+            </section> */}
         </div>
     );
 };
