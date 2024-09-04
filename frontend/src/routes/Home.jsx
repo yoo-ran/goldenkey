@@ -7,6 +7,7 @@ import { faSearch } from '@fortawesome/free-solid-svg-icons'
 
 import Login from '../components/Login';
 import Signup from '../components/Signup';
+import ImportExcel from '../components/feature/ImportExcel';
 
 import PropertyCarousel from '../components/feature/PropertyCarousel';
 
