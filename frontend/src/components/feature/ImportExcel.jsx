@@ -262,7 +262,7 @@ const fetchExistingProperties = async () => {
   };
 
   return (
-    <div>
+    <div className='flexCol gap-y-4'>
       <div className="ag-theme-quartz" style={{ height: 400, width: '90vw' }}>
         <AgGridReact
           ref={gridRef}
@@ -271,7 +271,10 @@ const fetchExistingProperties = async () => {
           defaultColDef={defaultColDef}
         />
       </div>
-      <button onClick={importExcel}>Import Excel Data</button>
+      <button onClick={importExcel}
+        className='bg-yellow text-white rounded-full px-4'
+      
+      >Import Excel Data</button>
     </div>
   );
 }

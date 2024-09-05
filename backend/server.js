@@ -47,9 +47,6 @@ const fetchExistingProperties = (callback) => {
 app.post('/import-csv', (req, res) => {
     const properties = req.body; // JSON data from the frontend
 
-    // Log the received data to check its structure
-    console.log('Received data:', properties);
-
     // Step 1: Extract property IDs (or other unique fields) to check for duplicates
     const uniqueFields = properties.map(item => item['순번']); // or use another unique field
 
@@ -209,6 +206,90 @@ app.get('/listing', (req, res) => {
         res.json(results);
     });
 });
+
+const util = require('util');
+
+// Promisify the db.query method
+const query = util.promisify(db.query).bind(db);
+
+app.put('/update-property/:propertyId', async (req, res) => {
+    const propertyId = req.params.propertyId;
+    const updatedFields = req.body;
+
+    if (!propertyId) {
+        return res.status(400).send('Property ID is required.');
+    }
+
+    // Dynamically create the SQL query based on the fields to be updated
+    const setClause = Object.keys(updatedFields)
+        .map(key => `${key} = ?`)
+        .join(', ');
+    
+    const sql = `UPDATE property SET ${setClause} WHERE 순번 = ?`;
+
+    const values = [...Object.values(updatedFields), propertyId];
+
+    try {
+        const result = await query(sql, values);
+        console.log('Query result:', result);
+        if (result.affectedRows === 0) {
+            return res.status(404).send('Property not found.');
+        }
+        res.status(200).send('Property updated successfully');
+    } catch (error) {
+        console.error('Error updating property:', error);
+        res.status(500).send('Error updating property: ' + error.message);
+    }
+});
+
+
+
+app.get('/detail/:propertyId', (req, res) => {
+    const { propertyId } = req.params;
+
+    // Query to get property details based on propertyId
+    const sql = 'SELECT * FROM property WHERE 순번 = ?';
+
+    db.query(sql, [propertyId], (err, results) => {
+        if (err) {
+            console.error('Error fetching property details:', err);
+            return res.status(500).json({ message: 'Error fetching property details' });
+        }
+
+        if (results.length > 0) {
+            res.json(results[0]); // Send the first result, assuming propertyId is unique
+        } else {
+            res.status(404).json({ message: 'Property not found' });
+        }
+    });
+});
+
+
+app.delete('/delete-property/:propertyId', (req, res) => {
+    const { propertyId } = req.params;
+        
+    const sql = 'DELETE FROM property WHERE 순번 = ?';
+    
+    db.query(sql, [propertyId], (err, results) => {
+        if (err) {
+            console.error('Error executing SQL query:', err);
+            return res.status(500).send('Internal server error');
+        }
+
+        console.log('SQL Query Results:', results);
+        
+        if (results.affectedRows === 0) {
+            console.log('Property with ID', propertyId, 'not found');
+            return res.status(404).send('Property not found');
+        }
+
+        console.log('Property deleted successfully');
+        res.status(200).send('Property deleted successfully');
+    });
+});
+
+
+
 
 // Authentication check endpoint
 app.get('/auth/check', (req, res) => {
