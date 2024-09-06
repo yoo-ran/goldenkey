@@ -231,7 +231,6 @@ app.put('/update-property/:propertyId', async (req, res) => {
 
     try {
         const result = await query(sql, values);
-        console.log('Query result:', result);
         if (result.affectedRows === 0) {
             return res.status(404).send('Property not found.');
         }
