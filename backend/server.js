@@ -4,8 +4,6 @@ const bodyParser = require('body-parser');
 const mysql = require("mysql");
 const cors = require('cors');
 const bcrypt = require('bcrypt');
-const multer = require('multer'); // For file uploads
-const csv = require('csv-parser'); // For parsing CSV files
 const fs = require('fs'); // For file system operations
 
 const corsOptions = {
@@ -101,11 +99,12 @@ app.post('/import-csv', (req, res) => {
             item['기타특이사항'], 
             item['총수수료'], 
             item['소장'], 
-            item['직원']
+            item['직원'],
+            item['메모'],
         ]);
 
         // Step 5: Insert the non-duplicate data into the database
-        const sql = `INSERT INTO property (순번, 등록일자, 부동산구분, 거래방식, 거래완료여부, 거래완료일자, 담당자, 구, 읍면동, 구상세주소, 도로명, 신상세주소, 건물명, 동, 호수, 보증금, 월세, 관리비, 전체m2, 전용m2, 전체평, 전용평, EV유무, 화장실개수, 주차가능대수, 비밀번호, 이름, 휴대폰번호, 기타특이사항, 총수수료, 소장, 직원) VALUES ?`;
+        const sql = `INSERT INTO property (순번, 등록일자, 부동산구분, 거래방식, 거래완료여부, 거래완료일자, 담당자, 구, 읍면동, 구상세주소, 도로명, 신상세주소, 건물명, 동, 호수, 보증금, 월세, 관리비, 전체m2, 전용m2, 전체평, 전용평, EV유무, 화장실개수, 주차가능대수, 비밀번호, 이름, 휴대폰번호, 기타특이사항, 총수수료, 소장, 직원, 메모) VALUES ?`;
 
         db.query(sql, [values], (err, result) => {
             if (err) {
@@ -215,7 +214,6 @@ const query = util.promisify(db.query).bind(db);
 app.put('/update-property/:propertyId', async (req, res) => {
     const propertyId = req.params.propertyId;
     const updatedFields = req.body;
-
     if (!propertyId) {
         return res.status(400).send('Property ID is required.');
     }
@@ -274,8 +272,6 @@ app.delete('/delete-property/:propertyId', (req, res) => {
             console.error('Error executing SQL query:', err);
             return res.status(500).send('Internal server error');
         }
-
-        console.log('SQL Query Results:', results);
         
         if (results.affectedRows === 0) {
             console.log('Property with ID', propertyId, 'not found');
@@ -287,6 +283,54 @@ app.delete('/delete-property/:propertyId', (req, res) => {
     });
 });
 
+
+app.get('/memos/:propertyId', async (req, res) => {
+    const { propertyId } = req.params;
+
+    try {
+        const query = 'SELECT 메모 FROM property WHERE 순번 = ?';
+        db.query(query, [propertyId], (err, result) => {
+            if (err) {
+                console.error('Error fetching memo:', err);
+                return res.status(500).json({ error: 'Failed to fetch memo' });
+            }
+
+            if (result.length === 0) {
+                return res.status(404).json({ message: 'Property not found' });
+            }
+
+            res.json({ 메모: result[0].메모 || '' }); // Return the memo or empty if null
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch memo' });
+    }
+});
+
+
+// Route to add a memo
+app.post('/memos/add', async (req, res) => {
+    const { propertyId, content } = req.body;
+
+    try {
+        // Execute the query using db.query (for mysql package)
+        db.query('UPDATE property SET 메모 = ? WHERE 순번 = ?', [content, propertyId], (error, result) => {
+            if (error) {
+                console.error('Error executing query:', error);
+                return res.status(500).json({ error: 'Failed to update memo' });
+            }
+
+            // Check if any rows were affected (indicating success)
+            if (result.affectedRows > 0) {
+                res.json({ id: propertyId, content }); // Return the updated memo
+            } else {
+                res.status(404).json({ error: 'Property not found' });
+            }
+        });
+    } catch (error) {
+        console.error('Unexpected error:', error);
+        res.status(500).json({ error: 'Failed to update memo' });
+    }
+});
 
 
 

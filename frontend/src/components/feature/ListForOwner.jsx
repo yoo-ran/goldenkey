@@ -9,7 +9,7 @@ const DeleteButtonRenderer = (params) => {
   const handleClick = () => {
       params.context.componentParent.handleDelete(params.data.순번);
   };
-  return <button onClick={handleClick}>Delete</button>;
+  return <button className='bg-red-500 text-white px-4 rounded' onClick={handleClick}>Delete</button>;
 };
 // Checkbox Renderer
 const CheckboxRenderer = (props) => {
@@ -42,9 +42,8 @@ const CheckboxRenderer = (props) => {
 };
 
 // Main component
-const ListForOwner = () => {
+const ListForOwner = ({updateData}) => {
     const [propertyData, setPropertyData] = useState([]);
-
     const fetchProperties = async () => {
         try {
             const response = await axios.get('http://localhost:8000/listing');
@@ -56,7 +55,7 @@ const ListForOwner = () => {
 
     useEffect(() => {
         fetchProperties();
-    }, []);
+    }, [updateData]);
 
     const handleDelete = async (propertyId) => {
         try {
@@ -145,6 +144,7 @@ const ListForOwner = () => {
       { field: '총수수료', editable: true },
       { field: '소장', editable: true },
       { field: '직원', editable: true },
+      { field: '메모', editable: true },
       {
           headerName: 'Actions',
           field: 'actions',

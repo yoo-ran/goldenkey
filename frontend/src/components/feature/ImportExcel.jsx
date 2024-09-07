@@ -6,10 +6,11 @@ import * as XLSX from 'xlsx';
 import axios from 'axios';
 
 
-function ImportExcel() {
+const ImportExcel = ({onDataUpdate}) =>{
   const gridRef = useRef();
   const [rowData, setRowData] = useState([]);
   const [dbRowData, setDbRowData] = useState([])
+  const [dataUpdated, setDataUpdated] = useState(false);
 
   const [columnDefs, setColumnDefs] = useState([
     { field: "순번", headerName: "순번", minWidth: 90 },
@@ -79,6 +80,8 @@ function ImportExcel() {
         { field: "직원", headerName: "직원" },
       ],
     },
+    { field: "메모", headerName: "메모" },
+
 ]);
 
   
@@ -160,6 +163,7 @@ function ImportExcel() {
         AD: '총수수료',
         AE: '소장',
         AF: '직원',
+        AG: '메모',
     };
 
     const rowData = [];
@@ -188,7 +192,7 @@ function ImportExcel() {
 
             // Handle specific columns formatting
             if (columns[column] === '총수수료' || columns[column] === '소장' || columns[column] === '직원') {
-              cellValue = cellValue === '' ? 0 : cellValue; // Default to 0 if empty
+              cellValue = cellValue === null ? 0 : cellValue; // Default to 0 if empty
             }
 
             // Format data for display
@@ -200,12 +204,13 @@ function ImportExcel() {
 
             // Prepare data for DB without commas
             if (columns[column] === 'EV유무') {
-                dbRow[columns[column]] = cellValue === '있음' ? 1 : 0;
-            } else if (columns[column] === '보증금' || columns[column] === '월세' || columns[column] === '관리비' || columns[column] === '총수수료' || columns[column] === '소장' || columns[column] === '직원') {
-                dbRow[columns[column]] = cellValue.toString().replace(/,/g, ''); // Remove commas
-            } else {
-                dbRow[columns[column]] = cellValue;
-            }
+              dbRow[columns[column]] = cellValue === '있음' ? 1 : 0;
+          } else if (columns[column] === '보증금' || columns[column] === '월세' || columns[column] === '관리비' || columns[column] === '총수수료' || columns[column] === '소장' || columns[column] === '직원') {
+              dbRow[columns[column]] = cellValue ? cellValue.toString().replace(/,/g, '') : ''; // Ensure no null value
+          } else {
+              dbRow[columns[column]] = cellValue;
+          }
+          
         });
 
         rowData.push(row);
@@ -215,10 +220,6 @@ function ImportExcel() {
 
     setRowData(rowData);
     setDbRowData(dbRowData);
-
-    console.log(rowData);
-    console.log(dbRowData);
-
     return dbRowData
 };
 
@@ -253,6 +254,8 @@ const fetchExistingProperties = async () => {
   
       // Handle success response
       alert('Data imported successfully!');
+      setDataUpdated(true)
+      onDataUpdate(dataUpdated)
       console.log(result.data);
     } catch (error) {
       // Handle error response
