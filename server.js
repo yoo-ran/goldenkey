@@ -1,9 +1,12 @@
+require('dotenv').config();
 const express = require("express");
 const session = require('express-session');
 const bodyParser = require('body-parser');
 const mysql = require("mysql");
 const cors = require('cors');
 const bcrypt = require('bcrypt');
+const multer = require('multer');
+const path = require('path');
 const fs = require('fs'); // For file system operations
 
 const corsOptions = {
@@ -17,7 +20,7 @@ app.use(cors(corsOptions));
 app.use(bodyParser.json());
 
 app.use(session({
-    secret: 'sessionKey', // Change this to a secure random string
+    secret: process.env.SESSION_SECRET, // Use environment variable for session secret
     resave: false,
     saveUninitialized: true,
     cookie: { secure: false }, // Set secure: true if using HTTPS
@@ -25,12 +28,13 @@ app.use(session({
 
 const db = mysql.createPool({
     connectionLimit: 10,
-    host: "localhost",
-    user: "root",
-    password: "root",
-    database: "userlists",
-    port: "8889"
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    port: process.env.DB_PORT
 });
+
 
 // Function to fetch existing properties from the database
 const fetchExistingProperties = (callback) => {
@@ -41,14 +45,12 @@ const fetchExistingProperties = (callback) => {
     });
 };
 
-  
+// Import CSV
 app.post('/import-csv', (req, res) => {
     const properties = req.body; // JSON data from the frontend
 
-    // Step 1: Extract property IDs (or other unique fields) to check for duplicates
     const uniqueFields = properties.map(item => item['순번']); // or use another unique field
 
-    // Step 2: Query the database to find existing properties with the same unique fields
     const query = `SELECT 순번 FROM property WHERE 순번 IN (?)`;
 
     db.query(query, [uniqueFields], (err, results) => {
@@ -57,16 +59,13 @@ app.post('/import-csv', (req, res) => {
             return res.status(500).send('Error checking existing data');
         }
 
-        // Step 3: Filter out duplicates based on the results from the database
-        const existingFields = results.map(row => row['순번']); // Or map based on the unique field
+        const existingFields = results.map(row => row['순번']);
         const filteredProperties = properties.filter(item => !existingFields.includes(item['순번']));
 
         if (filteredProperties.length === 0) {
-            // If no new data, send a message
             return res.status(200).send('No new data to insert (all duplicates).');
         }
 
-        // Step 4: Prepare data for bulk insertion
         const values = filteredProperties.map(item => [
             item['순번'], 
             item['등록일자'], 
@@ -101,10 +100,10 @@ app.post('/import-csv', (req, res) => {
             item['소장'], 
             item['직원'],
             item['메모'],
+            item['img_path'],
         ]);
 
-        // Step 5: Insert the non-duplicate data into the database
-        const sql = `INSERT INTO property (순번, 등록일자, 부동산구분, 거래방식, 거래완료여부, 거래완료일자, 담당자, 구, 읍면동, 구상세주소, 도로명, 신상세주소, 건물명, 동, 호수, 보증금, 월세, 관리비, 전체m2, 전용m2, 전체평, 전용평, EV유무, 화장실개수, 주차가능대수, 비밀번호, 이름, 휴대폰번호, 기타특이사항, 총수수료, 소장, 직원, 메모) VALUES ?`;
+        const sql = `INSERT INTO property (순번, 등록일자, 부동산구분, 거래방식, 거래완료여부, 거래완료일자, 담당자, 구, 읍면동, 구상세주소, 도로명, 신상세주소, 건물명, 동, 호수, 보증금, 월세, 관리비, 전체m2, 전용m2, 전체평, 전용평, EV유무, 화장실개수, 주차가능대수, 비밀번호, 이름, 휴대폰번호, 기타특이사항, 총수수료, 소장, 직원, 메모, img_path) VALUES ?`;
 
         db.query(sql, [values], (err, result) => {
             if (err) {
@@ -115,8 +114,6 @@ app.post('/import-csv', (req, res) => {
         });
     });
 });
-
-
 
 app.post('/login', async (req, res) => {
     try {
@@ -148,14 +145,12 @@ app.post('/login', async (req, res) => {
 
 app.put('/update-user', (req, res) => {
     const { id, fname, email } = req.body; // Assume user id is part of the request body
-    console.log(req.body);
     const sql = 'UPDATE users SET fname = ?, email = ? WHERE id = ?';
     db.query(sql, [fname, email, id], (err, result) => {
         if (err) {
             console.error('Error updating profile:', err);
             return res.status(500).send('An error occurred while updating the profile.');
         }
-        console.log(result);
         return res.send('Profile updated successfully.');
     });
 });
@@ -194,7 +189,6 @@ app.post('/signup', async (req, res) => {
     });
 });
 
-
 app.get('/listing', (req, res) => {
     db.query('SELECT * FROM property', (err, results) => {
         if (err) {
@@ -218,11 +212,10 @@ app.put('/update-property/:propertyId', async (req, res) => {
         return res.status(400).send('Property ID is required.');
     }
 
-    // Dynamically create the SQL query based on the fields to be updated
     const setClause = Object.keys(updatedFields)
         .map(key => `${key} = ?`)
         .join(', ');
-    
+
     const sql = `UPDATE property SET ${setClause} WHERE 순번 = ?`;
 
     const values = [...Object.values(updatedFields), propertyId];
@@ -239,12 +232,9 @@ app.put('/update-property/:propertyId', async (req, res) => {
     }
 });
 
-
-
 app.get('/detail/:propertyId', (req, res) => {
     const { propertyId } = req.params;
 
-    // Query to get property details based on propertyId
     const sql = 'SELECT * FROM property WHERE 순번 = ?';
 
     db.query(sql, [propertyId], (err, results) => {
@@ -254,7 +244,7 @@ app.get('/detail/:propertyId', (req, res) => {
         }
 
         if (results.length > 0) {
-            res.json(results[0]); // Send the first result, assuming propertyId is unique
+            res.json(results[0]);
         } else {
             res.status(404).json({ message: 'Property not found' });
         }
@@ -262,27 +252,104 @@ app.get('/detail/:propertyId', (req, res) => {
 });
 
 
-app.delete('/delete-property/:propertyId', (req, res) => {
-    const { propertyId } = req.params;
-        
-    const sql = 'DELETE FROM property WHERE 순번 = ?';
-    
-    db.query(sql, [propertyId], (err, results) => {
-        if (err) {
-            console.error('Error executing SQL query:', err);
-            return res.status(500).send('Internal server error');
-        }
-        
-        if (results.affectedRows === 0) {
-            console.log('Property with ID', propertyId, 'not found');
-            return res.status(404).send('Property not found');
-        }
 
-        console.log('Property deleted successfully');
-        res.status(200).send('Property deleted successfully');
-    });
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const uploadPath = path.join(__dirname, 'uploads');
+        if (!fs.existsSync(uploadPath)) {
+            fs.mkdirSync(uploadPath); // Create the uploads folder if it doesn't exist
+        }
+        cb(null, uploadPath); // Specify the folder to store uploaded files
+    },
+    filename: (req, file, cb) => {
+        // Use the original filename for the file, keeping the extension
+        cb(null, `${Date.now()}-${file.originalname}`);
+    },
 });
 
+const upload = multer({
+    dest: 'uploads/', // Destination folder for uploaded files
+    limits: {
+        fileSize: 5 * 1024 * 1024 // Limit file size to 5MB
+    },
+    fileFilter: (req, file, cb) => {
+        // Accept only certain file types
+        const filetypes = /jpeg|jpg|png/;
+        const mimetype = filetypes.test(file.mimetype);
+        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+
+        if (mimetype && extname) {
+            return cb(null, true);
+        } else {
+            cb(new Error('Only images are allowed'));
+        }
+    }
+});
+
+app.post('/upload-images/:propertyId', upload.array('images', 10), async (req, res) => {
+    try {
+        const propertyId = req.params.propertyId;
+        const newImagePaths = req.files.map(file => file.path); // Get the paths of the uploaded images
+
+        // Retrieve the current image paths for the given propertyId
+        const currentResult = await query('SELECT img_path FROM property WHERE 순번 = ?', [propertyId]);
+        
+        if (currentResult.length === 0) {
+            return res.status(404).json({ error: 'Property not found' });
+        }
+
+        const currentImagePaths = currentResult[0].img_path ? currentResult[0].img_path.split(',') : [];
+
+        // Combine current and new image paths
+        const updatedImagePaths = [...currentImagePaths, ...newImagePaths];
+        const updatedImagePathsString = updatedImagePaths.join(',');
+
+        // Update the property with the new image paths
+        await query('UPDATE property SET img_path = ? WHERE 순번 = ?', [updatedImagePathsString, propertyId]);
+
+        res.status(200).json({ imageUrls: newImagePaths });
+    } catch (error) {
+        console.error('Error uploading images:', error);
+        res.status(500).json({ error: 'Failed to upload images' });
+    }
+});
+
+app.post('/upload-images', upload.array('images'), (req, res) => {
+    const imagePaths = req.files.map(file => file.path); // Get the paths of uploaded images
+    res.json({ images: imagePaths });
+});
+
+
+app.get('/properties/:propertyId/images', async (req, res) => {
+    try {
+        const propertyId = req.params.propertyId;
+        
+        // Execute the query and get the results
+        const query = 'SELECT img_path FROM property WHERE 순번 = ?';
+        db.query(query, [propertyId], (error, results) => {
+            if (error) {
+                console.error('Error executing query:', error);
+                return res.status(500).json({ error: 'Failed to fetch images' });
+            }
+
+            // Check if the property exists
+            if (results.length === 0) {
+                return res.status(404).json({ error: 'Property not found' });
+            }
+
+            // Extract the image paths and split them into an array
+            const imgPaths = results[0].img_path ? results[0].img_path.split(',') : [];
+            res.json({ images: imgPaths });
+        });
+    } catch (error) {
+        console.error('Error fetching images:', error);
+        res.status(500).json({ error: 'Failed to fetch images' });
+    }
+});
+
+
+// Serve static files
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.get('/memos/:propertyId', async (req, res) => {
     const { propertyId } = req.params;
@@ -334,15 +401,26 @@ app.post('/memos/add', async (req, res) => {
 
 
 
-// Authentication check endpoint
-app.get('/auth/check', (req, res) => {
-    if (req.session.userId) {
-        res.status(200).json({ loggedIn: true, userId: req.session.userId });
-    } else {
-        res.status(401).json({ loggedIn: false });
-    }
-});
+
+
+
+app.post('/properties/update', (req, res) => {
+    const propertyData = req.body;
+  
+    db.query(
+      'INSERT INTO property SET ? ON DUPLICATE KEY UPDATE ?',
+      [propertyData, propertyData],
+      (err, result) => {
+        if (err) {
+          console.error('Database error:', err);
+          return res.status(500).send('Error saving property data');
+        }
+        res.send('Property data saved successfully');
+      }
+    );
+  });
+  
 
 app.listen(8000, () => {
-    console.log("Listening on port 8000");
+    console.log('Server is running on port 8000');
 });
