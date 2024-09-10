@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const Memo = ({ propertyId }) => {
+const Memo = ({ propertyId, onMemoUpdate }) => {
     const [memo, setMemo] = useState('');  // Stores the current memo
     const [isEditing, setIsEditing] = useState(false);  // Tracks if the memo is being edited
-
     // Fetch the existing memo when the component mounts
     useEffect(() => {
         const fetchMemo = async () => {
@@ -33,13 +32,19 @@ const Memo = ({ propertyId }) => {
             return;
         }
 
+
+
         try {
-            await axios.post(`http://localhost:8000/memos/add`, {
-                propertyId,
-                content: memo,  // Send the memo content to the backend
-            });
-            alert('Memo saved successfully');
-            setIsEditing(false);  // Exit edit mode after saving
+            if(propertyId!=undefined){
+                await axios.post(`http://localhost:8000/memos/add`, {
+                    propertyId,
+                    content: memo,  // Send the memo content to the backend
+                });
+                alert('Memo saved successfully');
+                setIsEditing(false);  // Exit edit mode after saving
+            }else{
+                onMemoUpdate(memo); // Notify parent component of the memo update
+            }
         } catch (error) {
             console.error('Error saving memo:', error);
         }

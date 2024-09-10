@@ -11,6 +11,7 @@ import Rental from './routes/Rental';
 import Favorite from './routes/Favorite';
 import Listing from './routes/Listing';
 import PropertyDetail from './routes/Detail';
+import PropertyUpload from './routes/UploadProperty';
 
 
 
@@ -32,6 +33,7 @@ const App = () => {
                 <Route path="/delete" element={<Delete />} />
                 <Route path="/rental" element={<Rental />} />
                 <Route path="/favorite" element={<Favorite />} />
+                <Route path="/upload" element={<PropertyUpload />} />
                 <Route path="/listing" element={<Listing />} />
                 <Route path="/detail/:pId" element={<PropertyDetail />} />
             </Routes>

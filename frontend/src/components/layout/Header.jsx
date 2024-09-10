@@ -34,6 +34,11 @@ const Header = () => {
                     >
                         <Link to="/rental">Room Rental</Link>
                     </li>
+                    <li 
+                        className={`transition-all ${location.pathname === "/upload" ? "text-yellow" : "hover:text-yellow"}`}
+                    >
+                        <Link to="/upload">Upload</Link>
+                    </li>
                     <button 
                         className='hover:bg-navy transition-all bg-yellow text-white border border-lightPurple lg:px-6 lg:py-2 rounded-full'
                     >

@@ -1,21 +1,14 @@
-import { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
 import axios from 'axios';
 
-// import MapComponent from '../components/feature/MapComponent';
-import ListingHeader from '../components/feature/ListingHeader';
 import Memo from '../components/feature/Memo';
 
-const PropertyDetail = () => {
-    const location = useLocation();
-    const { propertyId } = location.state || {}; 
-    const [isEditing, setIsEditing] = useState(false); // State for edit mode
+const PropertyUpload = () => {
     const [images, setImages] = useState([]); // State for storing uploaded images
     const [selectedFiles, setSelectedFiles] = useState([]); // Store selected files for upload
-    const [isImgUploaded,setIsImgUploaded] = useState()
-    // State for raw numbers
+    const [memo, setMemo] = useState(''); // State for memo content
     const [propertyData, setPropertyData] = useState({
-        순번: '', 등록일자: '', 부동산구분: '', 거래방식: '', 거래완료여부: '',
+        등록일자: '', 부동산구분: '', 거래방식: '', 거래완료여부: '',
         거래완료일자: '', 담당자: '', 구: '', 읍면동: '', 구상세주소: '',
         도로명: '', 신상세주소: '', 건물명: '', 동: '', 호수: '',
         보증금: 0, 월세: 0, 관리비: 0, 전체m2: 0, 전용m2: 0,
@@ -24,42 +17,9 @@ const PropertyDetail = () => {
         소장: 0, 직원: 0, 메모:"", img_path:""
     });
 
-    const fetchPropertyData = async () => {
-        try {
-            const response = await axios.get(`http://localhost:8000/detail/${propertyId}`);
-            setPropertyData(response.data);
-
-            const imgRes = await axios.get(`http://localhost:8000/properties/${propertyId}/images`);
-            // Ensure you are handling the data correctly
-            if (response.data && Array.isArray(imgRes.data.images)) {
-                setImages(imgRes.data.images);
-            } else {
-                console.error('Unexpected response structure:', imgRes.data);
-            }
-        } catch (error) {
-            console.error('Error fetching property data:', error);
-        }
-    };
-
-    useEffect(() => {
-        fetchPropertyData(); // Fetch data on component mount
-    }, [propertyId, isImgUploaded]);
-
-
-    const formatDateForMySQL = (date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    };
-
-    // Format number with commas
-    const formatNumber = (number) => {
-        return Number(number).toLocaleString();
-    };
-
-    // Handle input changes
-    const handleInputChange = (e) => {
+    
+     // Handle input changes
+     const handleInputChange = (e) => {
         const { name, type, value, checked } = e.target;
         let formattedValue;
 
@@ -75,77 +35,113 @@ const PropertyDetail = () => {
             ...propertyData,
             [name]: formattedValue
         });
+
+        console.log(propertyData);
     };
 
-    const handleDelete = async () => {
-        try {
-            await axios.delete(`http://localhost:8000/delete-property/${propertyId}`);
-            console.log("Property deleted successfully.");
-            // Handle successful deletion, e.g., navigate away or update state
-        } catch (error) {
-            console.error('Error deleting property:', error.response ? error.response.data : error.message);
-            alert('Error deleting property.');
-        }
+    const formatDateForMySQL = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
+    const handleMemoUpdate = (newMemo) => {
+        setMemo(newMemo);
+        setPropertyData(prevData => ({
+            ...prevData,
+            메모: newMemo // Update propertyData with the memo content
+        }));
+    };
+
+    console.log(propertyData);
+
+
+    // Format number with commas
+    const formatNumber = (number) => {
+        return Number(number).toLocaleString();
     };
 
     // Save data to the database
     const handleSave = async () => {
+        const { 등록일자, 거래완료일자, 비밀번호, ...fieldsToUpdate } = propertyData;
+
+        // Set default dates to current date if not provided
+        const currentDate = formatDateForMySQL(new Date());
+        const formattedFieldsToUpdate = {
+            ...fieldsToUpdate,
+            등록일자: 등록일자 ? formatDateForMySQL(new Date(등록일자)) : currentDate,
+            거래완료일자: 거래완료일자 ? formatDateForMySQL(new Date(거래완료일자)) : currentDate,
+            비밀번호: 비밀번호 || "미정" // Default to "미정" if 비밀번호 is not provided
+        };
         try {
-            // Use propertyId from outer scope
-            const { 등록일자, 거래완료일자, ...fieldsToUpdate } = propertyData;
-    
-            const formattedFieldsToUpdate = {
-                ...fieldsToUpdate,
-                등록일자: formatDateForMySQL(new Date(등록일자)),
-                거래완료일자: formatDateForMySQL(new Date(거래완료일자))
-            };
-    
-            await axios.put(`http://localhost:8000/update-property/${propertyId}`, formattedFieldsToUpdate);
+
+            // Save property details to the database
+            await axios.post('http://localhost:8000/properties/update', formattedFieldsToUpdate);
+            if (selectedFiles.length > 0) {
+                await handleImageUpload(); // Upload images and update propertyData
+            }
+
             alert("Data saved successfully!");
-    
-            fetchPropertyData();
-            setIsEditing(false); // Exit edit mode after saving
         } catch (error) {
             console.error('Error saving data:', error);
+            alert('Error saving data');
         }
     };
 
-    // Toggle edit mode
-    const toggleEdit = () => {
-        setIsEditing(!isEditing);
-    };
-    // Image Selction Handle
+    // Handle image selection
     const handleImageChange = (e) => {
         const files = Array.from(e.target.files);
-        setSelectedFiles(files);
+        setSelectedFiles(prevFiles => [...prevFiles, ...files]);
     };
 
-    // Image upload Handle
+    console.log(selectedFiles);
+    console.log(images);
+    // Handle image upload
     const handleImageUpload = async () => {
-        const formData = new FormData();
+    if (selectedFiles.length === 0) {
+        alert("No files selected for upload.");
+        return;
+    }
 
-        selectedFiles.forEach((file) => {
-            formData.append(`images`, file);
-        });        
-        
-        try {
-            const response = await axios.post(`http://localhost:8000/upload-images/${propertyId}`, formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
-            alert("Images uploaded successfully!");
-            setImages(response.data.images); // Assuming backend returns uploaded images
-            var img_length = images.length == undefined ? 0 : images.length
-            console.log(img_length);
-            setIsImgUploaded(img_length)
-        } catch (error) {
-            console.error('Error uploading images:', error);
-            alert('Error uploading images');
-        }
-    };
+    const formData = new FormData();
+
+    // Append each file to FormData
+    selectedFiles.forEach((file) => {
+        formData.append('images', file);
+    });
+
+    try {
+        const response = await axios.post('http://localhost:8000/upload-images', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+
+        // Get image paths from the response
+        const uploadedImages = response.data.images || [];
+        setImages(prevImages => [...prevImages, ...uploadedImages]); // Accumulate images
+        console.log("uploadedImages: ", uploadedImages);
+
+        // Update propertyData with image paths
+        setPropertyData(prevData => ({
+            ...prevData,
+            img_path: [...(prevData.img_path.split(',') || []), ...uploadedImages].join(',') // Append new image paths
+        }));
+        console.log("propertyData: ", propertyData);
+
+        // Clear selected files
+        setSelectedFiles([]);
+
+        alert("Images uploaded and paths saved successfully!");
+    } catch (error) {
+        console.error('Error uploading images:', error);
+        alert('Error uploading images');
+    }
+};
+
+    
 
     return (
         <main className='gap-y-16 w-1/2'>
-            <ListingHeader/>
 
             <section className='grid grid-cols-12 justify-between gap-x-10 w-full'>
                 <article className='col-span-8 flexCol items-start gap-y-10'>
@@ -154,7 +150,6 @@ const PropertyDetail = () => {
                         
                         <div className='w-full'>
                             <h2>Image Upload</h2>
-                            {isEditing ? (
                                 <div>
                                     <input
                                         type="file"
@@ -166,32 +161,27 @@ const PropertyDetail = () => {
                                         Upload Images
                                     </button>
                                 </div>
-                            ) : (
-                                <></>
-                            )}
-                            
 
-                            <div className="mt-4">
-                                <div className="flex flex-wrap">
-                                {
-                                    images && images.length > 0 &&
-                                    images.map((imgPath, index) => (
-                                        <div key={index} className="image-thumbnail mr-4 mb-4">
-                                            <img 
-                                                src={`http://localhost:8000/${imgPath}`}
-                                                alt={`Property Image ${index + 1}`} 
-                                                className="w-32 h-32 object-cover"/>
-                                        </div>
-                                    ))
-                                }
-
+                                <div className="mt-4">
+                                    <div className="flex flex-wrap">
+                                    {
+                                        images && images.length > 0 &&
+                                        images.map((imgPath, index) => (
+                                            <div key={index} className="image-thumbnail mr-4 mb-4">
+                                                <img 
+                                                    src={`http://localhost:8000/${imgPath}`}
+                                                    alt={`Property Image ${index + 1}`} 
+                                                    className="w-32 h-32 object-cover"/>
+                                            </div>
+                                        ))
+                                    }
+                                    </div>
                                 </div>
-                            </div>
+
                         </div>
 
                         <div className='flexRow'>
                             <p>등록일자:</p>
-                            {isEditing ? (
                                 <input
                                     type="date"
                                     name="등록일자"
@@ -199,14 +189,10 @@ const PropertyDetail = () => {
                                     onChange={handleInputChange}
                                     className="border p-1"
                                 />
-                            ) : (
-                                <p>{propertyData.등록일자.split('T')[0]}</p>
-                            )}
                         </div>
                         
                         <h1>
                             <label>건물명: </label>
-                            {isEditing ? (
                                 <input
                                     type="text"
                                     name="건물명"
@@ -214,14 +200,10 @@ const PropertyDetail = () => {
                                     onChange={handleInputChange}
                                     className="border p-1"
                                 />
-                            ) : (
-                                <p>{propertyData.건물명}</p>
-                            )}
                         </h1>
                         
                         <div className='flexRow'>
                             <p>부동산구분:</p>
-                            {isEditing ? (
                                 <input
                                     type="text"
                                     name="부동산구분"
@@ -229,14 +211,10 @@ const PropertyDetail = () => {
                                     onChange={handleInputChange}
                                     className="border p-1"
                                 />
-                            ) : (
-                                <p>{propertyData.부동산구분}</p>
-                            )}
                         </div>
                         
                         <div className='flexRow'>
                             <p>거래 방식:</p>
-                            {isEditing ? (
                                 <input
                                     type="text"
                                     name="거래방식"
@@ -244,14 +222,10 @@ const PropertyDetail = () => {
                                     onChange={handleInputChange}
                                     className="border p-1"
                                 />
-                            ) : (
-                                <p>{propertyData.거래방식}</p>
-                            )}
                         </div>
                         
                         <div className='flexRow'>
                             <p>거래 완료 여부:</p>
-                            {isEditing ? (
                                 <input
                                     type="text"
                                     name="거래완료여부"
@@ -259,14 +233,10 @@ const PropertyDetail = () => {
                                     onChange={handleInputChange}
                                     className="border p-1"
                                 />
-                            ) : (
-                                <p>{propertyData.거래완료여부}</p>
-                            )}
                         </div>
                         
                         <div className='flexRow'>
                             <p>거래완료일자:</p>
-                            {isEditing ? (
                                 <input
                                     type="date"
                                     name="거래완료일자"
@@ -274,13 +244,9 @@ const PropertyDetail = () => {
                                     onChange={handleInputChange}
                                     className="border p-1"
                                 />
-                            ) : (
-                                <p>{propertyData.거래완료일자.split('T')[0]}</p>
-                            )}
                         </div>
                         <div className='flexRow'>
                             <p>구 주소:</p>
-                            {isEditing ? (
                                 <>
                                     <input
                                         type="text"
@@ -304,15 +270,9 @@ const PropertyDetail = () => {
                                         className="border p-1"
                                     />
                                 </>
-                            ) : (
-                                <>
-                                    <p>{propertyData.구} {propertyData.읍면동} {propertyData.구상세주소}</p>
-                                </>
-                            )}
                         </div>
                         <div className='flexRow'>
                             <p>신 주소:</p>
-                            {isEditing ? (
                                 <>
                                     <input
                                         type="text"
@@ -329,15 +289,9 @@ const PropertyDetail = () => {
                                         className="border p-1"
                                     />
                                 </>
-                            ) : (
-                                <>
-                                    <p>{propertyData.도로명} {propertyData.신상세주소}</p>
-                                </>
-                            )}
                         </div>
                         <div className='flexRow'>
                             <p>동호수: </p>
-                            {isEditing ? (
                                 <>
                                     <input
                                         type="text"
@@ -354,11 +308,6 @@ const PropertyDetail = () => {
                                         className="border p-1"
                                     />호수
                                 </>
-                            ) : (
-                                <>
-                                    <p>{propertyData.동}동 {propertyData.호수}호수</p>
-                                </>
-                            )}
                         </div>
                         
                         
@@ -368,7 +317,6 @@ const PropertyDetail = () => {
                         <h2>금액</h2>
                         <div className='flexRow justify-between text-yellow'>
                             <p>보증금</p>
-                            {isEditing ? (
                                 <input
                                     type="text"
                                     name="보증금"
@@ -376,13 +324,9 @@ const PropertyDetail = () => {
                                     onChange={handleInputChange}
                                     className="border p-1"
                                 />
-                            ) : (
-                                <p>{formatNumber(propertyData.보증금)}</p>
-                            )}
                         </div>
                         <div className='flexRow justify-between text-yellow'>
                             <p>월세</p>
-                            {isEditing ? (
                                 <input
                                     type="text"
                                     name="월세"
@@ -390,13 +334,9 @@ const PropertyDetail = () => {
                                     onChange={handleInputChange}
                                     className="border p-1"
                                 />
-                            ) : (
-                                <p>{formatNumber(propertyData.월세)}</p>
-                            )}
                         </div>
                         <div className='flexRow justify-between text-yellow'>
                             <p>관리비</p>
-                            {isEditing ? (
                                 <input
                                     type="text"
                                     name="관리비"
@@ -404,14 +344,10 @@ const PropertyDetail = () => {
                                     onChange={handleInputChange}
                                     className="border p-1"
                                 />
-                            ) : (
-                                <p>{formatNumber(propertyData.관리비)}</p>
-                            )}
                         </div>
                     </div>
                     <div className='flexRow'>
                             <p>면적(m2): </p>
-                            {isEditing ? (
                                 <>
                                     전체<input
                                         type="text"
@@ -428,15 +364,9 @@ const PropertyDetail = () => {
                                         className="border p-1"
                                     />m2
                                 </>
-                            ) : (
-                                <>
-                                    <p>{propertyData.전체m2}m2 {propertyData.전용m2}m2</p>
-                                </>
-                            )}
                     </div>
                     <div className='flexRow'>
                             <p>면적(평): </p>
-                            {isEditing ? (
                                 <>
                                     전체<input
                                         type="text"
@@ -453,29 +383,19 @@ const PropertyDetail = () => {
                                         className="border p-1"
                                     />평
                                 </>
-                            ) : (
-                                <>
-                                    <p>{propertyData.전체평}평 {propertyData.전용평}평</p>
-                                </>
-                            )}
                     </div>
                     <div className='flexRow'>
                             <p>EV유무: </p>
-                            {isEditing ? (
                                     <input
                                         type="checkbox"
-                                        name="유무"
+                                        name="EV유무"
                                         value={propertyData.EV유무}
                                         onChange={handleInputChange}
                                         className="border p-1"
                                     />
-                            ) : (
-                                <p>{propertyData.EV유무 ? "있음" : '없음'}</p>
-                            )}
                     </div>
                     <div className='flexRow'>
                             <p>화장실개수: </p>
-                            {isEditing ? (
                                     <input
                                         type="number"
                                         name="화장실개수"
@@ -483,13 +403,9 @@ const PropertyDetail = () => {
                                         onChange={handleInputChange}
                                         className="border p-1"
                                     />
-                            ) : (
-                                <p>{propertyData.화장실개수}</p>
-                            )}
                     </div>
                     <div className='flexRow'>
                             <p>주차가능대수: </p>
-                            {isEditing ? (
                                     <input
                                         type="number"
                                         name="주차가능대수"
@@ -497,27 +413,21 @@ const PropertyDetail = () => {
                                         onChange={handleInputChange}
                                         className="border p-1"
                                     />
-                            ) : (
-                                <p>{propertyData.주차가능대수}</p>
-                            )}
+                          
                     </div>
                     <div className='flexRow'>
                             <p>비밀번호: </p>
-                            {isEditing ? (
                                     <input
-                                        type="number"
+                                        type="text"
                                         name="비밀번호"
                                         value={propertyData.비밀번호}
                                         onChange={handleInputChange}
                                         className="border p-1"
                                     />
-                            ) : (
-                                <p>숨김</p>
-                            )}
+                          
                     </div>
                     <div className='flexRow'>
                             <p>임차인정보: </p>
-                            {isEditing ? (
                                 <>
                                     이름<input
                                         type="text"
@@ -534,15 +444,11 @@ const PropertyDetail = () => {
                                         className="border p-1"
                                     />
                                 </>
-                            ) : (
-                                <p>이름 : {propertyData.이름} 휴대폰번호: {propertyData.휴대폰번호}</p>
-                            )}
                     </div>
                     <div className='w-full'>
                         <h2>정산금액</h2>
                         <div className='flexRow justify-between text-yellow'>
                             <p>총수수료</p>
-                            {isEditing ? (
                                 <input
                                     type="number"
                                     name="총수수료"
@@ -550,13 +456,9 @@ const PropertyDetail = () => {
                                     onChange={handleInputChange}
                                     className="border p-1"
                                 />
-                            ) : (
-                                <p>{formatNumber(propertyData.총수수료)}</p>
-                            )}
                         </div>
                         <div className='flexRow justify-between text-yellow'>
                             <p>소장</p>
-                            {isEditing ? (
                                 <input
                                     type="number"
                                     name="소장"
@@ -564,13 +466,9 @@ const PropertyDetail = () => {
                                     onChange={handleInputChange}
                                     className="border p-1"
                                 />
-                            ) : (
-                                <p>{formatNumber(propertyData.소장)}</p>
-                            )}
                         </div>
                         <div className='flexRow justify-between text-yellow'>
                             <p>직원</p>
-                            {isEditing ? (
                                 <input
                                     type="number"
                                     name="직원"
@@ -578,38 +476,24 @@ const PropertyDetail = () => {
                                     onChange={handleInputChange}
                                     className="border p-1"
                                 />
-                            ) : (
-                                <p>{formatNumber(propertyData.직원)}</p>
-                            )}
                         </div>
                         
                     </div>
                     <div className='flex justify-end w-10/12'>
-                    {isEditing ? (
                             <>
                                 <button onClick={handleSave} className="bg-yellow text-white px-4 py-2 rounded">
                                     Save Changes
                                 </button>
-                                <button onClick={toggleEdit} className="bg-gray-500 text-white px-4 py-2 rounded ml-4">
-                                    Cancel
-                                </button>
                             </>
-                        ) : (
-                            <>
-                                <button onClick={toggleEdit} className="bg-blue-500 text-white px-4 py-2 rounded">
-                                    Edit
-                                </button>
-                                <button onClick={handleDelete} className="bg-red-500 text-white px-4 py-2 rounded ml-4">
-                                    Delete Property
-                                </button>
-                            </>
-                        )}
                     </div>
                 </article>
             </section>
-            <Memo propertyId={propertyId} />
+            <Memo
+                propertyId={propertyData.순번}
+                onMemoUpdate={handleMemoUpdate}
+            />
         </main>
     );
 };
 
-export default PropertyDetail;
+export default PropertyUpload;

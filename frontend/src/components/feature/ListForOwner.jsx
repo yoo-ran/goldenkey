@@ -145,6 +145,7 @@ const ListForOwner = ({updateData}) => {
       { field: '소장', editable: true },
       { field: '직원', editable: true },
       { field: '메모', editable: true },
+      { field: 'img_path', editable: true },
       {
           headerName: 'Actions',
           field: 'actions',

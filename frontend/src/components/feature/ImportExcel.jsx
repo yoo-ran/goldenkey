@@ -6,11 +6,22 @@ import * as XLSX from 'xlsx';
 import axios from 'axios';
 
 
+
 const ImportExcel = ({onDataUpdate}) =>{
   const gridRef = useRef();
   const [rowData, setRowData] = useState([]);
   const [dbRowData, setDbRowData] = useState([])
   const [dataUpdated, setDataUpdated] = useState(false);
+
+  const ImageRenderer = (props) => {
+    const imageUrl = props.value;
+    console.log(imageUrl);
+    return (
+      <div>
+        {imageUrl ? <img src={imageUrl} alt="Property" style={{ width: '100px', height: '10vh' }} /> : 'No image'}
+      </div>
+    );
+  };
 
   const [columnDefs, setColumnDefs] = useState([
     { field: "순번", headerName: "순번", minWidth: 90 },
@@ -81,7 +92,7 @@ const ImportExcel = ({onDataUpdate}) =>{
       ],
     },
     { field: "메모", headerName: "메모" },
-
+    { field: "img_path", headerName: "Image", cellRendererFramework: ImageRenderer },
 ]);
 
   
@@ -124,8 +135,10 @@ const ImportExcel = ({onDataUpdate}) =>{
     date_info.setHours(hours, minutes, seconds);
 
     return date_info.toISOString().split('T')[0]; // returns 'YYYY-MM-DD' format
-};
-  
+  };
+
+
+
   // Function to populate the grid with data from the workbook
   const populateGrid = (workbook, existingProperties) => {
     const firstSheetName = workbook.SheetNames[0];
@@ -164,6 +177,7 @@ const ImportExcel = ({onDataUpdate}) =>{
         AE: '소장',
         AF: '직원',
         AG: '메모',
+        AH: 'img_path'
     };
 
     const rowData = [];
@@ -210,7 +224,11 @@ const ImportExcel = ({onDataUpdate}) =>{
           } else {
               dbRow[columns[column]] = cellValue;
           }
-          
+
+          if (columns[column] === 'img_path') {
+            console.log("cellValue: " + cellValue);
+            row[columns[column]] = cellValue;
+          }
         });
 
         rowData.push(row);
@@ -234,6 +252,25 @@ const fetchExistingProperties = async () => {
       return [];
   }
 };
+  const handleFileUpload = async (file, propertyId) => {
+    console.log("handleFileUpload: " + file);
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('propertyId', propertyId); // Include property ID or any relevant identifier
+
+
+    try {
+      const response = await axios.post('http://localhost:8000/upload-image', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      return response.data.imageUrl; // Server returns the image URL
+    } catch (error) {
+      console.error('Image upload failed:', error);
+      return '';
+    }
+  };
 
   // Function to import the Excel file
   const importExcel = async () => {
@@ -248,6 +285,21 @@ const fetchExistingProperties = async () => {
       // Convert data to workbook and process it
       const workbook = convertDataToWorkbook(data);
       const dbRowData = populateGrid(workbook, existingProperties);
+
+      for (const row of dbRowData) {
+        console.log(row);
+        console.log(row.img_path);
+        if (row.img_path) {
+          // Fetch the image file based on the path
+          const file = await fetchImageFile(row.img_path);
+          console.log("importExcel: "+ file);
+          // Upload the image and get the URL
+          const imageUrl = await handleFileUpload(file, row.propertyId);
+          console.log("importExcel: " + imageUrl);
+          // Update the row with the new image URL
+          row.img_path = imageUrl;
+        }
+      }
   
       // Send the data to the backend
       const result = await axios.post('http://localhost:8000/import-csv', dbRowData, { withCredentials: true });
@@ -263,6 +315,9 @@ const fetchExistingProperties = async () => {
       console.error(error);
     }
   };
+
+
+  
 
   return (
     <div className='flexCol gap-y-4'>
