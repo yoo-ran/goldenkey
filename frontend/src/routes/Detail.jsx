@@ -7,13 +7,14 @@ import ListingHeader from '../components/feature/ListingHeader';
 import Memo from '../components/feature/Memo';
 
 const PropertyDetail = () => {
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [loading, setLoading] = useState(true); // Loading state for checking authentication
     const location = useLocation();
-    const { propertyId } = location.state || {}; 
-    const [isEditing, setIsEditing] = useState(false); // State for edit mode
-    const [images, setImages] = useState([]); // State for storing uploaded images
-    const [selectedFiles, setSelectedFiles] = useState([]); // Store selected files for upload
-    const [isImgUploaded,setIsImgUploaded] = useState()
-    // State for raw numbers
+    const { propertyId } = location.state || {};
+    const [isEditing, setIsEditing] = useState(false);
+    const [images, setImages] = useState([]);
+    const [selectedFiles, setSelectedFiles] = useState([]);
+    const [isImgUploaded, setIsImgUploaded] = useState();
     const [propertyData, setPropertyData] = useState({
         순번: '', 등록일자: '', 부동산구분: '', 거래방식: '', 거래완료여부: '',
         거래완료일자: '', 담당자: '', 구: '', 읍면동: '', 구상세주소: '',
@@ -24,13 +25,31 @@ const PropertyDetail = () => {
         소장: 0, 직원: 0, 메모:"", img_path:""
     });
 
+    console.log(images);
+
+    useEffect(() => {
+        const checkAuthentication = async () => {
+            try {
+                const response = await axios.get('http://localhost:8000/check-auth', { withCredentials: true });
+                if (response.status === 200) {
+                    setIsAuthenticated(true);
+                }
+            } catch (error) {
+                console.error('User is not authenticated:', error);
+                setIsAuthenticated(false);
+            } finally {
+                setLoading(false); // Stop loading once authentication is checked
+            }
+        };
+        checkAuthentication();
+    }, []);
+
     const fetchPropertyData = async () => {
         try {
             const response = await axios.get(`http://localhost:8000/detail/${propertyId}`);
             setPropertyData(response.data);
 
             const imgRes = await axios.get(`http://localhost:8000/properties/${propertyId}/images`);
-            // Ensure you are handling the data correctly
             if (response.data && Array.isArray(imgRes.data.images)) {
                 setImages(imgRes.data.images);
             } else {
@@ -42,106 +61,69 @@ const PropertyDetail = () => {
     };
 
     useEffect(() => {
-        fetchPropertyData(); // Fetch data on component mount
+        fetchPropertyData();
     }, [propertyId, isImgUploaded]);
 
-
-    const formatDateForMySQL = (date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    };
-
-    // Format number with commas
-    const formatNumber = (number) => {
-        return Number(number).toLocaleString();
-    };
-
-    // Handle input changes
     const handleInputChange = (e) => {
         const { name, type, value, checked } = e.target;
-        let formattedValue;
-
-        if (type === 'checkbox') {
-            formattedValue = checked ? 1 : 0;
-        } else if (type === 'number') {
-            formattedValue = parseFloat(value.replace(/,/g, '')) || 0;
-        } else {
-            formattedValue = value;
-        }
-
-        setPropertyData({
-            ...propertyData,
-            [name]: formattedValue
-        });
+        const formattedValue = type === 'checkbox' ? (checked ? 1 : 0) : value;
+        setPropertyData({ ...propertyData, [name]: formattedValue });
     };
 
     const handleDelete = async () => {
         try {
             await axios.delete(`http://localhost:8000/delete-property/${propertyId}`);
             console.log("Property deleted successfully.");
-            // Handle successful deletion, e.g., navigate away or update state
         } catch (error) {
             console.error('Error deleting property:', error.response ? error.response.data : error.message);
             alert('Error deleting property.');
         }
     };
 
-    // Save data to the database
     const handleSave = async () => {
         try {
-            // Use propertyId from outer scope
             const { 등록일자, 거래완료일자, ...fieldsToUpdate } = propertyData;
-    
             const formattedFieldsToUpdate = {
                 ...fieldsToUpdate,
-                등록일자: formatDateForMySQL(new Date(등록일자)),
-                거래완료일자: formatDateForMySQL(new Date(거래완료일자))
+                등록일자: new Date(등록일자).toISOString().split('T')[0],
+                거래완료일자: new Date(거래완료일자).toISOString().split('T')[0]
             };
-    
             await axios.put(`http://localhost:8000/update-property/${propertyId}`, formattedFieldsToUpdate);
             alert("Data saved successfully!");
-    
             fetchPropertyData();
-            setIsEditing(false); // Exit edit mode after saving
+            setIsEditing(false);
         } catch (error) {
             console.error('Error saving data:', error);
         }
     };
 
-    // Toggle edit mode
-    const toggleEdit = () => {
-        setIsEditing(!isEditing);
-    };
-    // Image Selction Handle
     const handleImageChange = (e) => {
         const files = Array.from(e.target.files);
         setSelectedFiles(files);
     };
 
-    // Image upload Handle
     const handleImageUpload = async () => {
         const formData = new FormData();
-
         selectedFiles.forEach((file) => {
             formData.append(`images`, file);
-        });        
-        
+        });
         try {
             const response = await axios.post(`http://localhost:8000/upload-images/${propertyId}`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             alert("Images uploaded successfully!");
-            setImages(response.data.images); // Assuming backend returns uploaded images
-            var img_length = images.length == undefined ? 0 : images.length
-            console.log(img_length);
-            setIsImgUploaded(img_length)
+            setImages(response.data.images);
+            setIsImgUploaded(images.length);
         } catch (error) {
             console.error('Error uploading images:', error);
             alert('Error uploading images');
         }
     };
+
+    if (loading) {
+        return <div>Loading...</div>; // Show loading while checking authentication
+    }
+
 
     return (
         <main className='gap-y-16 w-1/2'>
@@ -178,7 +160,7 @@ const PropertyDetail = () => {
                                     images.map((imgPath, index) => (
                                         <div key={index} className="image-thumbnail mr-4 mb-4">
                                             <img 
-                                                src={`http://localhost:8000/${imgPath}`}
+                                                src={`http://localhost:8000${imgPath}`}
                                                 alt={`Property Image ${index + 1}`} 
                                                 className="w-32 h-32 object-cover"/>
                                         </div>
@@ -377,7 +359,7 @@ const PropertyDetail = () => {
                                     className="border p-1"
                                 />
                             ) : (
-                                <p>{formatNumber(propertyData.보증금)}</p>
+                                <p>{propertyData.보증금.toLocaleString()}</p>
                             )}
                         </div>
                         <div className='flexRow justify-between text-yellow'>
@@ -391,7 +373,7 @@ const PropertyDetail = () => {
                                     className="border p-1"
                                 />
                             ) : (
-                                <p>{formatNumber(propertyData.월세)}</p>
+                                <p>{propertyData.월세.toLocaleString()}</p>
                             )}
                         </div>
                         <div className='flexRow justify-between text-yellow'>
@@ -405,7 +387,7 @@ const PropertyDetail = () => {
                                     className="border p-1"
                                 />
                             ) : (
-                                <p>{formatNumber(propertyData.관리비)}</p>
+                                <p>{propertyData.관리비.toLocaleString()}</p>
                             )}
                         </div>
                     </div>
@@ -551,7 +533,7 @@ const PropertyDetail = () => {
                                     className="border p-1"
                                 />
                             ) : (
-                                <p>{formatNumber(propertyData.총수수료)}</p>
+                                <p>{propertyData.총수수료.toLocaleString()}</p>
                             )}
                         </div>
                         <div className='flexRow justify-between text-yellow'>
@@ -565,7 +547,7 @@ const PropertyDetail = () => {
                                     className="border p-1"
                                 />
                             ) : (
-                                <p>{formatNumber(propertyData.소장)}</p>
+                                <p>{propertyData.소장.toLocaleString()}</p>
                             )}
                         </div>
                         <div className='flexRow justify-between text-yellow'>
@@ -579,29 +561,33 @@ const PropertyDetail = () => {
                                     className="border p-1"
                                 />
                             ) : (
-                                <p>{formatNumber(propertyData.직원)}</p>
+                                <p>{propertyData.직원.toLocaleString()}</p>
                             )}
                         </div>
                         
                     </div>
                     <div className='flex justify-end w-10/12'>
-                    {isEditing ? (
+                        {isAuthenticated && (
                             <>
-                                <button onClick={handleSave} className="bg-yellow text-white px-4 py-2 rounded">
-                                    Save Changes
-                                </button>
-                                <button onClick={toggleEdit} className="bg-gray-500 text-white px-4 py-2 rounded ml-4">
-                                    Cancel
-                                </button>
-                            </>
-                        ) : (
-                            <>
-                                <button onClick={toggleEdit} className="bg-blue-500 text-white px-4 py-2 rounded">
-                                    Edit
-                                </button>
-                                <button onClick={handleDelete} className="bg-red-500 text-white px-4 py-2 rounded ml-4">
-                                    Delete Property
-                                </button>
+                                {isEditing ? (
+                                    <>
+                                        <button onClick={handleSave} className="bg-yellow text-white px-4 py-2 rounded">
+                                            Save Changes
+                                        </button>
+                                        <button onClick={() => setIsEditing(false)} className="bg-gray-500 text-white px-4 py-2 rounded ml-4">
+                                            Cancel
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <button onClick={() => setIsEditing(true)} className="bg-blue-500 text-white px-4 py-2 rounded">
+                                            Edit
+                                        </button>
+                                        <button onClick={handleDelete} className="bg-red-500 text-white px-4 py-2 rounded ml-4">
+                                            Delete Property
+                                        </button>
+                                    </>
+                                )}
                             </>
                         )}
                     </div>

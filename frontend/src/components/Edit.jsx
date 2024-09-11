@@ -1,5 +1,5 @@
 // src/components/EditProfile.jsx
-import { useState, } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 
 const EditProfile = ({ user, setUser }) => {
@@ -10,12 +10,15 @@ const EditProfile = ({ user, setUser }) => {
       setNewUserData(prevState => ({ ...prevState, [name]: value }));
   }
 
+  useEffect(() => {
+    setNewUserData(user);
+  }, [user]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
             const res = await axios.put("http://localhost:8000/update-user", newUserData); // Update user data in backend
-            localStorage.setItem('user', JSON.stringify(newUserData)); // Update user data in localStorage
+            // localStorage.setItem('user', JSON.stringify(newUserData)); // Update user data in localStorage
             setUser(newUserData); // Update user state
             console.log("Profile updated successfully!");
             console.log(res);
@@ -33,7 +36,7 @@ const EditProfile = ({ user, setUser }) => {
                     <input 
                         type="text" 
                         name="fname" 
-                        value={newUserData.fname || ''} onChange={handleChange} 
+                        value={newUserData.fname + newUserData.lname || ''} onChange={handleChange} 
                         className='border-b-2 border-yellow ml-2'
                     />
                 </div>

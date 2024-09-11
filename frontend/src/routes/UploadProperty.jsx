@@ -1,9 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom'; // For navigation to the login page
 
 import Memo from '../components/feature/Memo';
 
 const PropertyUpload = () => {
+    const [isAuthenticated, setIsAuthenticated] = useState(false); // State to track authentication status
+    const navigate = useNavigate(); // Hook for navigation
+
     const [images, setImages] = useState([]); // State for storing uploaded images
     const [selectedFiles, setSelectedFiles] = useState([]); // Store selected files for upload
     const [memo, setMemo] = useState(''); // State for memo content
@@ -17,6 +21,28 @@ const PropertyUpload = () => {
         소장: 0, 직원: 0, 메모:"", img_path:""
     });
 
+    useEffect(() => {
+        const checkAuthentication = async () => {
+            try {
+                // Make a request to the server to verify the user's token (stored in HTTP-only cookie)
+                const response = await axios.get('http://localhost:8000/check-auth', { withCredentials: true });
+                if (response.status === 200) {
+                    setIsAuthenticated(true);
+                } else {
+                    navigate('/login'); // Redirect to login if authentication fails
+                }
+            } catch (error) {
+                console.error('User is not authenticated:', error);
+                navigate('/login'); // Redirect to login if authentication fails
+            }
+        };
+
+        checkAuthentication();
+    }, [navigate]); // Dependency on `navigate`
+
+    if (!isAuthenticated) {
+        return <div>Loading...</div>; // Optionally show a loading indicator while checking authentication
+    }
     
      // Handle input changes
      const handleInputChange = (e) => {
@@ -35,8 +61,6 @@ const PropertyUpload = () => {
             ...propertyData,
             [name]: formattedValue
         });
-
-        console.log(propertyData);
     };
 
     const formatDateForMySQL = (date) => {
@@ -53,8 +77,6 @@ const PropertyUpload = () => {
             메모: newMemo // Update propertyData with the memo content
         }));
     };
-
-    console.log(propertyData);
 
 
     // Format number with commas
@@ -95,8 +117,6 @@ const PropertyUpload = () => {
         setSelectedFiles(prevFiles => [...prevFiles, ...files]);
     };
 
-    console.log(selectedFiles);
-    console.log(images);
     // Handle image upload
     const handleImageUpload = async () => {
     if (selectedFiles.length === 0) {

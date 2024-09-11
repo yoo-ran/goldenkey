@@ -7,23 +7,16 @@ const Logout = ({ onLogout }) => {
     const navigate = useNavigate();
 
     const handleLogout = async () => {
-        setIsLoggingOut(true);
+        setIsLoggingOut(true)
         try {
-            // Perform any cleanup or logout-related tasks here (e.g., invalidate session)
-            // For example, you might send a request to your server to invalidate the session
-            // and then update the state or perform any necessary client-side cleanup.
-            // For demonstration purposes, we'll just log out the user locally in this example.
-            await axios.post("http://localhost:8000/logout");
-            // Clear user data from local storage
-            localStorage.removeItem('user');
-            
-            // Call the onLogout callback to handle the logout process in the parent component
-            onLogout();
-            navigate('/login');
-            console.log("Logged out successfully!");
+            const response = await axios.post('http://localhost:8000/logout', {}, { withCredentials: true });
+            if (response.status === 200) {
+                alert('Logged out successfully');
+                // Redirect to login or home page
+                navigate('/login');
+            }
         } catch (error) {
-            console.error("Error logging out:", error);
-            setIsLoggingOut(false);
+            console.error('Error logging out:', error);
         }
     };
 

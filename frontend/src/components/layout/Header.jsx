@@ -1,20 +1,40 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const Header = () => {
     const location = useLocation(); // Get the current location
-    const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')) || {});
-    const [isUser, setIsUser] = useState(false)
+    const [isAuthenticated, setIsAuthenticated] = useState(false)
+    const navigate = useNavigate(); // Hook for navigation
 
-    useEffect(()=>{
-        if(user.id === undefined){
-            setIsUser(false)
-        }else{
-            setIsUser(true)
+    useEffect(() => {
+        const checkAuthentication = async () => {
+            try {
+                // Make a request to the server to verify the user's token (stored in HTTP-only cookie)
+                const response = await axios.get('http://localhost:8000/check-auth', { withCredentials: true });
+                if (response.status === 200) {
+                    setIsAuthenticated(true);
+                }else{
+                    navigate("/login")
+                }
+            } catch (error) {
+                console.error('User is not authenticated:', error);
+                navigate("/login")
+                setIsAuthenticated(false);
+                const detailPathRegex = /^\/detail\/\d+$/; // Matches /detail/1, /detail/2, etc.
+                if (location.pathname !== "/listing" && !detailPathRegex.test(location.pathname)) {
+                    navigate("/login");
+                }
+            }
+        };
+
+        const detailPathRegex = /^\/detail\/\d+$/; // Matches /detail/1, /detail/2, etc.
+        if (location.pathname !== "/listing" && !detailPathRegex.test(location.pathname)) {
+            checkAuthentication();
         }
-    },[user])
-    console.log(user);
-    
+    }, [location.pathname, navigate]);
+
     return (
         <header className='font-head w-full'>
             <nav className='flexRow justify-end lg:py-4'>
@@ -32,7 +52,7 @@ const Header = () => {
                     <li 
                         className={`transition-all ${location.pathname === "/rental" ? "text-yellow" : "hover:text-yellow"}`}
                     >
-                        <Link to="/rental">Room Rental</Link>
+                        <Link to="/rental">Import Excel</Link>
                     </li>
                     <li 
                         className={`transition-all ${location.pathname === "/upload" ? "text-yellow" : "hover:text-yellow"}`}
@@ -42,7 +62,9 @@ const Header = () => {
                     <button 
                         className='hover:bg-navy transition-all bg-yellow text-white border border-lightPurple lg:px-6 lg:py-2 rounded-full'
                     >
-                       {isUser ? <Link to="/user-page">Profile</Link> : <Link to="/login">Login</Link>}
+                     {
+                        isAuthenticated ? <Link to="/user-page">Profile</Link> : <Link to="/login">Login</Link>
+                    } 
                     </button>
                 </ul>
             </nav>

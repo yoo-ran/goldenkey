@@ -6,6 +6,7 @@ function Login(){
     const [formData, setFormData] = useState({ email: '', pw: '' });
     const navigate = useNavigate();
     const [isLogin, setIsLogin] = useState(true);
+    const [errorMessage, setErrorMessage] = useState(''); // New state to manage error messages
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -16,10 +17,11 @@ function Login(){
         e.preventDefault();
         try {
             const { email, pw } = formData;
-            const response = await axios.post('http://localhost:8000/login', { email, pw });
+            const response = await axios.post('http://localhost:8000/login', { email, pw },{ withCredentials: true } );
+
             if (response.status === 200) {
-                localStorage.setItem('user', JSON.stringify(response.data));
-                navigate(`/user-page`);
+                alert('Login successful!');
+                navigate(`/upload`);
             } else {
                 console.log('Invalid credentials');
             }
@@ -70,12 +72,12 @@ function Login(){
                     >
                         Login
                     </button>
-                    <button onClick={toggleForm}
+                    {/* <button onClick={toggleForm}
                             type="submit" 
                             className='hover:bg-yellow transition-all bg-navy text-white border border-lightPurple lg:px-6 lg:py-2 rounded-full'
                     >
                         Signup
-                    </button>
+                    </button> */}
                 </div>
             </form>
 

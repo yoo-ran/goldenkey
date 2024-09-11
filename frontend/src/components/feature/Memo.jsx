@@ -2,13 +2,32 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const Memo = ({ propertyId, onMemoUpdate }) => {
+    const [isAuthenticated, setIsAuthenticated] = useState(false); // State to track authentication status
     const [memo, setMemo] = useState('');  // Stores the current memo
     const [isEditing, setIsEditing] = useState(false);  // Tracks if the memo is being edited
+
+    useEffect(() => {
+        const checkAuthentication = async () => {
+            try {
+                // Make a request to the server to verify the user's token (stored in HTTP-only cookie)
+                const response = await axios.get('http://localhost:8000/check-auth', { withCredentials: true });
+                if (response.status === 200) {
+                    setIsAuthenticated(true);
+                }
+            } catch (error) {
+                console.error('User is not authenticated:', error);
+            }
+        };
+
+        checkAuthentication();
+    }, []); // Dependency on `navigate`
+
+
     // Fetch the existing memo when the component mounts
     useEffect(() => {
         const fetchMemo = async () => {
             try {
-                const response = await axios.get(`http://localhost:8000/memos/${propertyId}`);
+                const response = await axios.get(`http://localhost:8000/memos/${propertyId}`,  { withCredentials: true });
                 if (response.data) {
                     setMemo(response.data.메모); // Set the memo content
                 }
@@ -39,7 +58,7 @@ const Memo = ({ propertyId, onMemoUpdate }) => {
                 await axios.post(`http://localhost:8000/memos/add`, {
                     propertyId,
                     content: memo,  // Send the memo content to the backend
-                });
+                }, { withCredentials: true });
                 alert('Memo saved successfully');
                 setIsEditing(false);  // Exit edit mode after saving
             }else{
@@ -60,7 +79,7 @@ const Memo = ({ propertyId, onMemoUpdate }) => {
             await axios.post(`http://localhost:8000/memos/add`, {
                 propertyId,
                 content: '',  // Set memo to an empty string to delete it
-            });
+            },  { withCredentials: true });
             setMemo(''); // Clear the memo state
             alert('Memo deleted successfully');
         } catch (error) {
@@ -102,9 +121,10 @@ const Memo = ({ propertyId, onMemoUpdate }) => {
                         </button>
                     </>
                 ) : (
-                    <button onClick={() => setIsEditing(true)} className="bg-blue-500 text-white px-4 py-2 mt-2 rounded">
-                        Add Memo
-                    </button>
+                    isAuthenticated ?    <button onClick={() => setIsEditing(true)} className="bg-blue-500 text-white px-4 py-2 mt-2 rounded">
+                    Add Memo
+                </button> :""
+                 
                 )}
             </div>
         )}
