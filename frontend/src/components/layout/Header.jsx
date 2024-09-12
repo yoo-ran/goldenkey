@@ -50,6 +50,11 @@ const Header = () => {
                         <Link to="/favorite">Favorites</Link>
                     </li>
                     <li 
+                        className={`transition-all ${location.pathname === "/search" ? "text-yellow" : "hover:text-yellow"}`}
+                    >
+                        <Link to="/search">Search</Link>
+                    </li>
+                    <li 
                         className={`transition-all ${location.pathname === "/rental" ? "text-yellow" : "hover:text-yellow"}`}
                     >
                         <Link to="/rental">Import Excel</Link>
@@ -60,7 +65,7 @@ const Header = () => {
                         <Link to="/upload">Upload</Link>
                     </li>
                     <button 
-                        className='hover:bg-navy transition-all bg-yellow text-white border border-lightPurple lg:px-6 lg:py-2 rounded-full'
+                        className='hover:bg-navy transition-all bg-primary-yellow text-white border border-lightPurple lg:px-6 lg:py-2 rounded-full'
                     >
                      {
                         isAuthenticated ? <Link to="/user-page">Profile</Link> : <Link to="/login">Login</Link>

@@ -38,37 +38,40 @@ function Login(){
 
 
     return (
-        <div className='w-full flexRow h-screen'>
-            <form onSubmit={handleSubmit} className='border-2 border-yellow w-1/3 drop-shadow rounded-xl p-8 flexCol items-start gap-y-10'>
-                <div className='flexRow w-full'>
-                    <label htmlFor="email" 
-                        className='w-1/4'
-                    >Email</label>
+        <div className='w-full flexRow h-screen border'>
+            <form onSubmit={handleSubmit} className='w-11/12 rounded-xl p-8 flexCol items-start gap-y-14'>
+                <div className='flexCol w-full  gap-y-4'>
                     <input
                         type="email"
                         name="email"
-                        placeholder="Email"
+                        placeholder="이메일"
                         value={formData.email}
                         onChange={handleChange}
-                        className='border-b-2 border-yellow ml-3 bg-transparent w-3/4'
+                        className='w-full bg-secondary-light rounded-lg p-3 mobile_4'
                     />
-                </div>
-                <div className='flexRow w-full'>
-                    <label htmlFor="pw"
-                        className='w-1/4'
-                    >Password</label>
                     <input
                         type="password"
                         name="pw"
                         placeholder="Password"
                         value={formData.pw}
                         onChange={handleChange}
-                        className='border-b-2 border-yellow ml-3 bg-transparent w-3/4'
+                        className='w-full bg-secondary-light rounded-lg p-3 mobile_4'
                     />
+                    <button
+                        className='mobile_4 w-full text-right'
+                    >
+                        비밀번호를 잊어버렸다면?
+                    </button>
                 </div>
-                <div className='flexRow justify-end w-full gap-x-4'>
+                <div className='flexCol w-full gap-y-4'>
+                    <button 
+                            className='hover:bg-navy w-full mobile_4 transition-all bg-primary text-white rounded-lg p-3'
+                    >
+                        회원가입
+                    </button>
+
                     <button type="submit" 
-                            className='hover:bg-navy transition-all bg-yellow text-white border border-lightPurple lg:px-6 lg:py-2 rounded-full'
+                            className='hover:bg-navy w-full mobile_4 transition-all bg-primary-yellow text-white rounded-lg p-3'
                     >
                         Login
                     </button>

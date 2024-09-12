@@ -9,15 +9,23 @@ export default {
   theme: {
     extend: {
       colors: {
-        yellow: '#F2BB57',
-        white: '#fff',
-        navy: "#393B58",
-        lightPurple: "#D4D2E3",
-        lightBlack: "#1D1B20",
-        darkGray:"#D9D9D9"
+        primary: {
+          yellow: '#F2BB57',
+          DEFAULT: '#393B58',
+          blue: '#3578FF',
+        },
+        secondary: {
+          yellow: '#FFEFD4',
+          DEFAULT: '#9C9CAE',
+          light: '#E7E6F2',
+          blue: '#DAE8FF',
+        },
+      },
+      borderRadius: {
+        '4xl': '35px', 
       },
       fontFamily: {
-        'head': ['"Do Hyeon"'],
+        'head': [' "Open Sans", sans-serif;'],
       },
     },
   },

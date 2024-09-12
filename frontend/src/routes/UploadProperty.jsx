@@ -161,45 +161,245 @@ const PropertyUpload = () => {
     
 
     return (
-        <main className='gap-y-16 w-1/2'>
+        <main className='gap-y-16 w-full'>
 
-            <section className='grid grid-cols-12 justify-between gap-x-10 w-full'>
-                <article className='col-span-8 flexCol items-start gap-y-10'>
-                    <div className='flexCol items-start gap-y-5'>
-                        <p className='text-sm border px-2 rounded-full'>ID Number: {propertyData.순번}</p>
-                        
-                        <div className='w-full'>
-                            <h2>Image Upload</h2>
-                                <div>
+            <section className='w-11/12 flexCol gap-y-12'>
+                <article className='flexCol items-start gap-y-8'>
+                    <div className='w-full'>
+                        <h2>Image Upload</h2>
+                            <div>
+                                <input
+                                    type="file"
+                                    multiple
+                                    onChange={handleImageChange}
+                                    className="images border p-2"
+                                />
+                                <button onClick={handleImageUpload} className="bg-primary-yellow text-white px-4 py-2 rounded mt-2">
+                                    Upload Images
+                                </button>
+                            </div>
+
+                            <div className="grid grid-cols-3 grid-rows-2 ga h-52 overflow-hidden rounded-xl">
+                                {
+                                    images && images.length > 0 &&
+                                    images.map((imgPath, index) => (
+                                    <img 
+                                        key={index}
+                                        src={`http://localhost:8000${imgPath}`}
+                                        alt={`Property Image ${index + 1}`} 
+                                        className={`w-full h-full object-cover ${index === 0 ? "col-span-2 row-span-2" : "col-span-1 row-span-1"}`}
+                                        />
+                                    ))
+                                }
+                            </div>
+
+                    </div>
+                </article>
+
+                <p className='w-full border'></p>
+                
+                {/* 매물상태, 거래유형 */}
+                <article className='w-full flexCol items-start gap-y-4'>
+                    <h1>
+                        <label>건물명: </label>
+                            <input
+                                type="text"
+                                name="건물명"
+                                value={propertyData.건물명}
+                                onChange={handleInputChange}
+                                className=""
+                            />
+                    </h1>
+                    <div className='flexRow'>
+                        <p className='mobile_1_bold'>매물상태</p>
+                        <input
+                            type="text"
+                            name="거래완료여부"
+                            value={propertyData.거래완료여부}
+                            onChange={handleInputChange}
+                            className=""
+                        />
+                    </div>
+                    <div className='flexRow'>
+                        <p className='mobile_1_bold'>거래 유형</p>
+                        <input
+                            type="text"
+                            name="거래방식"
+                            value={propertyData.거래방식}
+                            onChange={handleInputChange}
+                            className=""
+                        />
+                    </div>
+                </article>
+            </section>
+
+                
+                <section className='w-full flexCol bg-primary-yellow py-6'>
+                    <article className='w-11/12 flexCol gap-y-2'>
+                            <p className='mobile_1_bold w-full'>금액</p>
+                            <div className='flexCol items-start w-full'>
+                                <p>보증금</p>
                                     <input
-                                        type="file"
-                                        multiple
-                                        onChange={handleImageChange}
-                                        className="images border p-2"
+                                        type="text"
+                                        name="보증금"
+                                        value={propertyData.보증금}
+                                        onChange={handleInputChange}
+                                        className="bg-white"
                                     />
-                                    <button onClick={handleImageUpload} className="bg-yellow text-white px-4 py-2 rounded mt-2">
-                                        Upload Images
-                                    </button>
-                                </div>
+                            </div>
+                            <div className='flexCol items-start w-full'>
+                                <p>월세</p>
+                                    <input
+                                        type="text"
+                                        name="월세"
+                                        value={propertyData.월세}
+                                        onChange={handleInputChange}
+                                        className="bg-white"
+                                    />
+                            </div>
+                            <div className='flexCol items-start w-full'>
+                                <p>관리비</p>
+                                    <input
+                                        type="text"
+                                        name="관리비"
+                                        value={propertyData.관리비}
+                                        onChange={handleInputChange}
+                                        className="bg-white"
+                                    />
+                            </div>
+                    </article>
+                    <article>
+                        <button>초기화</button>
+                        <button>적용하기</button>
+                    </article>
+                </section>
 
-                                <div className="mt-4">
-                                    <div className="flex flex-wrap">
-                                    {
-                                        images && images.length > 0 &&
-                                        images.map((imgPath, index) => (
-                                            <div key={index} className="image-thumbnail mr-4 mb-4">
-                                                <img 
-                                                    src={`http://localhost:8000/${imgPath}`}
-                                                    alt={`Property Image ${index + 1}`} 
-                                                    className="w-32 h-32 object-cover"/>
-                                            </div>
-                                        ))
-                                    }
-                                    </div>
-                                </div>
+                <section className='w-11/12'>
+                    <div className='flexRow'>
+                            <p>부동산구분:</p>
+                            <input
+                                type="text"
+                                name="부동산구분"
+                                value={propertyData.부동산구분}
+                                onChange={handleInputChange}
+                                className=""
+                            />
+                    </div>
 
+                <article>
+                    <div className='flexRow'>
+                        <p>구 주소:</p>
+                            <>
+                                <input
+                                    type="text"
+                                    name="구"
+                                    value={propertyData.구}
+                                    onChange={handleInputChange}
+                                    className=""
+                                />
+                                <input
+                                    type="text"
+                                    name="읍면동"
+                                    value={propertyData.읍면동}
+                                    onChange={handleInputChange}
+                                    className=""
+                                />
+                                <input
+                                    type="text"
+                                    name="구상세주소"
+                                    value={propertyData.구상세주소}
+                                    onChange={handleInputChange}
+                                    className=""
+                                />
+                            </>
+                    </div>
+                    <div className='flexRow'>
+                        <p>신 주소:</p>
+                            <>
+                                <input
+                                    type="text"
+                                    name="도로명"
+                                    value={propertyData.도로명}
+                                    onChange={handleInputChange}
+                                    className=""
+                                />
+                                <input
+                                    type="text"
+                                    name="신상세주소"
+                                    value={propertyData.신상세주소}
+                                    onChange={handleInputChange}
+                                    className=""
+                                />
+                            </>
+                    </div>
+
+                    <div className='flexRow'>
+                        <div className='flexRow'>
+                                <p>화장실개수: </p>
+                                        <input
+                                            type="number"
+                                            name="화장실개수"
+                                            value={propertyData.화장실개수}
+                                            onChange={handleInputChange}
+                                            className=""
+                                        />
                         </div>
+                        <div className='flexRow'>
+                                <p>주차가능대수: </p>
+                                        <input
+                                            type="number"
+                                            name="주차가능대수"
+                                            value={propertyData.주차가능대수}
+                                            onChange={handleInputChange}
+                                            className=""
+                                        />
+                            
+                        </div>
+                    </div>
 
+                    <div>
+                        <div className='flexRow'>
+                                <p>면적(m2): </p>
+                                    <>
+                                        전체<input
+                                            type="text"
+                                            name="전체m2"
+                                            value={propertyData.전체m2}
+                                            onChange={handleInputChange}
+                                            className=""
+                                        />m2
+                                        전용<input
+                                            type="text"
+                                            name="전용m2"
+                                            value={propertyData.전용m2}
+                                            onChange={handleInputChange}
+                                            className=""
+                                        />m2
+                                    </>
+                        </div>
+                        <div className='flexRow'>
+                                <p>면적(평): </p>
+                                    <>
+                                        전체<input
+                                            type="text"
+                                            name="전체평"
+                                            value={propertyData.전체평}
+                                            onChange={handleInputChange}
+                                            className=""
+                                        />평
+                                        전용<input
+                                            type="text"
+                                            name="전용평"
+                                            value={propertyData.전용평}
+                                            onChange={handleInputChange}
+                                            className=""
+                                        />평
+                                    </>
+                        </div>
+                    </div>
+                    
+                    {/* 등록일자, 거래상태 */}
+                    <div className='flexRow'>
                         <div className='flexRow'>
                             <p>등록일자:</p>
                                 <input
@@ -207,54 +407,9 @@ const PropertyUpload = () => {
                                     name="등록일자"
                                     value={propertyData.등록일자 ? propertyData.등록일자.split('T')[0] : ''}
                                     onChange={handleInputChange}
-                                    className="border p-1"
+                                    className=""
                                 />
                         </div>
-                        
-                        <h1>
-                            <label>건물명: </label>
-                                <input
-                                    type="text"
-                                    name="건물명"
-                                    value={propertyData.건물명}
-                                    onChange={handleInputChange}
-                                    className="border p-1"
-                                />
-                        </h1>
-                        
-                        <div className='flexRow'>
-                            <p>부동산구분:</p>
-                                <input
-                                    type="text"
-                                    name="부동산구분"
-                                    value={propertyData.부동산구분}
-                                    onChange={handleInputChange}
-                                    className="border p-1"
-                                />
-                        </div>
-                        
-                        <div className='flexRow'>
-                            <p>거래 방식:</p>
-                                <input
-                                    type="text"
-                                    name="거래방식"
-                                    value={propertyData.거래방식}
-                                    onChange={handleInputChange}
-                                    className="border p-1"
-                                />
-                        </div>
-                        
-                        <div className='flexRow'>
-                            <p>거래 완료 여부:</p>
-                                <input
-                                    type="text"
-                                    name="거래완료여부"
-                                    value={propertyData.거래완료여부}
-                                    onChange={handleInputChange}
-                                    className="border p-1"
-                                />
-                        </div>
-                        
                         <div className='flexRow'>
                             <p>거래완료일자:</p>
                                 <input
@@ -262,55 +417,13 @@ const PropertyUpload = () => {
                                     name="거래완료일자"
                                     value={propertyData.거래완료일자 ? propertyData.거래완료일자.split('T')[0] : ''}
                                     onChange={handleInputChange}
-                                    className="border p-1"
+                                    className=""
                                 />
                         </div>
-                        <div className='flexRow'>
-                            <p>구 주소:</p>
-                                <>
-                                    <input
-                                        type="text"
-                                        name="구"
-                                        value={propertyData.구}
-                                        onChange={handleInputChange}
-                                        className="border p-1"
-                                    />
-                                    <input
-                                        type="text"
-                                        name="읍면동"
-                                        value={propertyData.읍면동}
-                                        onChange={handleInputChange}
-                                        className="border p-1"
-                                    />
-                                    <input
-                                        type="text"
-                                        name="구상세주소"
-                                        value={propertyData.구상세주소}
-                                        onChange={handleInputChange}
-                                        className="border p-1"
-                                    />
-                                </>
-                        </div>
-                        <div className='flexRow'>
-                            <p>신 주소:</p>
-                                <>
-                                    <input
-                                        type="text"
-                                        name="도로명"
-                                        value={propertyData.도로명}
-                                        onChange={handleInputChange}
-                                        className="border p-1"
-                                    />
-                                    <input
-                                        type="text"
-                                        name="신상세주소"
-                                        value={propertyData.신상세주소}
-                                        onChange={handleInputChange}
-                                        className="border p-1"
-                                    />
-                                </>
-                        </div>
-                        <div className='flexRow'>
+                    </div>
+
+                    {/* 동호수 */}
+                    <div className='flexRow'>
                             <p>동호수: </p>
                                 <>
                                     <input
@@ -318,92 +431,18 @@ const PropertyUpload = () => {
                                         name="동"
                                         value={propertyData.동}
                                         onChange={handleInputChange}
-                                        className="border p-1"
+                                        className=""
                                     />동
                                     <input
                                         type="text"
                                         name="호수"
                                         value={propertyData.호수}
                                         onChange={handleInputChange}
-                                        className="border p-1"
+                                        className=""
                                     />호수
                                 </>
-                        </div>
-                        
-                        
                     </div>
-
-                    <div className='w-full'>
-                        <h2>금액</h2>
-                        <div className='flexRow justify-between text-yellow'>
-                            <p>보증금</p>
-                                <input
-                                    type="text"
-                                    name="보증금"
-                                    value={propertyData.보증금}
-                                    onChange={handleInputChange}
-                                    className="border p-1"
-                                />
-                        </div>
-                        <div className='flexRow justify-between text-yellow'>
-                            <p>월세</p>
-                                <input
-                                    type="text"
-                                    name="월세"
-                                    value={propertyData.월세}
-                                    onChange={handleInputChange}
-                                    className="border p-1"
-                                />
-                        </div>
-                        <div className='flexRow justify-between text-yellow'>
-                            <p>관리비</p>
-                                <input
-                                    type="text"
-                                    name="관리비"
-                                    value={propertyData.관리비}
-                                    onChange={handleInputChange}
-                                    className="border p-1"
-                                />
-                        </div>
-                    </div>
-                    <div className='flexRow'>
-                            <p>면적(m2): </p>
-                                <>
-                                    전체<input
-                                        type="text"
-                                        name="전체m2"
-                                        value={propertyData.전체m2}
-                                        onChange={handleInputChange}
-                                        className="border p-1"
-                                    />m2
-                                    전용<input
-                                        type="text"
-                                        name="전용m2"
-                                        value={propertyData.전용m2}
-                                        onChange={handleInputChange}
-                                        className="border p-1"
-                                    />m2
-                                </>
-                    </div>
-                    <div className='flexRow'>
-                            <p>면적(평): </p>
-                                <>
-                                    전체<input
-                                        type="text"
-                                        name="전체평"
-                                        value={propertyData.전체평}
-                                        onChange={handleInputChange}
-                                        className="border p-1"
-                                    />평
-                                    전용<input
-                                        type="text"
-                                        name="전용평"
-                                        value={propertyData.전용평}
-                                        onChange={handleInputChange}
-                                        className="border p-1"
-                                    />평
-                                </>
-                    </div>
+                       
                     <div className='flexRow'>
                             <p>EV유무: </p>
                                     <input
@@ -411,30 +450,10 @@ const PropertyUpload = () => {
                                         name="EV유무"
                                         value={propertyData.EV유무}
                                         onChange={handleInputChange}
-                                        className="border p-1"
+                                        className=""
                                     />
                     </div>
-                    <div className='flexRow'>
-                            <p>화장실개수: </p>
-                                    <input
-                                        type="number"
-                                        name="화장실개수"
-                                        value={propertyData.화장실개수}
-                                        onChange={handleInputChange}
-                                        className="border p-1"
-                                    />
-                    </div>
-                    <div className='flexRow'>
-                            <p>주차가능대수: </p>
-                                    <input
-                                        type="number"
-                                        name="주차가능대수"
-                                        value={propertyData.주차가능대수}
-                                        onChange={handleInputChange}
-                                        className="border p-1"
-                                    />
-                          
-                    </div>
+                    
                     <div className='flexRow'>
                             <p>비밀번호: </p>
                                     <input
@@ -442,7 +461,7 @@ const PropertyUpload = () => {
                                         name="비밀번호"
                                         value={propertyData.비밀번호}
                                         onChange={handleInputChange}
-                                        className="border p-1"
+                                        className=""
                                     />
                           
                     </div>
@@ -454,14 +473,14 @@ const PropertyUpload = () => {
                                         name="이름"
                                         value={propertyData.이름}
                                         onChange={handleInputChange}
-                                        className="border p-1"
+                                        className=""
                                     />
                                     휴대폰번호<input
                                         type="text"
                                         name="휴대폰번호"
                                         value={propertyData.휴대폰번호}
                                         onChange={handleInputChange}
-                                        className="border p-1"
+                                        className=""
                                     />
                                 </>
                     </div>
@@ -474,7 +493,7 @@ const PropertyUpload = () => {
                                     name="총수수료"
                                     value={propertyData.총수수료}
                                     onChange={handleInputChange}
-                                    className="border p-1"
+                                    className=""
                                 />
                         </div>
                         <div className='flexRow justify-between text-yellow'>
@@ -484,7 +503,7 @@ const PropertyUpload = () => {
                                     name="소장"
                                     value={propertyData.소장}
                                     onChange={handleInputChange}
-                                    className="border p-1"
+                                    className=""
                                 />
                         </div>
                         <div className='flexRow justify-between text-yellow'>
@@ -494,7 +513,7 @@ const PropertyUpload = () => {
                                     name="직원"
                                     value={propertyData.직원}
                                     onChange={handleInputChange}
-                                    className="border p-1"
+                                    className=""
                                 />
                         </div>
                         
@@ -508,6 +527,7 @@ const PropertyUpload = () => {
                     </div>
                 </article>
             </section>
+            
             <Memo
                 propertyId={propertyData.순번}
                 onMemoUpdate={handleMemoUpdate}

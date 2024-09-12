@@ -1,11 +1,38 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Do+Hyeon&display=swap');
+
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');
 
 *{margin:0; padding:0}
 li{list-style:none}
 a{text-decoration:none}
 
 body {
-    font-family: "DM Sans", sans-serif;
+    font-family:  "Open Sans", sans-serif;
+}
+
+:root {
+  --font-size-base: 1rem;
+  --font-size-mobile-1: 1.25rem;
+  --font-size-mobile-3: 1rem;
+  --font-size-mobile-4: 0.875rem;
+  --font-size-mobile-5: 0.75rem;
+  --font-size-mobile-6: 0.625rem;
+  --font-size-mobile-7: 0.375rem;
+  --font-size-destktop-h: 1.875rem;
+  --font-size-destktop-p: 1.25rem;
+  --font-size-destktop-white: 1.563rem;
+
+}
+
+@media (min-width: 640px) {
+  :root {
+    --font-size-base: 1rem;
+  }
+}
+
+@media (min-width: 768px) {
+  :root {
+    --font-size-base: 1.25rem;
+  }
 }
 
 #root {
@@ -24,11 +51,14 @@ main{
 
 @layer base {
     h1 {
-      @apply text-2xl font-bold;
+      @apply mobile_1_bold;
       
     }
     h2 {
-      @apply text-xl font-bold;
+      @apply  mobile_4_bold ;
+    }
+    input {
+      @apply bg-secondary-light rounded-lg mobile_5 p-2;
     }
 
   }
@@ -42,7 +72,49 @@ main{
     }
     .flexRow {
         display:flex;
-        justify-content:center;
         align-items:center;
     }
+
+    /* Text Stryle */
+    .mobile_1_bold {
+      font-size: var(--font-size-mobile-1);
+      font-weight: bold;
+      line-height: 1;
+    }
+    .mobile_3 {
+        font-size: var(--font-size-mobile-3);
+        line-height: 0.8;
+    }
+    .mobile_3_bold {
+        font-size: var(--font-size-mobile-3);
+        font-weight: bold;
+        line-height: 0.8;
+    }
+    .mobile_4 {
+        font-size: var(--font-size-mobile-4);
+        line-height: calc(14px / 16px);
+    }
+    .mobile_4_bold {
+        font-size: var(--font-size-mobile-4);
+        font-weight: bold;
+        line-height: calc(14px / 16px);
+    }
+    .mobile_5 {
+        font-size: var(--font-size-mobile-5);
+        line-height: calc(12px / 16px);
+    }
+    .mobile_5_bold {
+        font-size: var(--font-size-mobile-5);
+        font-weight: bold;
+        line-height: calc(12px / 16px);
+    }
+    .mobile_6 {
+        font-size: var(--font-size-mobile-6);
+        line-height: calc(10px / 16px);
+    }
+    .mobile_7 {
+        font-size: var(--font-size-mobile-7);
+        line-height: calc(6px / 10px);
+    }
+
   }
