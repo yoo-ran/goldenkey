@@ -1,0 +1,105 @@
+.container {
+  @layer flexRow justify-center;
+}
+
+.slider {
+  position: relative;
+  /* width: 200px; */
+}
+
+/* .slider__track, */
+.slider__range,
+.slider__right-value {
+  position: absolute;
+}
+
+.slider__track,
+.slider__range {
+  border-radius: 3px;
+  height: 5px;
+}
+
+.slider__track {
+  @apply bg-secondary-light;
+  /* width: 100%; */
+  /* z-index: 10; */
+}
+
+.slider__range {
+  @apply bg-primary-yellow ;
+  z-index: 4;
+}
+
+.slider__left-value,
+.slider__right-value {
+  color: black;
+  font-size: 12px;
+  margin-top: 20px;
+}
+
+.slider__left-value {
+  /* left: 6px; */
+}
+
+.slider__right-value {
+  right: 0;
+}
+
+/* Removing the default appearance */
+.thumb,
+.thumb::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.thumb {
+  @apply bg-transparent;
+  pointer-events: none;
+  position: absolute;
+  outline: none;
+  padding:0;
+  /* width:100% */
+
+}
+
+.thumb--left {
+  z-index: 5;
+  left: 0; /* or JavaScript controlled */
+
+}
+
+.thumb--right {
+  z-index: 5;
+  right: 0; /* or JavaScript controlled */
+
+}
+
+/* For Chrome browsers */
+.thumb::-webkit-slider-thumb {
+  @apply bg-white border-secondary-light border-2;
+  border-radius: 50%;
+  box-shadow: 0 0 1px 1px #ced4da;
+  cursor: pointer;
+  height: 1rem;
+  width: 1rem;
+  pointer-events: all;
+  position: relative;
+}
+
+/* For Firefox browsers */
+.thumb::-moz-range-thumb {
+  @apply bg-white border-secondary-light border-2;
+  border-radius: 50%;
+  box-shadow: 0 0 1px 1px #ced4da;
+  cursor: pointer;
+  height: 1rem;
+  width: 1rem;
+  pointer-events: all;
+  position: relative;
+}
+
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+

@@ -38,7 +38,7 @@ function Login(){
 
 
     return (
-        <div className='w-full flexRow h-screen border'>
+        <div className='w-full flexCol h-screen border'>
             <form onSubmit={handleSubmit} className='w-11/12 rounded-xl p-8 flexCol items-start gap-y-14'>
                 <div className='flexCol w-full  gap-y-4'>
                     <input
@@ -64,16 +64,16 @@ function Login(){
                     </button>
                 </div>
                 <div className='flexCol w-full gap-y-4'>
-                    <button 
+                    {/* <button 
                             className='hover:bg-navy w-full mobile_4 transition-all bg-primary text-white rounded-lg p-3'
                     >
                         회원가입
-                    </button>
+                    </button> */}
 
                     <button type="submit" 
                             className='hover:bg-navy w-full mobile_4 transition-all bg-primary-yellow text-white rounded-lg p-3'
                     >
-                        Login
+                        로그인
                     </button>
                     {/* <button onClick={toggleForm}
                             type="submit" 

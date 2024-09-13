@@ -171,7 +171,6 @@ const PropertyDetail = () => {
             <section className='flexCol gap-y-10 w-11/12'>
 
                 <article className='flexCol items-start gap-y-10 w-full'>
-                    <p className='text-sm border px-2 rounded-full'>ID Number: {propertyData.순번}</p>
                     {/* Image */}
                     <div className='w-full'>
                             {isEditing && (
@@ -187,7 +186,7 @@ const PropertyDetail = () => {
                                     </button>
                                 </div>
                             )}
-                            <div className="grid grid-cols-3 grid-rows-2 gap-1 h-52 overflow-hidden rounded-xl">
+                            <div className="grid grid-cols-3 grid-rows-2 gap-1 h-52 lg:h-96 overflow-hidden rounded-xl">
                                 {
                                     images && images.length > 0 &&
                                     images.map((imgPath, index) => (
@@ -205,6 +204,7 @@ const PropertyDetail = () => {
                         {/* 거래유형, 부동산구분, 금액, 등록일자  */}
                         <div className=' w-full flexRow justify-between'>
                             <div className='flexCol items-start gap-y-4 w-2/3'>
+                                        <span className='text-sm  border px-2 border-2 border-primary-yellow font-bold'>매물번호 00{propertyData.순번}</span>
                                 <div className=''>
                                     {isEditing ? (
                                         <div className='flexRow gap-x-2'>
@@ -609,14 +609,14 @@ const PropertyDetail = () => {
                     <p className='w-full border'></p>
 
                     {/* buttons */}
-                    <article>
-                        <div className='flex justify-end w-10/12'>
+                    <article className='w-10/12'>
+                        <div className='grid grid-cols-2'>
                             {isAuthenticated && (
                                 <>
                                     {isEditing ? (
                                         <>
-                                            <button onClick={handleSave} className="bg-primary-yellow text-white px-4 py-2 rounded">
-                                                Save Changes
+                                            <button onClick={handleSave} className="bg-primary-yellow text-primary font-bold px-4 py-2 rounded-full">
+                                                적용하기
                                             </button>
                                             <button onClick={() => setIsEditing(false)} className="bg-gray-500 text-white px-4 py-2 rounded ml-4">
                                                 Cancel
@@ -624,7 +624,7 @@ const PropertyDetail = () => {
                                         </>
                                     ) : (
                                         <>
-                                            <button onClick={() => setIsEditing(true)} className="bg-blue-500 text-white px-4 py-2 rounded">
+                                            <button onClick={() => setIsEditing(true)} className="bg-secondary-light text-primary font-bold px-4 py-2 rounded-full">
                                                 Edit
                                             </button>
                                             <button onClick={handleDelete} className="bg-red-500 text-white px-4 py-2 rounded ml-4">

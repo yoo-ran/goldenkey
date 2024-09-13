@@ -3,13 +3,16 @@ import {useEffect, useState } from "react";
 import axios from 'axios';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHeart } from '@fortawesome/free-solid-svg-icons';
+import { useLocation } from 'react-router-dom';
+
 
 
 const Search = () => {
     const [properties, setProperties] = useState([]);
     const [propertyImages, setPropertyImages] = useState({}); // Store images by property ID
-
-
+    const location = useLocation(); // Retrieve the state (data) from navigation
+    const rangeValues = location.state || {}; // Fallback to an empty object if no state is provided
+    
     useEffect(() => {
         const fetchProperties = async () => {
             try {
@@ -46,9 +49,27 @@ const Search = () => {
         fetchProperties();
 
     }, []);
+
     const transactionMethod = () => {
-        return "매매 8억 6천"
+        // return "매매 8억 6천"
     }
+
+    const filterProperties = properties.filter((property) => {
+        const withinDepositRange =
+          property.보증금 >= rangeValues.depositRange.min &&
+          property.보증금 <= rangeValues.depositRange.max;
+    
+        const withinRentRange =
+          property.월세 >= rangeValues.rentRange.min &&
+          property.월세 <= rangeValues.rentRange.max;
+    
+        const withinRoomSizeRange =
+          property.전용m2 >= rangeValues.roomSizeRange.min &&
+          property.전용m2 <= rangeValues.roomSizeRange.max;
+
+        return withinDepositRange && withinRentRange && withinRoomSizeRange;
+      });
+
 
     return (
         <main className='w-full gap-y-16'>
@@ -59,30 +80,31 @@ const Search = () => {
             {/* 검색결과 */}
             <section className='w-11/12 flexCol gap-y-4'>
                 <h2 className='w-full'>{properties.length}개의 검색결과</h2>
-                <article className='w-full flexCol gap-y-4'>
+                <article className='w-full grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8'>
 
-                    {properties.slice(0,6).map((property) => {
+                    {filterProperties.map((property) => {
                         const { 순번: propertyId } = property; // Assuming '순번' is the unique property ID
                         const images = propertyImages[propertyId] || []; // Get images for this property
 
                         return (
                             <div 
                                 key={propertyId}
-                                className='flexRow gap-x-4'
+                                className='flexRow gap-x-4 lg:flexCol gap-y-4'
                             >
-                                <div className="w-4/12 flexCol">
+                                <div className="w-4/12 lg:w-full flexCol">
                                     {images.length > 0 ? (
                                         <img
                                             src={`http://localhost:8000${images[0]}`}
                                             alt={`Property Image 1`}
-                                            className=" object-cover"
+                                            className=" object-cover lg:rounded-4xl"
                                         />
                                     ) : (
                                         <p>No images available</p>
                                     )}
                                 </div>
-                                <div className='flexCol items-start w-8/12 gap-y-4'>
-                                    <p className='mobile_1_bold'>{transactionMethod()}</p>
+                                <div className='flexCol items-start w-8/12 gap-y-4 lg:w-11/12'>
+                                    {/* <p className='mobile_1_bold'>{transactionMethod()}</p> */}
+                                    <p className='mobile_1_bold'>{property.부동산구분} {property.보증금}/{property.월세}</p>
                                     <div>
                                         <ul className='flexRow mobile_5'>
                                             <li>{property.부동산구분}</li>
@@ -107,34 +129,30 @@ const Search = () => {
                 <h2 className='w-11/12 text-white'>추천물건</h2>
 
                 <article className='w-11/12 flexRow gap-x-4'>
-                    {properties.slice(0,2).map((property) => {
+                    {properties.slice(0,4).map((property) => {
                         const { 순번: propertyId } = property; // Assuming '순번' is the unique property ID
                         const images = propertyImages[propertyId] || []; // Get images for this property
 
                         return (
                             <div 
                                 key={propertyId}
-                                className='flexCol justify-between w-44 h-72 bg-white rounded-3xl px-3 pt-3'
+                                className='flexCol justify-between gap-y-4 w-full bg-white rounded-3xl px-3 pt-3'
                             >
                                 {images.length > 0 ? (
                                     <div
                                         style={{
                                             backgroundImage: `url(http://localhost:8000${images[0]})`, // Corrected syntax
                                         }}                                
-                                        className='w-full h-full bg-cover bg-center rounded-2xl flex justify-end pt-2 pr-2'        
+                                        className='w-full aspect-square bg-cover bg-center rounded-2xl flex justify-end pt-2 pr-2'        
                                     >
                                         <FontAwesomeIcon icon={faHeart} className='text-primary-yellow'/>
                                     </div>
-                                    // <img
-                                    //     src={`http://localhost:8000${images[0]}`}
-                                    //     alt={`Property Image 1`}
-                                    //     className="w-full aspect-square object-cover rounded-2xl"
-                                    // />
                                 ) : (
                                     <p>No images available</p>
                                 )}
-                                <div className='flexCol items-start h-full w-full gap-y-4'>
+                                <div className='flexCol items-start w-full gap-y-4'>
                                     <div className='flexCol items-start gap-y-2 mobile_1_bold'>
+                                        {/* <p className=''>{transactionMethod()}</p> */}
                                         <p className=''>{transactionMethod()}</p>
                                         <li>{property.건물명}</li>
                                     </div>

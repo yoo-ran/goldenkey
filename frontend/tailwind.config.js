@@ -13,6 +13,7 @@ export default {
           yellow: '#F2BB57',
           DEFAULT: '#393B58',
           blue: '#3578FF',
+          orange: '#FF7B0A',
         },
         secondary: {
           yellow: '#FFEFD4',

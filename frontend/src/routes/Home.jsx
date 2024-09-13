@@ -3,13 +3,9 @@ import {useEffect, useState } from 'react';
 import axios from 'axios';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faChevronRight, faCircleUser, faGear, faHouse, faSearch } from '@fortawesome/free-solid-svg-icons'
+import { faBuilding, faChevronRight, faCircleUser, faGear, faHouse, faHouseChimneyWindow, faSearch } from '@fortawesome/free-solid-svg-icons'
 
-import Login from '../components/Login';
-import Signup from '../components/Signup';
-import ImportExcel from '../components/feature/ImportExcel';
-
-import PropertyCarousel from '../components/feature/PropertyCarousel';
+import Oneroom from '../components/filters/Oneroom';
 
 import Images from '../components/feature/importImg'; // Import the custom Image component
 import { faHeart } from '@fortawesome/free-regular-svg-icons';
@@ -28,7 +24,14 @@ const recommendTag = [
 const Home = () => {
     const [isLogin, setIsLogin] = useState(true);
     const [properties, setProperties] = useState([]);
+    const [openFilter, setOpenFilter] = useState(false)
 
+
+    const handleDataFromOneroom = (data) => {
+        setReceivedData(data);
+        console.log('Data received from Oneroom:', data);
+    };
+    
     useEffect(() => {
         const fetchProperties = async () => {
             try {
@@ -62,13 +65,38 @@ const Home = () => {
             </section>    
 
             {/* Filter Section */}
-            <section className='w-11/12 flexRow justify-between'>
-                <button
-                    className='flexCol bg-primary-yellow rounded-lg aspect-square w-10 px-3 py-2'
-                >
-                    <FontAwesomeIcon icon={faHouse}/>
-                </button>
-                <div className='flexRow gap-x-2 mobile_4 text-secondary bg-secondary-light p-3 rounded-lg w-8/12'>
+            <div className='absolute flexCol z-50 top-32 border w-full py-20 bg-white'>
+                <Oneroom />
+            </div>
+            <section className='w-11/12 lg:w-10/12 flexRow justify-between'>
+                <div className='flexCol relative'>
+                    <button
+                        className='flexCol bg-primary-yellow rounded-lg aspect-square w-10 px-3 py-2 '
+                        onClick={()=> {
+                            setOpenFilter(!openFilter)
+                            console.log("lo");
+                        }}
+                    >
+                        <FontAwesomeIcon icon={faHouse}/>
+                    </button>
+                    <div className={`absolute top-12 flexCol bg-white gap-y-4 mobile_6 w-28 overflow-fiddeng transition-[opacity]  ${openFilter ? "": "opacity-0"}`}>
+                        <button className={` transition-all  ${openFilter ? "translate-y-1.5": "opacity-0"}`}>
+                            <FontAwesomeIcon icon={faHouse}/>
+                            <p>원룸 / 투룸</p>
+                        </button>
+                        <button className={` transition-all  ${openFilter ? "translate-y-1.5": "opacity-0"}`}>
+                            <FontAwesomeIcon icon={faBuilding}/>
+                            <p>아파트 / 오피스텔</p>
+                        </button>
+                        <button className={` transition-all  ${openFilter ? "translate-y-1.5": "opacity-0"}`}>
+                            <FontAwesomeIcon icon={faHouseChimneyWindow}/>
+                            <p>주택 / 빌라</p>
+                        </button>
+                    </div>
+                    
+                </div>
+
+                <div className='flexRow gap-x-2 mobile_4 text-secondary bg-secondary-light p-3 rounded-lg lg:rounded-full lg:pl-8 lg:py-2 w-8/12'>
                     <FontAwesomeIcon icon={faSearch}/>
                     <input
                         type='search'
@@ -82,30 +110,30 @@ const Home = () => {
             </section>
 
             {/* 추천태그 */}
-            <section className='w-11/12 flexCol gap-y-4'>
+            <section className='w-11/12 lg:w-10/12 flexCol gap-y-4'>
                 <h2 className='w-full'>추천태그</h2>
                 <article className='w-full flexRow flex-wrap gap-3 mobile_5_bold text-primary'>
                     {
                         recommendTag.map((tag,index)=>(
-                            <div key={index} className='bg-secondary-blue rounded px-3 py-2'>
+                            <button key={index} className='bg-secondary-blue rounded px-3 py-2 hover:bg-secondary-yellow hover:text-primary-orange'>
                                 {tag}
-                            </div>
+                            </button>
                         ))
                     }
                 </article>
             </section>
 
             {/* Property Type */}
-            <section className='w-11/12'>
-                <article className='flexRow flex-wrap gap-y-4'>
+            <section className='w-11/12 lg:w-10/12'>
+                <article className='grid grid-cols-1 lg:grid-cols-2 gap-x-4 gap-y-6'>
                 {propertyType.map((item, id) => (
                     <div
                         key={id}
                         style={{ backgroundImage: `url(${Images[id]})` }}
-                        className="relative overflow-hidden flexCol w-full bg-cover bg-center rounded-4xl px-2 py-14"
+                        className="relative overflow-hidden flexCol w-full lg: bg-cover bg-center rounded-4xl px-2 py-14"
                     >
                         <div className="absolute bg-black w-full h-full bg-opacity-50"></div>
-                        <div className="border-l-8 pl-2 border-primary-yellow w-10/12 z-50 flexCol items-start gap-y-2 mobile_3_bold pl-8">
+                        <div className="border-l-8 pl-2 border-primary-yellow w-10/12 z-40 flexCol items-start gap-y-2 mobile_3_bold pl-8">
                             <p className="text-primary-yellow ">{item.type}</p>
                             <span className="text-white">{item.typeDescrp}</span>
                         </div>
@@ -120,12 +148,12 @@ const Home = () => {
                     최근 검색한 매물
                     <FontAwesomeIcon icon={faChevronRight}/>
                 </h2>
-                <article className='w-full flexRow  gap-3'>
+                <article className='w-full grid grid-cols-3 lg:grid-cols-4 gap-x-3 lg:gap-x-5'>
                     {propertyType.slice(0,3).map((item, id) => (
                         <div
                             key={id}
                             style={{ backgroundImage: `url(${Images[id]})` }}
-                            className="w-1/3 aspect-square bg-cover bg-center rounded-2xl "
+                            className="w-full aspect-square bg-cover bg-center rounded-2xl "
                         >
                             <div className="w-11/12 aspect-square flexRow items-end justify-end mobile_3_bold text-white ">
                                 <div className='bg-secondary-light p-2 aspect-square rounded-full'>
