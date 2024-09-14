@@ -28,15 +28,21 @@ const PropertyDetail = () => {
     const [selectedStatus, setSelectedStatus] = useState('');
 
     const [propertyData, setPropertyData] = useState({
-        순번: '', 등록일자: '', 부동산구분: '', 거래방식: '', 거래완료여부: '',
+        등록일자: '', 부동산구분: '', 거래방식: '', 거래완료여부: '',
         거래완료일자: '', 담당자: '', 구: '', 읍면동: '', 구상세주소: '',
         도로명: '', 신상세주소: '', 건물명: '', 동: '', 호수: '',
         보증금: 0, 월세: 0, 관리비: 0, 전체m2: 0, 전용m2: 0,
         전체평: 0, 전용평: 0, EV유무: false, 화장실개수: 0, 주차가능대수: 0,
-        비밀번호: '', 이름: '', 휴대폰번호: '', 기타특이사항: '', 총수수료: 0,
-        소장: 0, 직원: 0, 메모:"", img_path:""
+        비밀번호: '', 이름: '', 휴대폰번호: '', 기타특이사항: '', img_path: "",
+        정산금액: {
+            총수수료: 0,
+            소장: 0,
+            직원: [
+                { name: "직원1", money: 0 },
+                { name: "직원2", money: 0 }
+            ]
+        }
     });
-
 
     useEffect(() => {
         const checkAuthentication = async () => {
@@ -58,7 +64,14 @@ const PropertyDetail = () => {
     const fetchPropertyData = async () => {
         try {
             const response = await axios.get(`http://localhost:8000/detail/${propertyId}`);
-            setPropertyData(response.data);
+            const fetchedData = response.data;
+
+            // Parse 정산금액 if it's a JSON string
+            if (typeof fetchedData.정산금액 === 'string') {
+                fetchedData.정산금액 = JSON.parse(fetchedData.정산금액);
+            }
+
+            setPropertyData(fetchedData);
             
             const propertyType = await axios.get(`http://localhost:8000/property-types`);
             setPropertyTypes(propertyType.data);
@@ -163,6 +176,7 @@ const PropertyDetail = () => {
         return (price / 10000); // Divide by 10,000 and add commas
       };
 
+    console.log(propertyData);
 
     return (
         <main className='w-full gap-y-8 '>
@@ -490,7 +504,7 @@ const PropertyDetail = () => {
                                         className="border p-1"
                                     />
                                 ) : (
-                                    <p>{propertyData.관리비.toLocaleString()}</p>
+                                    <p>{propertyData.관리비}</p>
                                 )}
                             </div>
                         </div>
@@ -560,49 +574,57 @@ const PropertyDetail = () => {
                         </div>
                         <div className='w-full'>
                             <h2>정산금액</h2>
-                            <div className='flexRow justify-between text-yellow'>
-                                <p>총수수료</p>
-                                {isEditing ? (
-                                    <input
-                                        type="number"
-                                        name="총수수료"
-                                        value={propertyData.총수수료}
-                                        onChange={handleInputChange}
-                                        className="border p-1"
-                                    />
-                                ) : (
-                                    <p>{propertyData.총수수료.toLocaleString()}</p>
-                                )}
-                            </div>
-                            <div className='flexRow justify-between text-yellow'>
-                                <p>소장</p>
-                                {isEditing ? (
-                                    <input
-                                        type="number"
-                                        name="소장"
-                                        value={propertyData.소장}
-                                        onChange={handleInputChange}
-                                        className="border p-1"
-                                    />
-                                ) : (
-                                    <p>{propertyData.소장.toLocaleString()}</p>
-                                )}
-                            </div>
+                                <div className='flexRow justify-between text-yellow'>
+                                    <p>총수수료</p>
+                                    {isEditing ? (
+                                        <input
+                                            type="number"
+                                            name="총수수료"
+                                            value={propertyData.정산금액.총수수료}
+                                            onChange={handleInputChange}
+                                            className="border p-1"
+                                        />
+                                    ) : (
+                                        <p>{propertyData.정산금액.총수수료}</p>
+                                    )}
+                                </div>
+
+                                <div className='flexRow justify-between text-yellow'>
+                                    <p>소장</p>
+                                    {isEditing ? (
+                                        <input
+                                            type="number"
+                                            name="소장"
+                                            value={propertyData.정산금액.소장}
+                                            onChange={handleInputChange}
+                                            className="border p-1"
+                                        />
+                                    ) : (
+                                        <p>{propertyData.정산금액.소장}</p>
+                                    )}
+                                </div>
+
+                            {/* Render 직원 array dynamically */}
                             <div className='flexRow justify-between text-yellow'>
                                 <p>직원</p>
-                                {isEditing ? (
-                                    <input
-                                        type="number"
-                                        name="직원"
-                                        value={propertyData.직원}
-                                        onChange={handleInputChange}
-                                        className="border p-1"
-                                    />
-                                ) : (
-                                    <p>{propertyData.직원.toLocaleString()}</p>
-                                )}
+                                {propertyData.정산금액.직원.map((employee, index) => (
+                                    <div key={index} className='flexRow'>
+                                        <p>{employee.name}</p> {/* Display employee name */}
+                                        {isEditing ? (
+                                            <input
+                                                type="number"
+                                                name={`직원-${index}`}
+                                                value={employee.money}
+                                                onChange={(e) => handleEmployeeInputChange(e, index)}  // Handle input change for 직원 array
+                                                className="border p-1"
+                                            />
+                                        ) : (
+                                            <p>{employee.money}</p>
+                                        )}
+                                    </div>
+                                ))}
                             </div>
-                            
+
                         </div>
                     </article>
 

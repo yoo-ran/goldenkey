@@ -1,14 +1,20 @@
 .container {
-  @layer flexRow justify-center;
+  min-height: 4vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: content-box;
+
 }
 
 .slider {
   position: relative;
-  /* width: 200px; */
+  width: 200px;
 }
 
-/* .slider__track, */
+.slider__track,
 .slider__range,
+.slider__left-value,
 .slider__right-value {
   position: absolute;
 }
@@ -16,33 +22,33 @@
 .slider__track,
 .slider__range {
   border-radius: 3px;
-  height: 5px;
+  height: 3px;
 }
 
 .slider__track {
-  @apply bg-secondary-light;
-  /* width: 100%; */
-  /* z-index: 10; */
+  @apply bg-primary-gray;
+  width: 100%;
+  z-index: 1;
 }
 
 .slider__range {
-  @apply bg-primary-yellow ;
-  z-index: 4;
+  @apply bg-primary-yellow;
+  z-index: 2;
 }
 
 .slider__left-value,
 .slider__right-value {
-  color: black;
+  color: #dee2e6;
   font-size: 12px;
   margin-top: 20px;
 }
 
 .slider__left-value {
-  /* left: 6px; */
+  left: 6px;
 }
 
 .slider__right-value {
-  right: 0;
+  right: -4px;
 }
 
 /* Removing the default appearance */
@@ -53,53 +59,50 @@
 }
 
 .thumb {
-  @apply bg-transparent;
   pointer-events: none;
+  @apply bg-transparent;
   position: absolute;
-  outline: none;
-  padding:0;
-  /* width:100% */
-
+  height: 0;
+  width: 200px;
+  box-sizing: content-box;
 }
 
 .thumb--left {
-  z-index: 5;
-  left: 0; /* or JavaScript controlled */
-
+  z-index: 3;
 }
 
 .thumb--right {
-  z-index: 5;
-  right: 0; /* or JavaScript controlled */
-
+  z-index: 4;
 }
 
 /* For Chrome browsers */
 .thumb::-webkit-slider-thumb {
-  @apply bg-white border-secondary-light border-2;
+  @apply bg-white border-4 border-primary-gray ;
+  border: none;
   border-radius: 50%;
   box-shadow: 0 0 1px 1px #ced4da;
   cursor: pointer;
-  height: 1rem;
-  width: 1rem;
+  height: 1.25rem;
+  width:  1.25rem;
+  margin-top: 4px;
   pointer-events: all;
   position: relative;
 }
 
 /* For Firefox browsers */
 .thumb::-moz-range-thumb {
-  @apply bg-white border-secondary-light border-2;
+  @apply bg-white border-4 border-primary-gray ;
+  border: none;
   border-radius: 50%;
   box-shadow: 0 0 1px 1px #ced4da;
   cursor: pointer;
-  height: 1rem;
-  width: 1rem;
+  height: 18px;
+  width: 18px;
+  margin-top: 4px;
   pointer-events: all;
   position: relative;
 }
 
-
 @tailwind base;
-@tailwind components;
-@tailwind utilities;
-
+/* @tailwind components; */
+/* @tailwind utilities; */

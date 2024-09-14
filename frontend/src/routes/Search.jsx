@@ -11,8 +11,17 @@ const Search = () => {
     const [properties, setProperties] = useState([]);
     const [propertyImages, setPropertyImages] = useState({}); // Store images by property ID
     const location = useLocation(); // Retrieve the state (data) from navigation
-    const rangeValues = location.state || {}; // Fallback to an empty object if no state is provided
+    const rangeValues = location.state || {
+        selectedMethod: '',
+        depositRange: { min: 0, max: 3000 },
+        rentRange: { min: 0, max: 150 },
+        roomSizeRange: { min: 0, max: 1000 },
+        거래방식: '',
+        거래완료여부: '',
+    }; // Fallback to an empty object if no state is provided
     
+    console.log(rangeValues);
+
     useEffect(() => {
         const fetchProperties = async () => {
             try {
@@ -50,10 +59,6 @@ const Search = () => {
 
     }, []);
 
-    const transactionMethod = () => {
-        // return "매매 8억 6천"
-    }
-
     const filterProperties = properties.filter((property) => {
         const withinDepositRange =
           property.보증금 >= rangeValues.depositRange.min &&
@@ -67,9 +72,11 @@ const Search = () => {
           property.전용m2 >= rangeValues.roomSizeRange.min &&
           property.전용m2 <= rangeValues.roomSizeRange.max;
 
-        return withinDepositRange && withinRentRange && withinRoomSizeRange;
-      });
+        const matchesSelectedMethod =
+        property.거래방식 === rangeValues.selectedMethod || rangeValues.selectedMethod === 'all';
 
+        return withinDepositRange && withinRentRange && withinRoomSizeRange && matchesSelectedMethod;
+      });
 
     return (
         <main className='w-full gap-y-16'>
@@ -79,11 +86,11 @@ const Search = () => {
 
             {/* 검색결과 */}
             <section className='w-11/12 flexCol gap-y-4'>
-                <h2 className='w-full'>{properties.length}개의 검색결과</h2>
+                <h2 className='w-full'>{filterProperties.length > 0 ? filterProperties.length : properties.length}개의 검색결과</h2>
                 <article className='w-full grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8'>
 
-                    {filterProperties.map((property) => {
-                        const { 순번: propertyId } = property; // Assuming '순번' is the unique property ID
+                {(filterProperties.length > 0 ? filterProperties : properties).map((property) => {                        
+                    const { 순번: propertyId } = property; // Assuming '순번' is the unique property ID
                         const images = propertyImages[propertyId] || []; // Get images for this property
 
                         return (
@@ -103,8 +110,8 @@ const Search = () => {
                                     )}
                                 </div>
                                 <div className='flexCol items-start w-8/12 gap-y-4 lg:w-11/12'>
-                                    {/* <p className='mobile_1_bold'>{transactionMethod()}</p> */}
-                                    <p className='mobile_1_bold'>{property.부동산구분} {property.보증금}/{property.월세}</p>
+                                    {/* <p className='mobile_1_bold'>{property.거래방식}</p> */}
+                                    <p className='mobile_1_bold'>{property.거래방식} {property.보증금}/{property.월세}</p>
                                     <div>
                                         <ul className='flexRow mobile_5'>
                                             <li>{property.부동산구분}</li>
@@ -152,8 +159,7 @@ const Search = () => {
                                 )}
                                 <div className='flexCol items-start w-full gap-y-4'>
                                     <div className='flexCol items-start gap-y-2 mobile_1_bold'>
-                                        {/* <p className=''>{transactionMethod()}</p> */}
-                                        <p className=''>{transactionMethod()}</p>
+                                        <p className=''>{property.거래방식}</p>
                                         <li>{property.건물명}</li>
                                     </div>
                                     <ul className='flexRow gap-x-1 mobile_5 text-secondary'>
