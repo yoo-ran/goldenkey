@@ -52,7 +52,8 @@ app.use(
         /^\/upload-images\/\d+$/,
         '/property-types',
         '/transaction-methods',
-        '/transaction-status'
+        '/transaction-status',
+        '/properties/update'
     ] }) 
 );
 
@@ -519,9 +520,16 @@ app.post('/memos/add', async (req, res) => {
 
 app.post('/properties/update', (req, res) => {
     const propertyData = req.body;
-  
+
+    // Convert the 정산금액 object to a JSON string if it's an object
+    if (typeof propertyData.정산금액 === 'object') {
+        propertyData.정산금액 = JSON.stringify(propertyData.정산금액);
+    }
+
+    console.log(propertyData.총수수료);
+
     db.query(
-      'INSERT INTO property SET ? ON DUPLICATE KEY UPDATE ?',
+      'INSERT INTO property SET ? ON DUPLICATE KEY UPDATE 정산금액 = VALUES(정산금액)',
       [propertyData, propertyData],
       (err, result) => {
         if (err) {
