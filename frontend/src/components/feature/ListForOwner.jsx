@@ -143,7 +143,8 @@ const ListForOwner = ({updateData}) => {
       { field: '기타특이사항', editable: true },
       { field: '총수수료', editable: true },
       { field: '소장', editable: true },
-      { field: '직원', editable: true },
+      { field: '직원1', editable: true },
+      { field: '직원2', editable: true },
       { field: '메모', editable: true },
       { field: 'img_path', editable: true },
       {

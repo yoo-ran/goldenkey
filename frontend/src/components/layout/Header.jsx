@@ -55,9 +55,9 @@ const Header = () => {
                         <Link to="/search">Search</Link>
                     </li>
                     <li 
-                        className={`transition-all ${location.pathname === "/rental" ? "text-yellow" : "hover:text-yellow"}`}
+                        className={`transition-all ${location.pathname === "/importExcel" ? "text-yellow" : "hover:text-yellow"}`}
                     >
-                        <Link to="/rental">Import Excel</Link>
+                        <Link to="/importExcel">Import Excel</Link>
                     </li>
                     <li 
                         className={`transition-all ${location.pathname === "/upload" ? "text-yellow" : "hover:text-yellow"}`}

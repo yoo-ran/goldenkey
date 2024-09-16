@@ -7,7 +7,6 @@ import { faBuilding, faChevronRight, faCircleUser, faGear, faHouse, faHouseChimn
 
 import Oneroom from '../components/filters/Oneroom';
 
-import Images from '../components/feature/importImg'; // Import the custom Image component
 import { faHeart } from '@fortawesome/free-regular-svg-icons';
 
 const propertyType = [

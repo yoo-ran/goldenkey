@@ -11,7 +11,7 @@ const ImportExcel = ({onDataUpdate}) =>{
   const gridRef = useRef();
   const [rowData, setRowData] = useState([]);
   const [dbRowData, setDbRowData] = useState([])
-  const [dataUpdated, setDataUpdated] = useState(false);
+  const [dbProperties, setDbProperties] = useState([]);
 
   const ImageRenderer = (props) => {
     const imageUrl = props.value;
@@ -88,7 +88,8 @@ const ImportExcel = ({onDataUpdate}) =>{
       children: [
         { field: "총수수료", headerName: "총 수수료" },
         { field: "소장", headerName: "소장" },
-        { field: "직원", headerName: "직원" },
+        { field: "직원1", headerName: "직원1" },
+        { field: "직원2", headerName: "직원2" },
       ],
     },
     { field: "메모", headerName: "메모" },
@@ -140,7 +141,7 @@ const ImportExcel = ({onDataUpdate}) =>{
 
 
   // Function to populate the grid with data from the workbook
-  const populateGrid = (workbook, existingProperties) => {
+  const populateGrid = (workbook, dbProperties) => {
     const firstSheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[firstSheetName];
     const columns = {
@@ -175,9 +176,9 @@ const ImportExcel = ({onDataUpdate}) =>{
         AC: '기타특이사항',
         AD: '총수수료',
         AE: '소장',
-        AF: '직원',
-        AG: '메모',
-        AH: 'img_path'
+        AF: '직원1',
+        AG: '직원2',
+        AH: '메모',
     };
 
     const rowData = [];
@@ -190,7 +191,7 @@ const ImportExcel = ({onDataUpdate}) =>{
         const propertyId = worksheet['A' + rowIndex].v; // Assuming '순번' (column A) is the unique property ID
 
         // Check if the property ID already exists in the database
-        if (existingProperties.some(property => property.propertyId === propertyId)) {
+        if (dbProperties.some(property => property.propertyId === propertyId)) {
             console.log(`Skipping property with ID: ${propertyId} (already exists in database)`);
             rowIndex++; // Skip this row and move to the next one
             continue;
@@ -205,12 +206,12 @@ const ImportExcel = ({onDataUpdate}) =>{
             }
 
             // Handle specific columns formatting
-            if (columns[column] === '총수수료' || columns[column] === '소장' || columns[column] === '직원') {
+            if (columns[column] === '총수수료' || columns[column] === '소장' || columns[column] === '직원1' || columns[column] === '직원2') {
               cellValue = cellValue === null ? 0 : cellValue; // Default to 0 if empty
             }
 
             // Format data for display
-            if (columns[column] === '보증금' || columns[column] === '월세' || columns[column] === '관리비' || columns[column] === '총수수료' || columns[column] === '소장' || columns[column] === '직원') {
+            if (columns[column] === '보증금' || columns[column] === '월세' || columns[column] === '관리비' || columns[column] === '총수수료' || columns[column] === '소장' || columns[column] === '직원1' || columns[column] === '직원2') {
                 row[columns[column]] = cellValue.toLocaleString(); // Display formatted value
             } else {
                 row[columns[column]] = cellValue; // Normal value
@@ -223,11 +224,6 @@ const ImportExcel = ({onDataUpdate}) =>{
               dbRow[columns[column]] = cellValue ? cellValue.toString().replace(/,/g, '') : ''; // Ensure no null value
           } else {
               dbRow[columns[column]] = cellValue;
-          }
-
-          if (columns[column] === 'img_path') {
-            console.log("cellValue: " + cellValue);
-            row[columns[column]] = cellValue;
           }
         });
 
@@ -243,78 +239,207 @@ const ImportExcel = ({onDataUpdate}) =>{
 
 
 // First, fetch the existing property data (like property IDs) from your backend
-const fetchExistingProperties = async () => {
+const fetchDbProperties = async () => {
   try {
       const response = await axios.get('http://localhost:8000/listing', { withCredentials: true });
-      return response.data; // Assuming this returns an array of objects, e.g., [{ propertyId: 123, ... }, ...]
+      setDbProperties(response.data); 
+
   } catch (error) {
       console.error('Error fetching existing properties:', error);
-      return [];
+      return []
   }
 };
-  const handleFileUpload = async (file, propertyId) => {
-    console.log("handleFileUpload: " + file);
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('propertyId', propertyId); // Include property ID or any relevant identifier
 
 
-    try {
-      const response = await axios.post('http://localhost:8000/upload-image', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-      return response.data.imageUrl; // Server returns the image URL
-    } catch (error) {
-      console.error('Image upload failed:', error);
-      return '';
-    }
+
+  // Calculate Total for 정산금액 (소장금액, 직원금액, 총수수료)
+  const calculateTotal = (row) => {
+    const 소장 = parseFloat(row.소장) || 0;
+    const 직원1 = parseFloat(row.직원1) || 0;
+    const 직원2 = parseFloat(row.직원2) || 0;
+    return 소장 + 직원1 + 직원2;
+}
+
+const createTotalasJSON = (row) => {
+  row.정산금액 = {
+      "소장": parseFloat(row.소장) || 0,
+      "직원": [
+          { "name": "직원1", "money": parseFloat(row.직원1) || 0 },
+          { "name": "직원2", "money": parseFloat(row.직원2) || 0 },
+      ],
   };
+  row.정산금액.총수수료 = calculateTotal(row);
+
+  // Convert 정산금액 to JSON string
+  row.정산금액 = JSON.stringify(row.정산금액);
+};
+
+const convertToDateOnly = (isoString) => {
+  const date = new Date(isoString);
+  
+  const dateOnly = date.toISOString().slice(0, 10);
+  
+  return dateOnly;
+};
+
+
+
+
+const compareAndUpdateColumns = async (dbProperties, excelProperties) => {
+  const updatedRows = [];
+
+  for (const excelRow of excelProperties) {
+      const dbRow = dbProperties.find(dbRow => dbRow.순번 === excelRow.순번);
+
+      if (dbRow) {
+          let rowUpdated = false;
+          const updatedRow = { ...dbRow };  // Start with the existing dbRow
+
+          // Ensure both dates are in YYYY-MM-DD format
+          if (dbRow.등록일자) dbRow.등록일자 = convertToDateOnly(dbRow.등록일자);
+          if (dbRow.거래완료일자) dbRow.거래완료일자 = convertToDateOnly(dbRow.거래완료일자);
+
+          // Compare each column and prompt user
+          for (let key in excelRow) {
+              if (excelRow.hasOwnProperty(key) && dbRow.hasOwnProperty(key)) {
+                  // Handle keys that are part of the '정산금액' JSON in dbRow
+                  if (key === '총수수료' || key === "소장" || key === "직원1" || key === "직원2") {
+                      // Parse '정산금액' JSON in dbRow
+                      const dbValue = JSON.parse(dbRow['정산금액']);
+                      
+                      // Extract corresponding values from '정산금액' JSON
+                      const db소장 = dbValue.소장 || 0;
+                      const db직원1 = dbValue.직원.find(e => e.name === "직원1").money || 0;
+                      const db직원2 = dbValue.직원.find(e => e.name === "직원2").money || 0;
+                      const db총수수료 = dbValue.총수수료 || 0;
+
+                      // Map the keys to the values from the JSON
+                      const dbMappedValue = {
+                          소장: db소장,
+                          직원1: db직원1,
+                          직원2: db직원2,
+                          총수수료: db총수수료
+                      };
+
+                      // Compare the values from dbRow and excelRow
+                      const dbFieldValue = dbMappedValue[key];  // Get the corresponding value from the db JSON
+                      const excelFieldValue = parseFloat(excelRow[key]) || 0;  // Convert excelRow value to number
+
+                      // Compare and ask user for update if different
+                      if (dbFieldValue !== excelFieldValue) {
+                          console.log(`Difference in ${key}: DB = ${dbFieldValue}, Excel = ${excelFieldValue}`);
+                          const userWantsToUpdate = await askUserForColumnUpdate(key, dbFieldValue, excelFieldValue);
+                          if (userWantsToUpdate) {
+                              updatedRow['정산금액'] = {
+                                  ...dbValue,
+                                  [key]: excelFieldValue  // Update only the part that has changed
+                              };
+                              rowUpdated = true;  // Mark that the row has been updated
+                          }
+                      }
+                  } else {
+                      // Handle other fields with string/number normalization
+                      let dbValue = dbRow[key];
+                      let excelValue = excelRow[key];
+
+                      // Skip if both values are empty (null, undefined, "")
+                      if ((dbValue == null || dbValue === '') && (excelValue == null || excelValue === '')) {
+                          continue; // Skip comparison if both are empty
+                      } else {
+                          // Normalize number comparisons (convert stringified numbers to actual numbers)
+                          if (!isNaN(dbValue) && !isNaN(excelValue)) {
+                              dbValue = parseFloat(dbValue);
+                              excelValue = parseFloat(excelValue);
+                          }
+
+                          // Perform the comparison
+                          if (dbValue !== excelValue) {
+                              const userWantsToUpdate = await askUserForColumnUpdate(key, dbValue, excelValue);
+                              if (userWantsToUpdate) {
+                                  updatedRow[key] = excelRow[key];  // Update the column value
+                                  rowUpdated = true;  // Mark that the row has been updated
+                              }
+                          }
+                      }
+                  }
+              }
+          }
+
+          if (rowUpdated) {
+              updatedRows.push(updatedRow);  // Only push the row if it was updated
+          }
+      }
+  }
+
+  return updatedRows;  // Return only the updated rows
+};
+
+
+
+
+
+
+const askUserForColumnUpdate = (columnName, dbValue, excelValue) => {
+  return new Promise((resolve) => {
+      const userResponse = window.confirm(
+          `The column "${columnName}" has different values:\n\nDatabase Value: ${dbValue}\nExcel Value: ${excelValue}\n\nDo you want to overwrite the database value with the Excel value?`
+      );
+      resolve(userResponse);  // Resolve with true for Yes, false for No
+  });
+};
+
+
+
 
   // Function to import the Excel file
   const importExcel = async () => {
     try {
-      // Fetch existing property data from the database
-      const existingProperties = await fetchExistingProperties();
+        // Fetch existing property data from the database
+        await fetchDbProperties();
 
-      // Fetch the Excel file
-      const response = await fetch('https://docs.google.com/spreadsheets/d/1cE9XxIZLY52PFsJZJdTY6AQE6Qhs7T_cWhU9nh2c5KE/export?format=xlsx');
-      const data = await response.arrayBuffer();
-  
-      // Convert data to workbook and process it
-      const workbook = convertDataToWorkbook(data);
-      const dbRowData = populateGrid(workbook, existingProperties);
+        // Fetch the Excel file
+        const response = await fetch('https://docs.google.com/spreadsheets/d/1cE9XxIZLY52PFsJZJdTY6AQE6Qhs7T_cWhU9nh2c5KE/export?format=xlsx');
+        const data = await response.arrayBuffer();
 
-      for (const row of dbRowData) {
-        console.log(row);
-        console.log(row.img_path);
-        if (row.img_path) {
-          // Fetch the image file based on the path
-          const file = await fetchImageFile(row.img_path);
-          console.log("importExcel: "+ file);
-          // Upload the image and get the URL
-          const imageUrl = await handleFileUpload(file, row.propertyId);
-          console.log("importExcel: " + imageUrl);
-          // Update the row with the new image URL
-          row.img_path = imageUrl;
+        // Convert data to workbook and process it
+        const workbook = convertDataToWorkbook(data);
+        const excelRowData = populateGrid(workbook, dbProperties);
+
+        
+        // Compare each row in the Excel data with the database data
+        const updatedRows = await compareAndUpdateColumns(dbProperties, excelRowData);
+
+        // Find new records that don't exist in the database
+        const newRecords = excelRowData.filter(excelRow => !dbProperties.find(dbRow => dbRow.순번 === excelRow.순번));
+
+        // Combine both new and updated records into one dataset
+        const finalData = [...newRecords, ...updatedRows];
+
+        // Apply createTotalasJSON to each row in finalData
+        finalData.forEach(row => {
+            createTotalasJSON(row);
+        });
+
+        console.log(finalData);
+
+
+        // Now finalData contains the '정산금액' key with the calculated values
+        if (finalData.length > 0) {
+            // Send all data (new and updated records) to the backend
+            const result = await axios.post('http://localhost:8000/import-csv', finalData, { withCredentials: true });
+            onDataUpdate(true)
+            alert('Data imported successfully!');
+        } else {
+            alert('No changes made to the database.');
         }
-      }
-  
-      // Send the data to the backend
-      const result = await axios.post('http://localhost:8000/import-csv', dbRowData, { withCredentials: true });
-  
-      // Handle success response
-      alert('Data imported successfully!');
-      setDataUpdated(true)
-      onDataUpdate(dataUpdated)
-      console.log(result.data);
+
     } catch (error) {
-      // Handle error response
-      alert('Error importing data.');
-      console.error(error);
+        // Handle error response
+        alert('Error importing data.');
+        console.error(error);
     }
-  };
+};
+
 
 
   
@@ -330,7 +455,7 @@ const fetchExistingProperties = async () => {
         />
       </div>
       <button onClick={importExcel}
-        className='bg-yellow text-white rounded-full px-4'
+        className='bg-primary-yellow text-white rounded-full px-4'
       
       >Import Excel Data</button>
     </div>

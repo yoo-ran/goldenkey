@@ -5,7 +5,6 @@ import axios from 'axios';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHeart } from '@fortawesome/free-regular-svg-icons';
 
-import Images from '../components/feature/importImg'; // Import the custom Image component
 import ListingHeader from '../components/feature/ListingHeader';
 
 const Listing = () => {

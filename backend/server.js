@@ -89,12 +89,13 @@ app.get('/transaction-status', (req, res) => {
     res.json(TRANSACTION_STATUS);  // Send the enum values to the frontend
 });
 
-// Import CSV
+// Import CSV / excel
 app.post('/import-csv', (req, res) => {
     const properties = req.body; // JSON data from the frontend
-
     const uniqueFields = properties.map(item => item['순번']); // or use another unique field
+    console.log(uniqueFields);
 
+    // Query to fetch existing records with the same 순번
     const query = `SELECT 순번 FROM property WHERE 순번 IN (?)`;
 
     db.query(query, [uniqueFields], (err, results) => {
@@ -103,61 +104,101 @@ app.post('/import-csv', (req, res) => {
             return res.status(500).send('Error checking existing data');
         }
 
-        const existingFields = results.map(row => row['순번']);
-        const filteredProperties = properties.filter(item => !existingFields.includes(item['순번']));
+        const existingFields = results.map(row => row['순번']); // List of IDs that already exist in DB
+        const newRecords = properties.filter(item => !existingFields.includes(item['순번'])); // Records to insert
+        const updateRecords = properties.filter(item => existingFields.includes(item['순번'])); // Records to update
 
-        if (filteredProperties.length === 0) {
-            return res.status(200).send('No new data to insert (all duplicates).');
+        const promises = [];
+
+        // Insert new records
+        if (newRecords.length > 0) {
+            const insertValues = newRecords.map(item => [
+                item['순번'], 
+                item['등록일자'], 
+                item['부동산구분'], 
+                item['거래방식'], 
+                item['거래완료여부'], 
+                item['거래완료일자'], 
+                item['담당자'], 
+                item['구'], 
+                item['읍면동'], 
+                item['구상세주소'], 
+                item['도로명'], 
+                item['신상세주소'], 
+                item['건물명'], 
+                item['동'], 
+                item['호수'], 
+                item['보증금'], 
+                item['월세'], 
+                item['관리비'], 
+                item['전체m2'], 
+                item['전용m2'], 
+                item['전체평'], 
+                item['전용평'], 
+                item['EV유무'], 
+                item['화장실개수'], 
+                item['주차가능대수'], 
+                item['비밀번호'], 
+                item['이름'], 
+                item['휴대폰번호'], 
+                item['기타특이사항'], 
+                item['정산금액'], 
+                item['메모'],
+            ]);
+
+            const insertSql = `INSERT INTO property (순번, 등록일자, 부동산구분, 거래방식, 거래완료여부, 거래완료일자, 담당자, 구, 읍면동, 구상세주소, 도로명, 신상세주소, 건물명, 동, 호수, 보증금, 월세, 관리비, 전체m2, 전용m2, 전체평, 전용평, EV유무, 화장실개수, 주차가능대수, 비밀번호, 이름, 휴대폰번호, 기타특이사항, 정산금액, 메모) VALUES ?`;
+
+            promises.push(new Promise((resolve, reject) => {
+                db.query(insertSql, [insertValues], (err, result) => {
+                    if (err) {
+                        console.error('Error inserting data:', err);
+                        reject('Error inserting data');
+                    } else {
+                        console.log(`${newRecords.length} new records inserted successfully.`);
+                        resolve();
+                    }
+                });
+            }));
         }
 
-        const values = filteredProperties.map(item => [
-            item['순번'], 
-            item['등록일자'], 
-            item['부동산구분'], 
-            item['거래방식'], 
-            item['거래완료여부'], 
-            item['거래완료일자'], 
-            item['담당자'], 
-            item['구'], 
-            item['읍면동'], 
-            item['구상세주소'], 
-            item['도로명'], 
-            item['신상세주소'], 
-            item['건물명'], 
-            item['동'], 
-            item['호수'], 
-            item['보증금'], 
-            item['월세'], 
-            item['관리비'], 
-            item['전체m2'], 
-            item['전용m2'], 
-            item['전체평'], 
-            item['전용평'], 
-            item['EV유무'], 
-            item['화장실개수'], 
-            item['주차가능대수'], 
-            item['비밀번호'], 
-            item['이름'], 
-            item['휴대폰번호'], 
-            item['기타특이사항'], 
-            item['총수수료'], 
-            item['소장'], 
-            item['직원'],
-            item['메모'],
-            item['img_path'],
-        ]);
+        // Update existing records
+        if (updateRecords.length > 0) {
+            updateRecords.forEach(item => {
+                const updateFields = [];
 
-        const sql = `INSERT INTO property (순번, 등록일자, 부동산구분, 거래방식, 거래완료여부, 거래완료일자, 담당자, 구, 읍면동, 구상세주소, 도로명, 신상세주소, 건물명, 동, 호수, 보증금, 월세, 관리비, 전체m2, 전용m2, 전체평, 전용평, EV유무, 화장실개수, 주차가능대수, 비밀번호, 이름, 휴대폰번호, 기타특이사항, 총수수료, 소장, 직원, 메모, img_path) VALUES ?`;
+                // Prepare fields for updating
+                // if (item['등록일자']) updateFields.push(`등록일자 = ${db.escape(item['등록일자'])}`);
+                // Add other fields similarly...
 
-        db.query(sql, [values], (err, result) => {
-            if (err) {
-                console.error('Error inserting data:', err);
-                return res.status(500).send('Error inserting data');
-            }
-            res.status(200).send(`${filteredProperties.length} new records inserted successfully`);
-        });
+                if (updateFields.length > 0) {
+                    const updateSql = `UPDATE property SET ${updateFields.join(', ')} WHERE 순번 = ${db.escape(item['순번'])}`;
+
+                    promises.push(new Promise((resolve, reject) => {
+                        db.query(updateSql, (err, result) => {
+                            if (err) {
+                                console.error(`Error updating record with 순번 ${item['순번']}:`, err);
+                                reject(`Error updating record with 순번 ${item['순번']}`);
+                            } else {
+                                resolve();
+                            }
+                        });
+                    }));
+                }
+            });
+        }
+
+        // Wait for all queries to finish
+        Promise.all(promises)
+            .then(() => {
+                res.status(200).send('Records processed successfully.');
+            })
+            .catch((err) => {
+                console.error('Error processing records:', err);
+                res.status(500).send('Error processing records');
+            });
     });
 });
+
 
 
 

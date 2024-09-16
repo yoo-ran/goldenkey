@@ -5,15 +5,15 @@ import axios from 'axios';
 import ImportExcel from '../components/feature/ImportExcel';
 import ListForOwner from '../components/feature/ListForOwner';
 
-const Rental = () => {
+const ImportExcelPage = () => {
     // Define the shared state
-    const [updateData, setUpdateData] = useState(null);
+    const [updateData, setUpdateData] = useState(false);
     const [isAuthenticated, setIsAuthenticated] = useState(false); // State to track authentication status
     const navigate = useNavigate(); // Hook for navigation
 
     // Function to update the shared state
-    const handleDataUpdate = (bool) => {
-        setUpdateData(bool);
+    const handleDataUpdate = (onDataUpdate) => {
+        setUpdateData(onDataUpdate);
     };
 
     useEffect(() => {
@@ -44,9 +44,9 @@ const Rental = () => {
             Room Rental
 
             <ImportExcel onDataUpdate={handleDataUpdate} />
-            <ListForOwner updateData={updateData} />
+            <ListForOwner updateData={!updateData} />
         </main>
     );
 };
 
-export default Rental;
+export default ImportExcelPage;
