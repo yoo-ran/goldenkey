@@ -144,22 +144,34 @@ const ListForOwner = ({updateData}) => {
       {
         field: '총수수료',
         // valueGetter: (params) => JSON.parse(params.data.정산금액).총수수료 || '',
-        valueGetter: (params) => JSON.parse(params.data.정산금액).총수수료 || '',
+        valueGetter: (params) => JSON.parse(params.data.정산금액).총수수료 || 0,
         editable: false // Set this field to non-editable for now if you don't want it to be changed directly
     },
     {
         field: '소장',
-        valueGetter: (params) => JSON.parse(params.data.정산금액).소장 || '',
+        valueGetter: (params) => JSON.parse(params.data.정산금액).소장 || 0,
         editable: true
     },
     {
         field: '직원1',
-        valueGetter: (params) => JSON.parse(params.data.정산금액).직원[0].money || '',
+        valueGetter: (params) => {
+            let 정산금액 = JSON.parse(params.data.정산금액);
+            if (정산금액.직원 && Array.isArray(정산금액.직원) && 정산금액.직원.length > 0) {
+                return 정산금액.직원[0].money || 0;
+            }
+            return 0; 
+        },
         editable: true
     },
     {
         field: '직원2',
-        valueGetter: (params) => JSON.parse(params.data.정산금액).직원[1].money || '',
+        valueGetter: (params) => {
+            let 정산금액 = JSON.parse(params.data.정산금액);
+            if (정산금액.직원 && Array.isArray(정산금액.직원) && 정산금액.직원.length > 0) {
+                return 정산금액.직원[1].money || 0;
+            }
+            return 0; 
+        },
         editable: true
     },
     
@@ -170,13 +182,13 @@ const ListForOwner = ({updateData}) => {
           cellRenderer: DeleteButtonRenderer,
       }
   ]);
-  
+
 
     const defaultColDef = {
         minWidth: 100,
         flex: 1,
     };
-
+console.log(propertyData);
     return (
         <div className="ag-theme-quartz" style={{ width: "100%", height: "60vh" }}>
             <AgGridReact

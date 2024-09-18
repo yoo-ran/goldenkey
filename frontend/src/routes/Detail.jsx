@@ -130,12 +130,14 @@ const PropertyDetail = () => {
 
     const handleSave = async () => {
         try {
-            const { 등록일자, 거래완료일자, ...fieldsToUpdate } = propertyData;
+            const { 등록일자, 거래완료일자, 정산금액, ...fieldsToUpdate } = propertyData;
             const formattedFieldsToUpdate = {
                 ...fieldsToUpdate,
                 등록일자: new Date(등록일자).toISOString().split('T')[0],
-                거래완료일자: new Date(거래완료일자).toISOString().split('T')[0]
+                거래완료일자: new Date(거래완료일자).toISOString().split('T')[0],
+                정산금액 : JSON.stringify(정산금액)
             };
+            console.log(formattedFieldsToUpdate);
             await axios.put(`http://localhost:8000/update-property/${propertyId}`, formattedFieldsToUpdate);
             alert("Data saved successfully!");
             fetchPropertyData();

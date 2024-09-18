@@ -4,16 +4,23 @@ import axios from 'axios';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faBuilding, faChevronRight, faCircleUser, faGear, faHouse, faHouseChimneyWindow, faSearch } from '@fortawesome/free-solid-svg-icons'
-
-import Oneroom from '../components/filters/Oneroom';
-
 import { faHeart } from '@fortawesome/free-regular-svg-icons';
 
+import apartmentImg from "../assets/home/apartment.jpg";
+import houseImg from "../assets/home/house.jpg";
+import officeTellImg from "../assets/home/officetell.jpg";
+import oneroomImg from "../assets/home/oneroom.jpg";
+
+import Oneroom from '../components/filters/Oneroom';
+import House from '../components/filters/House.jsx';
+import Apartment from '../components/filters/Apartment';
+
+
 const propertyType = [
-    {type:"원룸 / 투룸", typeDescrp:"주택, 빌라, 오피스텔"},
-    {type:"오피스텔", typeDescrp:"오피스텔 정보"},
-    {type:"아파트", typeDescrp:"아파트 단지 정보, 실거래가"},
-    {type:"주택, 빌라", typeDescrp:"주택, 빌라, 다세대"},
+    {type:"원룸 / 투룸", typeDescrp:"주택, 빌라, 오피스텔", img: oneroomImg},
+    {type:"오피스텔", typeDescrp:"오피스텔 정보", img: officeTellImg},
+    {type:"아파트", typeDescrp:"아파트 단지 정보, 실거래가", img: apartmentImg},
+    {type:"주택, 빌라", typeDescrp:"주택, 빌라, 다세대", img:houseImg},
 ]
 
 const recommendTag = [
@@ -23,7 +30,9 @@ const recommendTag = [
 const Home = () => {
     const [isLogin, setIsLogin] = useState(true);
     const [properties, setProperties] = useState([]);
-    const [openFilter, setOpenFilter] = useState(false)
+    const [openFilter, setOpenFilter] = useState(false);
+    const [filterType, setFilterType] = useState("")
+    const [propertyImages, setPropertyImages] = useState({}); // Store images by property ID
 
 
     const handleDataFromOneroom = (data) => {
@@ -36,6 +45,27 @@ const Home = () => {
             try {
                 const response = await axios.get('http://localhost:8000/listing');
                 setProperties(response.data);
+
+                for (const property of properties) {
+                    const { 순번: propertyId } = property; // Assuming property ID is in '순번' field
+                    try {
+                    const imgRes = await axios.get(
+                        `http://localhost:8000/properties/${propertyId}/images`
+                    );
+        
+                    // Store images for each property using its ID
+                    if (Array.isArray(imgRes.data.images)) {
+                        setPropertyImages((prev) => ({
+                        ...prev,
+                        [propertyId]: imgRes.data.images,
+                        }));
+                    } else {
+                        console.error("Unexpected response structure:", imgRes.data);
+                    }
+                    } catch (imageError) {
+                    console.error(`Error fetching images for property ${propertyId}:`, imageError);
+                    }
+                }
             } catch (error) {
                 console.error('Error fetching properties:', error);
             }
@@ -48,10 +78,25 @@ const Home = () => {
         setIsLogin(!isLogin);
     };
 
-
+    const filterPropertyType = () => {
+        switch (filterType) {
+            case "house/villa":
+                return <House />;
+        
+            case "oneroom/tworoom":
+                return <Oneroom />;
+        
+            case "apartment":
+                return <Apartment />;
+        
+            default:
+                return null; // or any default component you'd like to render
+        }
+        
+    }
 
     return (
-        <main className='w-full gap-y-16'>
+        <main className='w-full gap-y-10'>
 
             {/* Sub Header */}
             <section className='flexRow justify-between w-11/12'>
@@ -64,11 +109,48 @@ const Home = () => {
             </section>    
 
             {/* Filter Section */}
-            <div className='absolute flexCol z-50 top-32 border w-full py-20 bg-white'>
-                <Oneroom />
+            <div className={`absolute flexCol z-50 top-32 border w-full py-20 bg-white ${filterType == "" ? "hidden":"" }`}>
+                <button
+                    onClick={()=> setFilterType("")}
+                >X</button>
+                { filterPropertyType()}
             </div>
-            <section className='w-11/12 lg:w-10/12 flexRow justify-between'>
-                <div className='flexCol relative'>
+
+            <section className='w-11/12 lg:w-10/12 flexRow justify-between relative'>
+                <div className={`absolute top-12 flexCol bg-white gap-y-4 mobile_6 w-full overflow-fiddeng transition-[all]  ${openFilter ? "translate-y-1.5": "opacity-0"}`}>
+                    <article className='mobile_4 border-b w-full text-center py-2'><p>거주유형선택</p></article>
+                    <article className='w-full'>
+                        <p className='mobile_4_bold'>옵션을 선택하세요</p>
+                        <div className='grid grid-cols-3 gap-x-4 mt-3'>
+                            <button
+                                onClick={()=> setFilterType("house/villa")} 
+                                className={`bg-secondary-light w-full  py-4 mobile_5 rounded-lg`}
+                            >
+                                <FontAwesomeIcon icon={faHouseChimneyWindow} className='mobile_1_bold'/>
+                                <p>주택 / 빌라</p>
+                            </button>
+                            <button
+                                onClick={()=> setFilterType("oneroom/tworoom")} 
+                                className={`bg-secondary-light w-full py-4 mobile_5  rounded-lg`}
+                            >
+                                <FontAwesomeIcon icon={faHouse} className='mobile_1_bold'/>
+                                <p>원룸 / 투룸</p>
+                            </button>
+                            <button
+                                onClick={()=> setFilterType("apartment")} 
+                                className={`bg-secondary-light w-full  py-4 mobile_5 rounded-lg `}
+                            >
+                                <FontAwesomeIcon icon={faBuilding} className='mobile_1_bold'/>
+                                <p>아파트 / 오피스텔</p>
+                            </button>
+                        </div>
+                    </article>
+                    <article className='py-2 mobile_4 grid grid-cols-2 w-full gap-x-4'>
+                        <button className='bg-secondary-light w-full py-2 rounded'>초기화</button>
+                        <button className='bg-primary-yellow w-full py-2 rounded'>적용</button>
+                    </article>
+                </div>
+                <div className='flexCol'>
                     <button
                         className='flexCol bg-primary-yellow rounded-lg aspect-square w-10 px-3 py-2 '
                         onClick={()=> {
@@ -78,24 +160,9 @@ const Home = () => {
                     >
                         <FontAwesomeIcon icon={faHouse}/>
                     </button>
-                    <div className={`absolute top-12 flexCol bg-white gap-y-4 mobile_6 w-28 overflow-fiddeng transition-[opacity]  ${openFilter ? "": "opacity-0"}`}>
-                        <button className={` transition-all  ${openFilter ? "translate-y-1.5": "opacity-0"}`}>
-                            <FontAwesomeIcon icon={faHouse}/>
-                            <p>원룸 / 투룸</p>
-                        </button>
-                        <button className={` transition-all  ${openFilter ? "translate-y-1.5": "opacity-0"}`}>
-                            <FontAwesomeIcon icon={faBuilding}/>
-                            <p>아파트 / 오피스텔</p>
-                        </button>
-                        <button className={` transition-all  ${openFilter ? "translate-y-1.5": "opacity-0"}`}>
-                            <FontAwesomeIcon icon={faHouseChimneyWindow}/>
-                            <p>주택 / 빌라</p>
-                        </button>
-                    </div>
-                    
                 </div>
 
-                <div className='flexRow gap-x-2 mobile_4 text-secondary bg-secondary-light p-3 rounded-lg lg:rounded-full lg:pl-8 lg:py-2 w-8/12'>
+                <div className='flexRow gap-x-2 mobile_4 text-secondary bg-secondary-light p-2 rounded-lg lg:rounded-full lg:pl-8 lg:py-2 w-8/12'>
                     <FontAwesomeIcon icon={faSearch}/>
                     <input
                         type='search'
@@ -128,7 +195,7 @@ const Home = () => {
                 {propertyType.map((item, id) => (
                     <div
                         key={id}
-                        // style={{ backgroundImage: `url(${Images[id]})` }}
+                        style={{ backgroundImage: `url(${item.img})` }}
                         className="relative overflow-hidden flexCol w-full lg: bg-cover bg-center rounded-4xl px-2 py-14"
                     >
                         <div className="absolute bg-black w-full h-full bg-opacity-50"></div>
@@ -148,19 +215,25 @@ const Home = () => {
                     <FontAwesomeIcon icon={faChevronRight}/>
                 </h2>
                 <article className='w-full grid grid-cols-3 lg:grid-cols-4 gap-x-3 lg:gap-x-5'>
-                    {propertyType.slice(0,3).map((item, id) => (
-                        <div
-                            key={id}
-                            // style={{ backgroundImage: `url(${Images[id]})` }}
-                            className="w-full aspect-square bg-cover bg-center rounded-2xl "
-                        >
-                            <div className="w-11/12 aspect-square flexRow items-end justify-end mobile_3_bold text-white ">
-                                <div className='bg-secondary-light p-2 aspect-square rounded-full'>
-                                    <FontAwesomeIcon icon={faHeart} className=''/>
+                    {properties.slice(0,3).map((item, id) => {
+                        
+                        const { 순번: propertyId } = item; // Assuming '순번' is the unique property ID
+                        const images = propertyImages[propertyId] || []; // Get images for this property
+                        return (
+                            <div
+                                key={id}
+                                style={{ backgroundImage: `url(http://localhost:8000${images[id]})` }}
+                                className="w-full aspect-square bg-cover bg-center rounded-2xl "
+                            >
+                                <div className="w-full aspect-square flexRow items-start justify-end mobile_3_bold text-white ">
+                                    <div className='bg-secondary-light p-2 m-2 aspect-square rounded-full'>
+                                        <FontAwesomeIcon icon={faHeart} className='text-primary'/>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+
+                        )
+                    })}
                 </article>
             </section>
 

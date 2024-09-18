@@ -53,7 +53,7 @@ main{
       @apply  mobile_4_bold;
     }
     input {
-      @apply bg-secondary-light rounded-lg mobile_5 p-2;
+      @apply bg-white rounded-lg mobile_5 p-2;
     }
 
   }
@@ -70,6 +70,10 @@ main{
         align-items:center;
     }
 
+    .mobile_1 {
+      font-size: var(--font-size-mobile-1);
+      line-height: 1;
+    }
     .mobile_1_bold {
       font-size: var(--font-size-mobile-1);
       font-weight: bold;

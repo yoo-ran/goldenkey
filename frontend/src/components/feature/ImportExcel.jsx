@@ -428,10 +428,9 @@ const askUserForColumnUpdate = (columnName, dbValue, excelValue) => {
         console.log(finalData);
         // Apply createTotalasJSON to each row in finalData
         finalData.forEach(row => {
-            console.log(row.정산금액);
             row.등록일자 = convertToDateOnly(row.등록일자)
             row.거래완료일자 = convertToDateOnly(row.거래완료일자)
-            // row.정산금액 = JSON.stringify(row.정산금액)
+            row.정산금액 = JSON.stringify(row.정산금액)
         });
 
         console.log(finalData);

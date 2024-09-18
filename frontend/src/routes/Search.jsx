@@ -5,6 +5,10 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHeart } from '@fortawesome/free-solid-svg-icons';
 import { useLocation } from 'react-router-dom';
 
+import { Swiper, SwiperSlide } from 'swiper/react';
+import 'swiper/swiper-bundle.css';
+
+
 
 
 const Search = () => {
@@ -20,7 +24,6 @@ const Search = () => {
         거래완료여부: '',
     }; // Fallback to an empty object if no state is provided
     
-    console.log(rangeValues);
 
     useEffect(() => {
         const fetchProperties = async () => {
@@ -78,6 +81,28 @@ const Search = () => {
         return withinDepositRange && withinRentRange && withinRoomSizeRange && matchesSelectedMethod;
       });
 
+    const formatToKoreanCurrency = (number) => {
+        const billion = Math.floor(number / 100000000); // Extract the 억 (billion) part
+        const remainder = number % 100000000; // The remainder after dividing by 억
+        const thousand = Math.floor(remainder / 10000000); // Extract the 천 (thousand) part
+
+        let result = '';
+        
+        if (billion > 0) {
+            result += `${billion}억`;
+        }
+        
+        if (thousand > 0) {
+            result += ` ${thousand}천`;
+        }
+
+        if (!result) {
+            result = number.toString(); // Return the number if it's less than 1억
+        }
+        
+        return result.trim(); // Return the formatted string, removing any unnecessary spaces
+    };
+
     return (
         <main className='w-full gap-y-16'>
             <section>
@@ -111,7 +136,9 @@ const Search = () => {
                                 </div>
                                 <div className='flexCol items-start w-8/12 gap-y-4 lg:w-11/12'>
                                     {/* <p className='mobile_1_bold'>{property.거래방식}</p> */}
-                                    <p className='mobile_1_bold'>{property.거래방식} {property.보증금}/{property.월세}</p>
+                                    <p className='mobile_1_bold'>
+                                        {property.거래방식} {property.거래방식 === "매매"? formatToKoreanCurrency(property.보증금) : property.보증금/property.월세}
+                                    </p>
                                     <div>
                                         <ul className='flexRow mobile_5'>
                                             <li>{property.부동산구분}</li>
@@ -132,45 +159,68 @@ const Search = () => {
 
 
             {/* 추천물건 */}
-            <section className='w-full  bg-primary-yellow flexCol gap-y-4 py-10 pl-2'>
+            <section className='w-full  bg-primary-yellow flexCol gap-y-4 py-10 pl-2 overflow-hidden'>
                 <h2 className='w-11/12 text-white'>추천물건</h2>
 
-                <article className='w-11/12 flexRow gap-x-4'>
-                    {properties.slice(0,4).map((property) => {
+                <Swiper
+                    spaceBetween={14} // Space between slides
+                    pagination={{ clickable: true }} // Show pagination dots
+                    scrollbar={{ draggable: true }} // Enable draggable scrollbar
+                    style={{width:"120%"}}
+                    breakpoints={{
+                        // when window width is >= 640px
+                        0: {
+                            slidesPerView: 2, // 2 slides on mobile
+                        },
+                        // when window width is >= 1024px
+                        1023: {
+                            slidesPerView: 4, // 4 slides on desktop
+                        },
+                    }}
+                >
+                    {properties.map((property) => {
                         const { 순번: propertyId } = property; // Assuming '순번' is the unique property ID
                         const images = propertyImages[propertyId] || []; // Get images for this property
 
                         return (
-                            <div 
-                                key={propertyId}
-                                className='flexCol justify-between gap-y-4 w-full bg-white rounded-3xl px-3 pt-3'
-                            >
-                                {images.length > 0 ? (
-                                    <div
-                                        style={{
-                                            backgroundImage: `url(http://localhost:8000${images[0]})`, // Corrected syntax
-                                        }}                                
-                                        className='w-full aspect-square bg-cover bg-center rounded-2xl flex justify-end pt-2 pr-2'        
-                                    >
-                                        <FontAwesomeIcon icon={faHeart} className='text-primary-yellow'/>
+                            <SwiperSlide key={propertyId}>
+                                <article className='flexCol justify-between gap-y-4  bg-white rounded-3xl px-2 py-3'>
+                                    {/* Property Images */}
+                                    {images.length > 0 ? (
+                                        <div
+                                            style={{
+                                                backgroundImage: `url(http://localhost:8000${images[0]})`,
+                                            }}
+                                            className='w-full aspect-square bg-cover bg-center rounded-2xl flex justify-end p-2'
+                                        >
+                                            <FontAwesomeIcon icon={faHeart} className='text-primary-yellow border p-2 rounded-full' />
+                                        </div>
+                                    ) : (
+                                        <p>No images available</p>
+                                    )}
+
+                                    {/* Property Details */}
+                                    <div className='flexCol items-start w-full gap-y-4'>
+                                        <div className='flexCol items-start gap-y-2 '>
+                                            <p className='mobile_1_bold'>
+                                                {property.거래방식} &nbsp;
+                                                {property.거래방식 === "매매"? formatToKoreanCurrency(property.보증금) : property.보증금/property.월세}
+                                            </p>
+                                            <p className='mobile_3'>{property.건물명}</p>
+                                        </div>
+                                        <ul className='flexRow gap-x-1 mobile_5 text-secondary'>
+                                            <li>{property.전체평}평형 •</li>
+                                            <li>{property.담당자}</li>
+                                        </ul>
                                     </div>
-                                ) : (
-                                    <p>No images available</p>
-                                )}
-                                <div className='flexCol items-start w-full gap-y-4'>
-                                    <div className='flexCol items-start gap-y-2 mobile_1_bold'>
-                                        <p className=''>{property.거래방식}</p>
-                                        <li>{property.건물명}</li>
-                                    </div>
-                                    <ul className='flexRow gap-x-1 mobile_5 text-secondary'>
-                                        <li>{property.전체m2}m<sup>2</sup>,</li>
-                                        <li>{property.담당자}</li>
-                                    </ul>
-                                </div>
-                            </div>
+                                </article>
+                            </SwiperSlide>
                         );
                     })}
-                </article>
+                </Swiper>
+
+
+
             </section>
         </main>
     );
