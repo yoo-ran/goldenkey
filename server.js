@@ -12,7 +12,7 @@ const fs = require('fs'); // For file system operations
 const jwt = require('jsonwebtoken');
 const { expressjwt: jwtMiddleware } = require('express-jwt'); // Import the express-jwt middleware
 
-const { PROPERTY_TYPES, TRANSACTION_METHOD, TRANSACTION_STATUS } = require('./constants'); // Import the constants
+const { PROPERTY_TYPES, TRANSACTION_METHOD, TRANSACTION_STATUS, TOILETS_NUM } = require('./constants'); // Import the constants
 
 
 const JWT_SECRET = 'your_super_secret_key';
@@ -53,7 +53,8 @@ app.use(
         '/property-types',
         '/transaction-methods',
         '/transaction-status',
-        '/properties/update'
+        '/toilets-num',
+        '/properties/update',
     ] }) 
 );
 
@@ -87,6 +88,10 @@ app.get('/transaction-methods', (req, res) => {
 
 app.get('/transaction-status', (req, res) => {
     res.json(TRANSACTION_STATUS);  // Send the enum values to the frontend
+});
+
+app.get('/toilets-num', (req, res) => {
+    res.json(TOILETS_NUM);  // Send the enum values to the frontend
 });
 
 // Import CSV / excel
