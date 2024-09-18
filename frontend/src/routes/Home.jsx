@@ -128,7 +128,7 @@ const Home = () => {
                 {propertyType.map((item, id) => (
                     <div
                         key={id}
-                        style={{ backgroundImage: `url(${Images[id]})` }}
+                        // style={{ backgroundImage: `url(${Images[id]})` }}
                         className="relative overflow-hidden flexCol w-full lg: bg-cover bg-center rounded-4xl px-2 py-14"
                     >
                         <div className="absolute bg-black w-full h-full bg-opacity-50"></div>
@@ -151,7 +151,7 @@ const Home = () => {
                     {propertyType.slice(0,3).map((item, id) => (
                         <div
                             key={id}
-                            style={{ backgroundImage: `url(${Images[id]})` }}
+                            // style={{ backgroundImage: `url(${Images[id]})` }}
                             className="w-full aspect-square bg-cover bg-center rounded-2xl "
                         >
                             <div className="w-11/12 aspect-square flexRow items-end justify-end mobile_3_bold text-white ">

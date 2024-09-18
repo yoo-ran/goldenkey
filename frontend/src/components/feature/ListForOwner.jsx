@@ -141,12 +141,29 @@ const ListForOwner = ({updateData}) => {
       { field: '이름', editable: true },
       { field: '휴대폰번호', editable: true },
       { field: '기타특이사항', editable: true },
-      { field: '총수수료', editable: true },
-      { field: '소장', editable: true },
-      { field: '직원1', editable: true },
-      { field: '직원2', editable: true },
+      {
+        field: '총수수료',
+        // valueGetter: (params) => JSON.parse(params.data.정산금액).총수수료 || '',
+        valueGetter: (params) => JSON.parse(params.data.정산금액).총수수료 || '',
+        editable: false // Set this field to non-editable for now if you don't want it to be changed directly
+    },
+    {
+        field: '소장',
+        valueGetter: (params) => JSON.parse(params.data.정산금액).소장 || '',
+        editable: true
+    },
+    {
+        field: '직원1',
+        valueGetter: (params) => JSON.parse(params.data.정산금액).직원[0].money || '',
+        editable: true
+    },
+    {
+        field: '직원2',
+        valueGetter: (params) => JSON.parse(params.data.정산금액).직원[1].money || '',
+        editable: true
+    },
+    
       { field: '메모', editable: true },
-      { field: 'img_path', editable: true },
       {
           headerName: 'Actions',
           field: 'actions',

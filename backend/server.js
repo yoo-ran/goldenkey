@@ -92,7 +92,7 @@ app.get('/transaction-status', (req, res) => {
 // Import CSV / excel
 app.post('/import-csv', (req, res) => {
     const properties = req.body; // JSON data from the frontend
-    const uniqueFields = properties.map(item => item['순번']); // or use another unique field
+    const uniqueFields = properties.map(item => item['순번']); // Using '순번' as the unique identifier
     console.log(uniqueFields);
 
     // Query to fetch existing records with the same 순번
@@ -166,9 +166,37 @@ app.post('/import-csv', (req, res) => {
             updateRecords.forEach(item => {
                 const updateFields = [];
 
-                // Prepare fields for updating
-                // if (item['등록일자']) updateFields.push(`등록일자 = ${db.escape(item['등록일자'])}`);
-                // Add other fields similarly...
+                // Loop through the fields you want to update
+                if (item['등록일자']) updateFields.push(`등록일자 = ${db.escape(item['등록일자'])}`);
+                if (item['부동산구분']) updateFields.push(`부동산구분 = ${db.escape(item['부동산구분'])}`);
+                if (item['거래방식']) updateFields.push(`거래방식 = ${db.escape(item['거래방식'])}`);
+                if (item['거래완료여부']) updateFields.push(`거래완료여부 = ${db.escape(item['거래완료여부'])}`);
+                if (item['거래완료일자']) updateFields.push(`거래완료일자 = ${db.escape(item['거래완료일자'])}`);
+                if (item['담당자']) updateFields.push(`담당자 = ${db.escape(item['담당자'])}`);
+                if (item['구']) updateFields.push(`구 = ${db.escape(item['구'])}`);
+                if (item['읍면동']) updateFields.push(`읍면동 = ${db.escape(item['읍면동'])}`);
+                if (item['구상세주소']) updateFields.push(`구상세주소 = ${db.escape(item['구상세주소'])}`);
+                if (item['도로명']) updateFields.push(`도로명 = ${db.escape(item['도로명'])}`);
+                if (item['신상세주소']) updateFields.push(`신상세주소 = ${db.escape(item['신상세주소'])}`);
+                if (item['건물명']) updateFields.push(`건물명 = ${db.escape(item['건물명'])}`);
+                if (item['동']) updateFields.push(`동 = ${db.escape(item['동'])}`);
+                if (item['호수']) updateFields.push(`호수 = ${db.escape(item['호수'])}`);
+                if (item['보증금']) updateFields.push(`보증금 = ${db.escape(item['보증금'])}`);
+                if (item['월세']) updateFields.push(`월세 = ${db.escape(item['월세'])}`);
+                if (item['관리비']) updateFields.push(`관리비 = ${db.escape(item['관리비'])}`);
+                if (item['전체m2']) updateFields.push(`전체m2 = ${db.escape(item['전체m2'])}`);
+                if (item['전용m2']) updateFields.push(`전용m2 = ${db.escape(item['전용m2'])}`);
+                if (item['전체평']) updateFields.push(`전체평 = ${db.escape(item['전체평'])}`);
+                if (item['전용평']) updateFields.push(`전용평 = ${db.escape(item['전용평'])}`);
+                if (item['EV유무']) updateFields.push(`EV유무 = ${db.escape(item['EV유무'])}`);
+                if (item['화장실개수']) updateFields.push(`화장실개수 = ${db.escape(item['화장실개수'])}`);
+                if (item['주차가능대수']) updateFields.push(`주차가능대수 = ${db.escape(item['주차가능대수'])}`);
+                if (item['비밀번호']) updateFields.push(`비밀번호 = ${db.escape(item['비밀번호'])}`);
+                if (item['이름']) updateFields.push(`이름 = ${db.escape(item['이름'])}`);
+                if (item['휴대폰번호']) updateFields.push(`휴대폰번호 = ${db.escape(item['휴대폰번호'])}`);
+                if (item['기타특이사항']) updateFields.push(`기타특이사항 = ${db.escape(item['기타특이사항'])}`);
+                if (item['정산금액']) updateFields.push(`정산금액 = ${db.escape(item['정산금액'])}`);
+                if (item['메모']) updateFields.push(`메모 = ${db.escape(item['메모'])}`);
 
                 if (updateFields.length > 0) {
                     const updateSql = `UPDATE property SET ${updateFields.join(', ')} WHERE 순번 = ${db.escape(item['순번'])}`;

@@ -250,6 +250,9 @@ const fetchDbProperties = async () => {
   }
 };
 
+useEffect(()=>{
+  fetchDbProperties()
+},[])
 
 
   // Calculate Total for 정산금액 (소장금액, 직원금액, 총수수료)
@@ -261,17 +264,16 @@ const fetchDbProperties = async () => {
 }
 
 const createTotalasJSON = (row) => {
+  console.log(row);
   row.정산금액 = {
       "소장": parseFloat(row.소장) || 0,
       "직원": [
-          { "name": "직원1", "money": parseFloat(row.직원1) || 0 },
-          { "name": "직원2", "money": parseFloat(row.직원2) || 0 },
+          { "name": "직원1", "money": parseFloat(row.직원1) || 0},
+          { "name": "직원2", "money": parseFloat(row.직원2)|| 0},
       ],
   };
   row.정산금액.총수수료 = calculateTotal(row);
 
-  // Convert 정산금액 to JSON string
-  row.정산금액 = JSON.stringify(row.정산금액);
 };
 
 const convertToDateOnly = (isoString) => {
@@ -289,91 +291,99 @@ const compareAndUpdateColumns = async (dbProperties, excelProperties) => {
   const updatedRows = [];
 
   for (const excelRow of excelProperties) {
+      createTotalasJSON(excelRow);
+      console.log(excelRow);
       const dbRow = dbProperties.find(dbRow => dbRow.순번 === excelRow.순번);
-
+      console.log(dbRow);
       if (dbRow) {
-          let rowUpdated = false;
-          const updatedRow = { ...dbRow };  // Start with the existing dbRow
+        let rowUpdated = false;
+        const updatedRow = dbRow;  // Deep copy of dbRow to prevent reference issues
+        console.log(updatedRow);
+        
+        // Ensure both dates are in YYYY-MM-DD format
+        if (dbRow.등록일자) dbRow.등록일자 = convertToDateOnly(dbRow.등록일자);
+        if (dbRow.거래완료일자) dbRow.거래완료일자 = convertToDateOnly(dbRow.거래완료일자);
+    
+        // Compare each column and prompt user
+        for (let key in excelRow) {
+            if (excelRow.hasOwnProperty(key) && dbRow.hasOwnProperty(key)) {
+                // Handle '정산금액' JSON in both dbRow and excelRow
+                if (key === '정산금액') {
+                    // Parse '정산금액' JSON in both dbRow and excelRow
+                    let dbValue = JSON.parse(dbRow['정산금액'] || '{}');
+                    let excelValue = excelRow['정산금액'] || '{}';
+                    let updateValue = JSON.parse(updatedRow['정산금액'] || '{}');  // Work on updating this
+                    
+                    // Compare the nested values inside 정산금액
+                    for (const key in dbValue) {
+                        console.log(key);
+                        if (key === "직원") {
+                            for (let i = 0; i < excelValue[key].length; i++) {
+                                let dbEmployeeMoney = dbValue[key][i].money;
+                                let excelEmployeeMoney = excelValue[key][i].money;
+                                
+                                if (dbEmployeeMoney !== excelEmployeeMoney) {
+                                    const userWantsToUpdate = await askUserForColumnUpdate(excelValue[key][i].name, dbEmployeeMoney, excelEmployeeMoney);
+                                    if (userWantsToUpdate) {
+                                        updateValue[key][i].money = excelEmployeeMoney;  // Update the value in updateValue
+                                        console.log(updateValue[key][i].money);
+                                        rowUpdated = true;  // Mark that the row has been updated
+                                    }
+                                }
+                            }
+                        } else {
+                            if (dbValue[key] !== excelValue[key]) {
+                              console.log(dbValue[key]);
+                                const userWantsToUpdate = await askUserForColumnUpdate(key, dbValue[key], excelValue[key]);
+                                if (userWantsToUpdate) {
+                                    updateValue[key] = excelValue[key];  // Update other fields in 정산금액
+                                    rowUpdated = true;  // Mark that the row has been updated
+                                }
+                            }
+                        }
+                    }
+    
+                    // After updating, assign the new 정산금액 back to updatedRow
+                    updatedRow['정산금액'] = JSON.stringify(updateValue);  // Ensure this is stringified
+                    console.log('Updated 정산금액:', JSON.stringify(updatedRow['정산금액']));
+                } else {
+                    // Handle other fields with string/number normalization
+                    let dbValue = dbRow[key];
+                    let excelValue = excelRow[key];
+    
+                    // Skip if both values are empty (null, undefined, "")
+                    if ((dbValue == null || dbValue === '') && (excelValue == null || excelValue === '')) {
+                        continue; // Skip comparison if both are empty
+                    } else {
+                        // Normalize number comparisons (convert stringified numbers to actual numbers)
+                        if (!isNaN(dbValue) && !isNaN(excelValue)) {
+                            dbValue = parseFloat(dbValue);
+                            excelValue = parseFloat(excelValue);
+                        }
+    
+                        // Perform the comparison
+                        if (dbValue !== excelValue) {
+                            const userWantsToUpdate = await askUserForColumnUpdate(key, dbValue, excelValue);
+                            if (userWantsToUpdate) {
+                                updatedRow[key] = excelRow[key];  // Update the column value
+                                rowUpdated = true;  // Mark that the row has been updated
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
-          // Ensure both dates are in YYYY-MM-DD format
-          if (dbRow.등록일자) dbRow.등록일자 = convertToDateOnly(dbRow.등록일자);
-          if (dbRow.거래완료일자) dbRow.거래완료일자 = convertToDateOnly(dbRow.거래완료일자);
-
-          // Compare each column and prompt user
-          for (let key in excelRow) {
-              if (excelRow.hasOwnProperty(key) && dbRow.hasOwnProperty(key)) {
-                  // Handle keys that are part of the '정산금액' JSON in dbRow
-                  if (key === '총수수료' || key === "소장" || key === "직원1" || key === "직원2") {
-                      // Parse '정산금액' JSON in dbRow
-                      const dbValue = JSON.parse(dbRow['정산금액']);
-                      
-                      // Extract corresponding values from '정산금액' JSON
-                      const db소장 = dbValue.소장 || 0;
-                      const db직원1 = dbValue.직원.find(e => e.name === "직원1").money || 0;
-                      const db직원2 = dbValue.직원.find(e => e.name === "직원2").money || 0;
-                      const db총수수료 = dbValue.총수수료 || 0;
-
-                      // Map the keys to the values from the JSON
-                      const dbMappedValue = {
-                          소장: db소장,
-                          직원1: db직원1,
-                          직원2: db직원2,
-                          총수수료: db총수수료
-                      };
-
-                      // Compare the values from dbRow and excelRow
-                      const dbFieldValue = dbMappedValue[key];  // Get the corresponding value from the db JSON
-                      const excelFieldValue = parseFloat(excelRow[key]) || 0;  // Convert excelRow value to number
-
-                      // Compare and ask user for update if different
-                      if (dbFieldValue !== excelFieldValue) {
-                          console.log(`Difference in ${key}: DB = ${dbFieldValue}, Excel = ${excelFieldValue}`);
-                          const userWantsToUpdate = await askUserForColumnUpdate(key, dbFieldValue, excelFieldValue);
-                          if (userWantsToUpdate) {
-                              updatedRow['정산금액'] = {
-                                  ...dbValue,
-                                  [key]: excelFieldValue  // Update only the part that has changed
-                              };
-                              rowUpdated = true;  // Mark that the row has been updated
-                          }
-                      }
-                  } else {
-                      // Handle other fields with string/number normalization
-                      let dbValue = dbRow[key];
-                      let excelValue = excelRow[key];
-
-                      // Skip if both values are empty (null, undefined, "")
-                      if ((dbValue == null || dbValue === '') && (excelValue == null || excelValue === '')) {
-                          continue; // Skip comparison if both are empty
-                      } else {
-                          // Normalize number comparisons (convert stringified numbers to actual numbers)
-                          if (!isNaN(dbValue) && !isNaN(excelValue)) {
-                              dbValue = parseFloat(dbValue);
-                              excelValue = parseFloat(excelValue);
-                          }
-
-                          // Perform the comparison
-                          if (dbValue !== excelValue) {
-                              const userWantsToUpdate = await askUserForColumnUpdate(key, dbValue, excelValue);
-                              if (userWantsToUpdate) {
-                                  updatedRow[key] = excelRow[key];  // Update the column value
-                                  rowUpdated = true;  // Mark that the row has been updated
-                              }
-                          }
-                      }
-                  }
-              }
-          }
 
           if (rowUpdated) {
               updatedRows.push(updatedRow);  // Only push the row if it was updated
+              console.log(JSON.stringify(updatedRows[0].정산금액));
+
           }
       }
   }
-
   return updatedRows;  // Return only the updated rows
 };
-
 
 
 
@@ -382,7 +392,7 @@ const compareAndUpdateColumns = async (dbProperties, excelProperties) => {
 const askUserForColumnUpdate = (columnName, dbValue, excelValue) => {
   return new Promise((resolve) => {
       const userResponse = window.confirm(
-          `The column "${columnName}" has different values:\n\nDatabase Value: ${dbValue}\nExcel Value: ${excelValue}\n\nDo you want to overwrite the database value with the Excel value?`
+          `The column "${columnName}" has different values:\n\nDatabase Value: ${JSON.stringify(dbValue)}\nExcel Value: ${JSON.stringify(excelValue)}\n\nDo you want to overwrite the database value with the Excel value?`
       );
       resolve(userResponse);  // Resolve with true for Yes, false for No
   });
@@ -395,7 +405,7 @@ const askUserForColumnUpdate = (columnName, dbValue, excelValue) => {
   const importExcel = async () => {
     try {
         // Fetch existing property data from the database
-        await fetchDbProperties();
+        await fetchDbProperties();  // <-- add await here
 
         // Fetch the Excel file
         const response = await fetch('https://docs.google.com/spreadsheets/d/1cE9XxIZLY52PFsJZJdTY6AQE6Qhs7T_cWhU9nh2c5KE/export?format=xlsx');
@@ -408,25 +418,29 @@ const askUserForColumnUpdate = (columnName, dbValue, excelValue) => {
         
         // Compare each row in the Excel data with the database data
         const updatedRows = await compareAndUpdateColumns(dbProperties, excelRowData);
-
+        console.log(updatedRows);
         // Find new records that don't exist in the database
         const newRecords = excelRowData.filter(excelRow => !dbProperties.find(dbRow => dbRow.순번 === excelRow.순번));
-
+        
         // Combine both new and updated records into one dataset
         const finalData = [...newRecords, ...updatedRows];
 
+        console.log(finalData);
         // Apply createTotalasJSON to each row in finalData
         finalData.forEach(row => {
-            createTotalasJSON(row);
+            console.log(row.정산금액);
+            row.등록일자 = convertToDateOnly(row.등록일자)
+            row.거래완료일자 = convertToDateOnly(row.거래완료일자)
+            // row.정산금액 = JSON.stringify(row.정산금액)
         });
 
         console.log(finalData);
-
 
         // Now finalData contains the '정산금액' key with the calculated values
         if (finalData.length > 0) {
             // Send all data (new and updated records) to the backend
             const result = await axios.post('http://localhost:8000/import-csv', finalData, { withCredentials: true });
+            console.log(result);
             onDataUpdate(true)
             alert('Data imported successfully!');
         } else {
