@@ -614,7 +614,47 @@ app.post('/properties/update', (req, res) => {
       }
     );
   });
-  
+
+  app.get('/get-favorites', (req, res) => {
+    const userId = req.auth.id; // Get user ID from JWT payload
+
+    db.query('SELECT favorite FROM users WHERE id = ?', [userId], (err, results) => {
+        if (err) {
+            console.error('Error fetching favorites:', err);
+            return res.status(500).json({ error: 'Failed to fetch favorites' });
+        }
+
+        if (results.length > 0) {
+            const favorites = JSON.parse(results[0].favorite); // Assuming 'favorite' is a JSON array
+            return res.status(200).json({ favorites });
+        } else {
+            return res.status(404).json({ message: 'User not found' });
+        }
+    });
+});
+
+app.post('/save-favorites', (req, res) => {
+    const userId = req.auth.id;  // Get user ID from JWT payload
+    const { favorites } = req.body;  // Get favorites array from the request body
+
+    // Convert the array of favorite IDs to a JSON string
+    const favoriteString = JSON.stringify(favorites);
+
+    // Update the 'favorite' column for the user in the 'users' table
+    db.query('UPDATE users SET favorite = ? WHERE id = ?', [favoriteString, userId], (err, result) => {
+        if (err) {
+            console.error('Error updating favorites:', err);
+            return res.status(500).json({ error: 'Failed to save favorites' });
+        }
+
+        if (result.affectedRows > 0) {
+            return res.status(200).json({ message: 'Favorites saved successfully' });
+        } else {
+            return res.status(404).json({ message: 'User not found' });
+        }
+    });
+});
+
 
 app.listen(8000, () => {
     console.log('Server is running on port 8000');
