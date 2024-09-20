@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom'; // For navigation to the login page
 import axios from 'axios';
 
-import ImportExcel from '../components/feature/ImportExcel';
-import ListForOwner from '../components/feature/ListForOwner';
+import ImportExcel from '../components/excelImport/ImportExcel';
+import ListForOwner from '../components/excelImport/ListForOwner';
 
 const ImportExcelPage = () => {
     // Define the shared state

@@ -5,6 +5,8 @@ import 'ag-grid-community/styles/ag-theme-quartz.css';
 import * as XLSX from 'xlsx';
 import axios from 'axios';
 
+import AlertComponent from './AlertComponent';
+
 
 
 const ImportExcel = ({onDataUpdate}) =>{
@@ -12,6 +14,12 @@ const ImportExcel = ({onDataUpdate}) =>{
   const [rowData, setRowData] = useState([]);
   const [dbRowData, setDbRowData] = useState([])
   const [dbProperties, setDbProperties] = useState([]);
+
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [pendingResolve, setPendingResolve] = useState(null);
+  const [alertData, setAlertData] = useState({ columnName: '', dbValue: '', excelValue: '' });
+
+
 
   const ImageRenderer = (props) => {
     const imageUrl = props.value;
@@ -264,7 +272,6 @@ useEffect(()=>{
 }
 
 const createTotalasJSON = (row) => {
-  console.log(row);
   row.정산금액 = {
       "소장": parseFloat(row.소장) || 0,
       "직원": [
@@ -292,9 +299,8 @@ const compareAndUpdateColumns = async (dbProperties, excelProperties) => {
 
   for (const excelRow of excelProperties) {
       createTotalasJSON(excelRow);
-      console.log(excelRow);
       const dbRow = dbProperties.find(dbRow => dbRow.순번 === excelRow.순번);
-      console.log(dbRow);
+
       if (dbRow) {
         let rowUpdated = false;
         const updatedRow = dbRow;  // Deep copy of dbRow to prevent reference issues
@@ -310,22 +316,24 @@ const compareAndUpdateColumns = async (dbProperties, excelProperties) => {
                 // Handle '정산금액' JSON in both dbRow and excelRow
                 if (key === '정산금액') {
                     // Parse '정산금액' JSON in both dbRow and excelRow
-                    let dbValue = JSON.parse(dbRow['정산금액'] || '{}');
+                    let dbValue = JSON.parse(dbRow['정산금액']) || '{}';
                     let excelValue = excelRow['정산금액'] || '{}';
-                    let updateValue = JSON.parse(updatedRow['정산금액'] || '{}');  // Work on updating this
+                    let updateValue = JSON.parse(updatedRow['정산금액']) || '{}';  // Work on updating this
                     
+                    console.log(dbValue);
+                    console.log(excelValue);
+                    console.log(updateValue);
                     // Compare the nested values inside 정산금액
                     for (const key in dbValue) {
-                        console.log(key);
                         if (key === "직원") {
                             for (let i = 0; i < excelValue[key].length; i++) {
                                 let dbEmployeeMoney = dbValue[key][i].money;
                                 let excelEmployeeMoney = excelValue[key][i].money;
                                 
                                 if (dbEmployeeMoney !== excelEmployeeMoney) {
-                                    const userWantsToUpdate = await askUserForColumnUpdate(excelValue[key][i].name, dbEmployeeMoney, excelEmployeeMoney);
+                                    const userWantsToUpdate = await askUserForColumnUpdate(excelRow["순번"], excelValue[key][i].name, dbEmployeeMoney, excelEmployeeMoney);
                                     if (userWantsToUpdate) {
-                                        updateValue[key][i].money = excelEmployeeMoney;  // Update the value in updateValue
+                                        updateValue[key][i].money = excelEmployeeMoney; 
                                         console.log(updateValue[key][i].money);
                                         rowUpdated = true;  // Mark that the row has been updated
                                     }
@@ -333,8 +341,7 @@ const compareAndUpdateColumns = async (dbProperties, excelProperties) => {
                             }
                         } else {
                             if (dbValue[key] !== excelValue[key]) {
-                              console.log(dbValue[key]);
-                                const userWantsToUpdate = await askUserForColumnUpdate(key, dbValue[key], excelValue[key]);
+                                const userWantsToUpdate = await askUserForColumnUpdate(excelRow["순번"],key, dbValue[key], excelValue[key]);
                                 if (userWantsToUpdate) {
                                     updateValue[key] = excelValue[key];  // Update other fields in 정산금액
                                     rowUpdated = true;  // Mark that the row has been updated
@@ -344,8 +351,7 @@ const compareAndUpdateColumns = async (dbProperties, excelProperties) => {
                     }
     
                     // After updating, assign the new 정산금액 back to updatedRow
-                    updatedRow['정산금액'] = JSON.stringify(updateValue);  // Ensure this is stringified
-                    console.log('Updated 정산금액:', JSON.stringify(updatedRow['정산금액']));
+                    updatedRow['정산금액'] = updateValue;  // Ensure this is stringified
                 } else {
                     // Handle other fields with string/number normalization
                     let dbValue = dbRow[key];
@@ -363,7 +369,7 @@ const compareAndUpdateColumns = async (dbProperties, excelProperties) => {
     
                         // Perform the comparison
                         if (dbValue !== excelValue) {
-                            const userWantsToUpdate = await askUserForColumnUpdate(key, dbValue, excelValue);
+                            const userWantsToUpdate = await askUserForColumnUpdate(excelRow["순번"], key, dbValue, excelValue);
                             if (userWantsToUpdate) {
                                 updatedRow[key] = excelRow[key];  // Update the column value
                                 rowUpdated = true;  // Mark that the row has been updated
@@ -377,8 +383,6 @@ const compareAndUpdateColumns = async (dbProperties, excelProperties) => {
 
           if (rowUpdated) {
               updatedRows.push(updatedRow);  // Only push the row if it was updated
-              console.log(JSON.stringify(updatedRows[0].정산금액));
-
           }
       }
   }
@@ -386,18 +390,23 @@ const compareAndUpdateColumns = async (dbProperties, excelProperties) => {
 };
 
 
-
-
-
-const askUserForColumnUpdate = (columnName, dbValue, excelValue) => {
+const askUserForColumnUpdate = (propertyId, columnName, dbValue, excelValue) => {
   return new Promise((resolve) => {
-      const userResponse = window.confirm(
-          `The column "${columnName}" has different values:\n\nDatabase Value: ${JSON.stringify(dbValue)}\nExcel Value: ${JSON.stringify(excelValue)}\n\nDo you want to overwrite the database value with the Excel value?`
-      );
-      resolve(userResponse);  // Resolve with true for Yes, false for No
+    setAlertData({propertyId, columnName, dbValue, excelValue });
+    setAlertVisible(true);
+    setPendingResolve(() => resolve);  // Store the resolve function for later
   });
 };
 
+const handleConfirm = () => {
+  if (pendingResolve) pendingResolve(true);
+  setAlertVisible(false);
+};
+
+const handleCancel = () => {
+  if (pendingResolve) pendingResolve(false);
+  setAlertVisible(false);
+};
 
 
 
@@ -459,6 +468,17 @@ const askUserForColumnUpdate = (columnName, dbValue, excelValue) => {
 
   return (
     <div className='flexCol gap-y-4'>
+            {alertVisible && (
+              <AlertComponent
+                propertyId={alertData.propertyId}
+                columnName={alertData.columnName}
+                dbValue={alertData.dbValue}
+                excelValue={alertData.excelValue}
+                onConfirm={handleConfirm}
+                onCancel={handleCancel}
+              />
+            )}
+
       <div className="ag-theme-quartz" style={{ height: 400, width: '90vw' }}>
         <AgGridReact
           ref={gridRef}

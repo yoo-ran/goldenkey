@@ -8,10 +8,13 @@ import { useLocation } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/swiper-bundle.css';
 
+import FavoriteHeart from '../components/feature/FavoriteHeart';
+import Favorite from './Favorite';
 
 
 
 const Search = () => {
+    const [propertyId, setPropertyId] = useState()
     const [properties, setProperties] = useState([]);
     const [propertyImages, setPropertyImages] = useState({}); // Store images by property ID
     const location = useLocation(); // Retrieve the state (data) from navigation
@@ -103,6 +106,10 @@ const Search = () => {
         return result.trim(); // Return the formatted string, removing any unnecessary spaces
     };
 
+    const handlePropertyIdUpdate = (newPropertyId) => {
+        setPropertyId(newPropertyId);
+    };
+
     return (
         <main className='w-full gap-y-16'>
             <section>
@@ -123,7 +130,7 @@ const Search = () => {
                                 key={propertyId}
                                 className='flexRow gap-x-4 lg:flexCol gap-y-4'
                             >
-                                <div className="w-4/12 lg:w-full flexCol">
+                                <div className="w-4/12 lg:w-full flexCol relative bg-secondary-light h-full rounded">
                                     {images.length > 0 ? (
                                         <img
                                             src={`http://localhost:8000${images[0]}`}
@@ -131,8 +138,9 @@ const Search = () => {
                                             className=" object-cover lg:rounded-4xl"
                                         />
                                     ) : (
-                                        <p>No images available</p>
+                                        <p className='text-center mobile_5'>No images available</p>
                                     )}
+                                    <FavoriteHeart propertyId={propertyId} updatePropertyId={handlePropertyIdUpdate}/>
                                 </div>
                                 <div className='flexCol items-start w-8/12 gap-y-4 lg:w-11/12'>
                                     {/* <p className='mobile_1_bold'>{property.거래방식}</p> */}
@@ -156,6 +164,8 @@ const Search = () => {
                     })}
                 </article>
             </section>
+
+            <Favorite propertyId={propertyId} updatePropertyId={handlePropertyIdUpdate}/>
 
 
             {/* 추천물건 */}

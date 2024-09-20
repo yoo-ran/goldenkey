@@ -1,49 +1,50 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { AgGridReact } from "ag-grid-react";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-quartz.css";
 
 
-const DeleteButtonRenderer = (params) => {
-  const handleClick = () => {
-      params.context.componentParent.handleDelete(params.data.순번);
-  };
-  return <button className='bg-red-500 text-white px-4 rounded' onClick={handleClick}>Delete</button>;
-};
-// Checkbox Renderer
-const CheckboxRenderer = (props) => {
-    const handleChange = async () => {
-        const newValue = !Boolean(props.value);
-        const propertyId = props.data.순번;
 
-        try {
-            await axios.put(`http://localhost:8000/update-property/${propertyId}`, {
-                EV유무: newValue
-            });
-
-            // Re-fetch the updated properties after change
-            props.context.componentParent.fetchProperties();
-
-            alert("Property updated successfully!");
-        } catch (error) {
-            console.error('Error updating property:', error);
-            alert('Error updating property.');
-        }
-    };
-
-    return (
-        <input
-            type="checkbox"
-            checked={Boolean(props.value)}
-            onChange={handleChange}
-        />
-    );
-};
 
 // Main component
 const ListForOwner = ({updateData}) => {
     const [propertyData, setPropertyData] = useState([]);
+    const DeleteButtonRenderer = (params) => {
+        const handleClick = () => {
+            params.context.componentParent.handleDelete(params.data.순번);
+        };
+        return <button className='bg-red-500 text-white px-4 rounded' onClick={handleClick}>Delete</button>;
+      };
+      // Checkbox Renderer
+      const CheckboxRenderer = (props) => {
+          const handleChange = async () => {
+              const newValue = !Boolean(props.value);
+              const propertyId = props.data.순번;
+      
+              try {
+                  await axios.put(`http://localhost:8000/update-property/${propertyId}`, {
+                      EV유무: newValue
+                  });
+      
+                  // Re-fetch the updated properties after change
+                  props.context.componentParent.fetchProperties();
+      
+                  alert("Property updated successfully!");
+              } catch (error) {
+                  console.error('Error updating property:', error);
+                  alert('Error updating property.');
+              }
+          };
+      
+          return (
+              <input
+                  type="checkbox"
+                  checked={Boolean(props.value)}
+                  onChange={handleChange}
+              />
+          );
+      };
     const fetchProperties = async () => {
         try {
             const response = await axios.get('http://localhost:8000/listing');
@@ -188,7 +189,7 @@ const ListForOwner = ({updateData}) => {
         minWidth: 100,
         flex: 1,
     };
-console.log(propertyData);
+
     return (
         <div className="ag-theme-quartz" style={{ width: "100%", height: "60vh" }}>
             <AgGridReact
