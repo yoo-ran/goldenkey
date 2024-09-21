@@ -70,7 +70,7 @@ const House = () => {
 
 
   return (
-    <main className="w-11/12 flexCol gap-y-20 ">
+    <main className="w-11/12 flexCol gap-y-20">
       주택/빌라
       <form className="w-full flexCol gap-y-20 lg:flexRow items-start justify-between" onSubmit={handleSubmit}>
         {/* 거래유형 */}

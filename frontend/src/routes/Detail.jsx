@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 
 // import MapComponent from '../components/feature/MapComponent';
-import ListingHeader from '../components/feature/ListingHeader';
+// import ListingHeader from '../components/feature/ListingHeader';
 import Memo from '../components/feature/Memo';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowsLeftRightToLine, faElevator, faHouse, faParking, faToilet } from '@fortawesome/free-solid-svg-icons';

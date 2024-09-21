@@ -5,7 +5,7 @@ import axios from 'axios';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHeart } from '@fortawesome/free-regular-svg-icons';
 
-import ListingHeader from '../components/feature/ListingHeader';
+// import ListingHeader from '../components/feature/ListingHeader';
 
 const Listing = () => {
     const [properties, setProperties] = useState([]);
@@ -57,7 +57,7 @@ const Listing = () => {
     return (
         <main className='gap-y-10 w-full'>
             
-            <ListingHeader onSendType={handleData} />
+            {/* <ListingHeader onSendType={handleData} /> */}
 
             {/* List */}
             <section className='relative w-10/12 grid grid-cols-12 gap-x-4 gap-y-20 '>
