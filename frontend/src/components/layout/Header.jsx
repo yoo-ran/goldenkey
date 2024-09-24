@@ -7,7 +7,7 @@ const Header = () => {
     const location = useLocation(); // Get the current location
     const [isAuthenticated, setIsAuthenticated] = useState(false)
     const navigate = useNavigate(); // Hook for navigation
-
+    const [open, setOpen] =useState(false)
     useEffect(() => {
         const checkAuthentication = async () => {
             try {
@@ -36,42 +36,46 @@ const Header = () => {
     }, [location.pathname, navigate]);
 
     return (
-        <header className='font-head w-full'>
-            <nav className='flexRow justify-end lg:py-4'>
-                <ul className='flexRow justify-around gap-x-4 lg:w-1/2'>
+        <header className='font-head w-full z-50'>
+            <nav className='flexCol lg:py-5 relative'>
+                <ul className={`w-full absolute divide-y-[0.1rem] divide-secondary flexCol text-center mobile_3_bold justify-around gap-x-4 bg-primary transition-[all] ${open? " top-14": "-top-52"}`}>
                     <li 
-                        className={`transition-all ${location.pathname === "/listing" ? "text-yellow" : "hover:text-yellow"}`}
+                        className={`w-full py-5  transition-all ${location.pathname === "/favorite" ? "text-primary-yellow lg:text-primary bg-secondary lg:bg-primary-yellow" : "text-primary-yellow"}`}
                     >
-                        <Link to="/listing">Listing</Link>
+                        <Link to="/">홈</Link>
                     </li>
                     <li 
-                        className={`transition-all ${location.pathname === "/favorite" ? "text-yellow" : "hover:text-yellow"}`}
+                        className={`w-full py-5 transition-all ${location.pathname === "/search" ? "text-primary-yellow lg:text-primary bg-secondary lg:bg-primary-yellow" : "text-primary-yellow"}`}
                     >
-                        <Link to="/favorite">Favorites</Link>
+                        <Link to="/search">매물 검색</Link>
                     </li>
                     <li 
-                        className={`transition-all ${location.pathname === "/search" ? "text-yellow" : "hover:text-yellow"}`}
+                        className={`w-full py-5 transition-all ${location.pathname === "/upload" ? "text-primary-yellow lg:text-primary bg-secondary lg:bg-primary-yellow" : "text-primary-yellow"}`}
                     >
-                        <Link to="/search">Search</Link>
+                        <Link to="/upload">매물 업로드</Link>
                     </li>
                     <li 
-                        className={`transition-all ${location.pathname === "/importExcel" ? "text-yellow" : "hover:text-yellow"}`}
+                        className={`w-full py-5 transition-all ${location.pathname === "/importExcel" ? "text-primary-yellow lg:text-primary bg-secondaryylg:bg-primary-yellow" : "text-primary-yellow"}`}
                     >
-                        <Link to="/importExcel">Import Excel</Link>
+                        <Link to="/importExcel">엑셀 업로드</Link>
                     </li>
-                    <li 
-                        className={`transition-all ${location.pathname === "/upload" ? "text-yellow" : "hover:text-yellow"}`}
-                    >
-                        <Link to="/upload">Upload</Link>
-                    </li>
-                    <button 
-                        className='hover:bg-navy transition-all bg-primary-yellow text-white border border-lightPurple lg:px-6 lg:py-2 rounded-full'
-                    >
-                     {
-                        isAuthenticated ? <Link to="/user-page">Profile</Link> : <Link to="/login">Login</Link>
-                    } 
-                    </button>
                 </ul>
+
+                <div className='py-5 px-5 flexRow justify-between w-full z-50 bg-white'>
+                    <div 
+                        className='w-8/12 h-5 relative'
+                        onClick={()=> setOpen(!open)}
+                    >
+                        <p className={`bg-primary w-7 h-0.5 absolute top-0 transition-all ${open ? "rotate-45 top-1/2":""}`}></p>
+                        <p className={`bg-primary w-7 h-0.5 absolute top-1/2 transition-all transform -translate-y-1/2 ${open ? "hidden":""}`}></p>
+                        <p className={`bg-primary w-7 h-0.5 absolute bottom-0 transition-all ${open ? "-rotate-45 top-1/2":""}`}></p>
+                    </div>
+                    <button 
+                        className='hover:bg-navy transition-all bg-primary-yellow text-primary px-4 lg:py-2 rounded-lg'
+                    >
+                        <Link to="/login">로그인</Link>
+                    </button>
+                </div>
             </nav>
         </header>
     );

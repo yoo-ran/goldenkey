@@ -52,8 +52,8 @@ main{
     h2 {
       @apply  mobile_4_bold;
     }
-    input {
-      @apply bg-white rounded-lg mobile_5 p-2;
+    input, textarea {
+      @apply bg-secondary-yellow text-secondary rounded-lg mobile_5 p-2;
     }
 
   }
@@ -113,6 +113,12 @@ main{
     .mobile_7 {
         font-size: var(--font-size-mobile-7);
         line-height: calc(6px / 10px);
+    }
+    .btn_clear {
+      @apply bg-secondary-light mobile_3_bold text-primary rounded-lg py-3
+    }
+    .btn_save {
+      @apply bg-primary mobile_3_bold text-primary-yellow rounded-lg py-3
     }
   }
 

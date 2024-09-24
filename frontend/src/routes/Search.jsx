@@ -15,7 +15,7 @@ import 'swiper/css';
 // import 'swiper/swiper-bundle.css'; // Swiper core styles
 import 'swiper/css/pagination';
 import 'swiper/css/scrollbar';
-import SearchHeader from '../components/feature/SearchHeader';
+import SearchHeader from '../components/layout/SearchHeader';
 
 
 const Search = () => {

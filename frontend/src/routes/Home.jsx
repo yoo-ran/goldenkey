@@ -10,7 +10,7 @@ import apartmentImg from "../assets/home/apartment.jpg";
 import houseImg from "../assets/home/house.jpg";
 import officeTellImg from "../assets/home/officetell.jpg";
 import oneroomImg from "../assets/home/oneroom.jpg";
-import SearchHeader from '../components/feature/SearchHeader';
+import SearchHeader from '../components/layout/SearchHeader';
 
 
 const propertyType = [
