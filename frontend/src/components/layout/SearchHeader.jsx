@@ -39,10 +39,10 @@ const SearchHeader = ({ onSendSearchTerm  }) => {
 
     return (
           <section className='w-11/12 lg:w-10/12 flexRow justify-between relative z-40'>
-                <div className={`absolute top-12 flexCol bg-white gap-y-4 mobile_6 w-full overflow-hidden transition-[all]  ${openFilter ? "translate-y-1.5": "opacity-0"}`}>
-                    <article className='mobile_4 border-b w-full text-center py-2'><p>거주유형선택</p></article>
+                <div className={`absolute border-2 rounded-lg drop-shadow p-4 top-14 flexCol bg-primary gap-y-4 mobile_6 w-full overflow-hidden transition-[all]  ${openFilter ? "translate-y-1.5": "opacity-0"}`}>
+                    <article className='mobile_4_bold border-b w-full text-center text-primary-yellow pb-4'><p>거주유형선택</p></article>
                     <article className='w-full'>
-                        <p className='mobile_4_bold'>옵션을 선택하세요</p>
+                        <p className='mobile_4 text-primary-yellow'>옵션을 선택하세요</p>
                         <div className='grid grid-cols-3 gap-x-4 mt-3'>
                             <button
                                 onClick={()=> setFilterType("house/villa")} 
@@ -66,10 +66,6 @@ const SearchHeader = ({ onSendSearchTerm  }) => {
                                 <p>아파트 / 오피스텔</p>
                             </button>
                         </div>
-                    </article>
-                    <article className='py-2 mobile_4 grid grid-cols-2 w-full gap-x-4'>
-                        <button className='bg-secondary-light w-full py-2 rounded'>초기화</button>
-                        <button className='bg-primary-yellow w-full py-2 rounded'>적용</button>
                     </article>
                 </div>
                 <div className='flexCol'>

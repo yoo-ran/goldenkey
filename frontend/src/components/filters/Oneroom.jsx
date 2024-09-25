@@ -70,7 +70,7 @@ const Oneroom = () => {
 
 
   return (
-    <main className="w-11/12 flexCol gap-y-20 ">
+    <main className="w-11/12 flexCol gap-y-20">
       <form className="w-full flexCol gap-y-20 lg:flexRow items-start justify-between" onSubmit={handleSubmit}>
         {/* 거래유형 */}
         <section className="flexCol gap-y-8 items-start w-full">
