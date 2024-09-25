@@ -1,5 +1,6 @@
 // src/components/User.jsx
 import {useEffect, useState } from "react";
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronLeft, faChevronRight, faHeart as faSolidHeart } from '@fortawesome/free-solid-svg-icons';
@@ -12,161 +13,120 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 
 // Import Swiper styles
 import 'swiper/css';
-// import 'swiper/swiper-bundle.css'; // Swiper core styles
 import 'swiper/css/pagination';
 import 'swiper/css/scrollbar';
+
+import Memo from '../components/feature/Memo';
 import SearchHeader from '../components/layout/SearchHeader';
 
 
 const Search = () => {
-    const [favoriteIds, setFavoriteIds] = useState([])
-    const [propertyId, setPropertyId] = useState()
-    const [properties, setProperties] = useState([]);
-    const [propertyImages, setPropertyImages] = useState({}); // Store images by property ID
-    const [searchTerm, setSearchTerm] = useState(""); // Search term state
-    const [filteredProperties, setFilteredProperties] = useState([]); 
+    const navigate = useNavigate();
     const location = useLocation(); // Retrieve the state (data) from navigation
-    const rangeValues = location.state || {
-        selectedMethod: '',
+    const [favoriteIds, setFavoriteIds] = useState([]);
+    const [properties, setProperties] = useState([]);
+    const [propertyImages, setPropertyImages] = useState({});
+    const [searchTerm, setSearchTerm] = useState(location.state?.searchTerm || ""); // Use state for search term
+    const [filteredProperties, setFilteredProperties] = useState([]);
+    const [rangeValues, setRangeValues] = useState({
+        selectedMethod: 'all',
         depositRange: { min: 0, max: 3000 },
         rentRange: { min: 0, max: 150 },
         roomSizeRange: { min: 0, max: 1000 },
-        거래방식: '',
-        거래완료여부: '',
-    }; // Fallback to an empty object if no state is provided
-    
+    });
 
+    // Fetch property listings and images
     useEffect(() => {
         const fetchProperties = async () => {
             try {
                 const response = await axios.get('http://localhost:8000/listing');
                 const propertyList = response.data;
                 setProperties(propertyList);
-                setFilteredProperties(propertyList); // Initially, show all properties
-        
+                const favoriteResponse = await axios.get('http://localhost:8000/get-favorites', { withCredentials: true });
+                if (favoriteResponse.status === 200) {
+                    setFavoriteIds(favoriteResponse.data.favorites); // Set favoriteIds
+                } else {
+                    console.error('Failed to fetch favorite IDs');
+                }
                 // Fetch images for each property
                 for (const property of propertyList) {
-                        const { 순번: propertyId } = property; // Assuming property ID is in '순번' field
-                        try {
-                        const imgRes = await axios.get(
-                            `http://localhost:8000/properties/${propertyId}/images`
-                        );
-            
-                        // Store images for each property using its ID
+                    const { 순번: propertyId } = property;
+                    try {
+                        const imgRes = await axios.get(`http://localhost:8000/properties/${propertyId}/images`);
                         if (Array.isArray(imgRes.data.images)) {
                             setPropertyImages((prev) => ({
-                            ...prev,
-                            [propertyId]: imgRes.data.images,
+                                ...prev,
+                                [propertyId]: imgRes.data.images,
                             }));
-                        } else {
-                            console.error("Unexpected response structure:", imgRes.data);
                         }
-                        } catch (imageError) {
+                    } catch (imageError) {
                         console.error(`Error fetching images for property ${propertyId}:`, imageError);
-                        }
                     }
+                }
             } catch (error) {
                 console.error('Error fetching properties:', error);
             }
         };
 
         fetchProperties();
-
     }, []);
 
-      // Filter properties based on rangeValues
-      const filterProperties = () => {
-        const filtered = properties.filter((property) => {
-            const withinDepositRange =
-                property.보증금 >= rangeValues.depositRange.min &&
-                property.보증금 <= rangeValues.depositRange.max;
-            
-            const withinRentRange =
-                property.월세 >= rangeValues.rentRange.min &&
-                property.월세 <= rangeValues.rentRange.max;
-            
-            const withinRoomSizeRange =
-                property.전용m2 >= rangeValues.roomSizeRange.min &&
-                property.전용m2 <= rangeValues.roomSizeRange.max;
-
-            const matchesSelectedMethod =
-                property.거래방식 === rangeValues.selectedMethod || rangeValues.selectedMethod === 'all';
-
-            return withinDepositRange && withinRentRange && withinRoomSizeRange && matchesSelectedMethod;
-        });
-
-        setFilteredProperties(filtered); // Update the filtered properties state
-    };
-
-    // Call the filter function when rangeValues or properties change
+    // Function to filter properties based on range and search term
     useEffect(() => {
-        filterProperties(); // Filter properties when values change
-    }, [properties]); // Dependencies
+        const filtered = properties.filter((property) => {
+            const matchesSearchTerm = property.건물명.includes(searchTerm) || property.도로명.includes(searchTerm);
 
+            const withinDepositRange =
+                property.보증금 >= rangeValues.depositRange.min && property.보증금 <= rangeValues.depositRange.max;
+            const withinRentRange =
+                property.월세 >= rangeValues.rentRange.min && property.월세 <= rangeValues.rentRange.max;
+            const withinRoomSizeRange =
+                property.전용m2 >= rangeValues.roomSizeRange.min && property.전용m2 <= rangeValues.roomSizeRange.max;
+            const matchesSelectedMethod = rangeValues.selectedMethod === 'all' || property.거래방식 === rangeValues.selectedMethod;
 
-    const formatToKoreanCurrency = (number) => {
-        const billion = Math.floor(number / 100000000); // Extract the 억 (billion) part
-        const remainder = number % 100000000; // The remainder after dividing by 억
-        const thousand = Math.floor(remainder / 10000000); // Extract the 천 (thousand) part
+            return matchesSearchTerm && withinDepositRange && withinRentRange && withinRoomSizeRange && matchesSelectedMethod;
+        });
+console.log(filtered);
+        setFilteredProperties(filtered);
+    }, [properties, searchTerm, rangeValues]);
 
-        let result = '';
-        
-        if (billion > 0) {
-            result += `${billion}억`;
-        }
-        
-        if (thousand > 0) {
-            result += ` ${thousand}천`;
-        }
-
-        if (!result) {
-            result = number.toString(); // Return the number if it's less than 1억
-        }
-        
-        return result.trim(); // Return the formatted string, removing any unnecessary spaces
-    };
-    
     const handleSearchTerm = (term) => {
-        setSearchTerm(term);
         const filtered = properties.filter((property) => 
             property.건물명.includes(term) ||  property.도로명.includes(term) // Assuming property names are in Korean
         );
-    
+
         setFilteredProperties(filtered);
     };
 
 
 
-    const fetchFavoriteIds = async () => {
-        try {
-            const response = await axios.get('http://localhost:8000/get-favorites', { withCredentials: true });
-            if (response.status === 200) {
-                setFavoriteIds(response.data.favorites); // Ensure 'favorites' is an array
-            }
-        } catch (error) {
-            console.error('Error fetching favorite IDs:', error);
+    const formatToKoreanCurrency = (number) => {
+        const billion = Math.floor(number / 100000000);
+        const remainder = number % 100000000;
+        const thousand = Math.floor(remainder / 10000000);
+        let result = '';
+        if (billion > 0) {
+            result += `${billion}억`;
         }
+        if (thousand > 0) {
+            result += ` ${thousand}천`;
+        }
+        if (!result) {
+            result = number.toString();
+        }
+        return result.trim();
     };
-    
-    useEffect(()=>{
-        fetchFavoriteIds()
-    },[])
 
+    // Manage favorite IDs
     const heartClick = async (pId) => {
         setFavoriteIds((prevArr) => {
             let updatedFavorites;
-
             if (prevArr.includes(pId)) {
-                // Remove the id if it exists
                 updatedFavorites = prevArr.filter(id => id !== pId);
             } else {
-                // Add the id if it doesn't exist
                 updatedFavorites = [...prevArr, pId];
             }
-
-            // Send the updated favorites to the backend
             saveFavoriteIds(updatedFavorites);
-
             return updatedFavorites;
         });
     };
@@ -176,17 +136,17 @@ const Search = () => {
             const response = await axios.post('http://localhost:8000/save-favorites', {
                 favorites: updatedFavorites
             }, { withCredentials: true });
-
-            if (response.status === 200) {
-                // console.log('Favorites saved successfully');
-            } else {
+            if (response.status !== 200) {
                 console.error('Failed to save favorites');
             }
         } catch (error) {
             console.error('Error saving favorite IDs:', error);
         }
     };
-    
+
+    const handleItemClick = (id) => {
+        navigate(`/detail/${id}`, { state: { propertyId: id } });
+    };
 
     return (
         <main className='w-full gap-y-16'>
@@ -206,6 +166,7 @@ const Search = () => {
                             <div 
                                 key={propertyId}
                                 className='flexRow gap-x-4 lg:flexCol gap-y-4'
+                                onClick={() => handleItemClick(property.순번)} // Handle item click
                             >
                                 <div className="w-4/12 lg:w-full flexCol relative bg-secondary-light h-full rounded">
                                     {images.length > 0 ? (
@@ -218,8 +179,11 @@ const Search = () => {
                                         <p className='text-center mobile_5'>No images available</p>
                                     )}
                                     <div
-                                        onClick={() => heartClick(propertyId)} 
-                                        className='absolute top-1 right-1'
+                                        onClick={(e) => {
+                                            e.stopPropagation(); // Prevent the handleItemClick from being triggered
+                                            heartClick(propertyId); // Call the heartClick function
+                                        }}                                         
+                                        className='absolute top-1 right-1 z-30'
                                     >
                                           <FontAwesomeIcon icon={faRegularHeart} className='absolute top-0 right-0 text-primary border border-white p-1 rounded-full mobile_5'/>
                                         {favoriteIds.includes(propertyId) ? (
@@ -295,7 +259,10 @@ const Search = () => {
     
                             return (
                                 <SwiperSlide key={propertyId}>
-                                    <article className='flexCol justify-between gap-y-4  bg-white rounded-3xl px-2 py-3 mb-6'>
+                                    <article 
+                                        className='flexCol justify-between gap-y-4  bg-white rounded-3xl px-2 py-3 mb-6'
+                                        onClick={() => handleItemClick(property.순번)} // Handle item click
+                                    >
                                         {/* Property Images */}
                                         {images.length > 0 ? (
                                             <div
@@ -310,8 +277,11 @@ const Search = () => {
                                             <p className='bg-secondary-light text-center py-4 rounded-lg'>No images available</p>
                                         )}
                                         <div
-                                            onClick={() => heartClick(propertyId)} 
-                                            className='absolute top-5 right-3'
+                                            onClick={(e) => {
+                                                e.stopPropagation(); // Prevent the handleItemClick from being triggered
+                                                heartClick(propertyId); // Call the heartClick function
+                                            }}                                
+                                            className='absolute top-5 right-3 z-40'
                                         >
                                           <FontAwesomeIcon icon={faRegularHeart} className='absolute top-0 right-0 text-primary border border-white p-1 rounded-full mobile_5'/>
                                         {favoriteIds.includes(propertyId) ? (
@@ -339,8 +309,7 @@ const Search = () => {
                     })}
                 </Swiper>
 
-
-
+                <Memo/>
             </section>
         </main>
     );

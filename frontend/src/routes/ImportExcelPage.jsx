@@ -4,6 +4,9 @@ import axios from 'axios';
 
 import ImportExcel from '../components/excelImport/ImportExcel';
 import ListForOwner from '../components/excelImport/ListForOwner';
+import SearchHeader from '../components/layout/SearchHeader';
+import Memo from '../components/feature/Memo';
+
 
 const ImportExcelPage = () => {
     // Define the shared state
@@ -41,10 +44,16 @@ const ImportExcelPage = () => {
 
     return (
         <main className='flexCol gap-y-20'>
-            Room Rental
-
-            <ImportExcel onDataUpdate={handleDataUpdate} />
-            <ListForOwner updateData={!updateData} />
+            <SearchHeader/>
+            <div className='flexCol items-start gap-y-6'>
+                <p className='mobile_1_bold'>엑셀 데이터</p>
+                <ImportExcel onDataUpdate={handleDataUpdate} />
+            </div>
+            <div className='flexCol items-start w-full gap-y-6'>
+                <p className='mobile_1_bold'>데이터베이스 데이터</p>
+                <ListForOwner updateData={!updateData} />
+            </div>
+            <Memo/>
         </main>
     );
 };

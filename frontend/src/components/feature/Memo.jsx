@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { } from '@fortawesome/free-solid-svg-icons';
+import { faPenToSquare } from '@fortawesome/free-regular-svg-icons';
 
-const Memo = ({ propertyId, onMemoUpdate }) => {
+
+const Memo = ({ onMemoUpdate }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false); // State to track authentication status
+    const [propertyId, setPropertyId] = useState()
     const [memo, setMemo] = useState('');  // Stores the current memo
     const [isEditing, setIsEditing] = useState(false);  // Tracks if the memo is being edited
-
+    const [openMemo, setOpenMemo] = useState(false)
     useEffect(() => {
         const checkAuthentication = async () => {
             try {
@@ -41,7 +46,12 @@ const Memo = ({ propertyId, onMemoUpdate }) => {
 
     // Handle input change
     const handleInputChange = (e) => {
-        setMemo(e.target.value);
+        console.log(e.target.value);
+        if(e.target.name === "propertyId"){
+            setPropertyId(e.target.value)
+        }else{
+            setMemo(e.target.value);
+        }
     };
 
     // Save or update the memo in the database
@@ -87,47 +97,41 @@ const Memo = ({ propertyId, onMemoUpdate }) => {
         }
     };
 
-    return (
-        <div className="border border-yellow p-10 rounded-xl flexCol gap-y-6">
-        <h3 className='w-full'>메모</h3>
+    const handleOpenMemo = () => {
+        setOpenMemo(!openMemo)
+    }
 
-        {isEditing ? (
-            <div>
+    return (
+        <div className="fixed bottom-4 right-2 z-50">
+            {/* Memo button */}
+            <div className={`absolute -top-72 w-72 flexCol items-end gap-y-3 rounded bg-primary p-3 transition-all ${openMemo ? "right-0":"-right-80"}`}>
+                <FontAwesomeIcon icon={faPenToSquare} className='text-primary-yellow self-start'/>
+                <div className='flexRow gap-x-2 w-full'>
+                    <label htmlFor="" className='mobile_4 text-secondary-light'>매물번호</label>
+                    <input 
+                        type="number"
+                        name='propertyId'
+                        placeholder='매물번호를 입력하시오'
+                        onChange={handleInputChange}
+                        className='bg-secondary-light'
+                    />
+                </div>
                 <textarea
-                    value={memo}
                     onChange={handleInputChange}
+                    rows={5}
+                    name='memo'
                     placeholder="Edit memo"
-                    className="border p-2 w-full"
+                    className="p-1 bg-primary w-full text-primary-yellow"
                 />
                 <div className="mt-2">
-                    <button onClick={handleSaveMemo} className="bg-blue-500 text-white px-4 py-2 rounded mr-2">
-                        Save Memo
-                    </button>
-                    <button onClick={() => setIsEditing(false)} className="bg-gray-500 text-white px-4 py-2 rounded">
-                        Cancel
+                    <button onClick={handleSaveMemo} className="bg-primary-yellow text-white p-4 rounded mr-2 mobile_3">
+                        저장
                     </button>
                 </div>
             </div>
-        ) : (
-            <div>
-                <p className='border px-2 py-8'>{memo || "No memo available"}</p>
-                {memo ? (
-                    <>
-                        <button onClick={() => setIsEditing(true)} className="bg-yellow text-white px-4 py-2 mt-2 rounded mr-2">
-                            Edit Memo
-                        </button>
-                        <button onClick={handleDeleteMemo} className="bg-red-500 text-white px-4 py-2 rounded">
-                            Delete Memo
-                        </button>
-                    </>
-                ) : (
-                    isAuthenticated ?    <button onClick={() => setIsEditing(true)} className="bg-blue-500 text-white px-4 py-2 mt-2 rounded">
-                    Add Memo
-                </button> :""
-                 
-                )}
+            <div className='rounded bg-primary w-8 h-8 flexCol' onClick={handleOpenMemo}>
+                <FontAwesomeIcon icon={faPenToSquare} className='text-primary-yellow'/>
             </div>
-        )}
     </div>
     );
 };

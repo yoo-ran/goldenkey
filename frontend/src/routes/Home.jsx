@@ -11,6 +11,7 @@ import houseImg from "../assets/home/house.jpg";
 import officeTellImg from "../assets/home/officetell.jpg";
 import oneroomImg from "../assets/home/oneroom.jpg";
 import SearchHeader from '../components/layout/SearchHeader';
+import Memo from '../components/feature/Memo';
 
 
 const propertyType = [
@@ -139,7 +140,7 @@ const Home = () => {
                         return (
                             <div
                                 key={id}
-                                style={{ backgroundImage: `url(http://localhost:8000${images[id]})` }}
+                                style={{ backgroundImage: `url(http://localhost:8000/uploads/1727197779093-apartment.jpg)` }}
                                 className="w-full aspect-square bg-cover bg-center rounded-2xl "
                             >
                                 <div className="w-full aspect-square flexRow items-start justify-end mobile_3_bold text-white ">
@@ -153,7 +154,7 @@ const Home = () => {
                     })}
                 </article>
             </section>
-
+            <Memo/>
         </main>
     );
 };
