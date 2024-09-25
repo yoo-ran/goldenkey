@@ -488,9 +488,9 @@ const handleCancel = () => {
         />
       </div>
       <button onClick={importExcel}
-        className='bg-primary-yellow text-white rounded-full px-4'
+        className='bg-primary-yellow text-white rounded-lg px-4 py-2'
       
-      >Import Excel Data</button>
+      >엑셀 불러오기</button>
     </div>
   );
 }
