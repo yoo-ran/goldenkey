@@ -1,12 +1,13 @@
 // src/components/User.jsx
 import {useEffect, useState } from "react";
+import axios from 'axios';
 
 
-const Favorite = () => {
+const Favorite = ({ favoriteIdsArr  }) => {
+    console.log(favoriteIdsArr);
 
     return (
         <main>
-            Favorite
         </main>
     );
 };

@@ -12,6 +12,9 @@ const fs = require('fs'); // For file system operations
 const jwt = require('jsonwebtoken');
 const { expressjwt: jwtMiddleware } = require('express-jwt'); // Import the express-jwt middleware
 
+const { PROPERTY_TYPES, TRANSACTION_METHOD, TRANSACTION_STATUS, TOILETS_NUM } = require('./constants'); // Import the constants
+
+
 const JWT_SECRET = 'your_super_secret_key';
 
 const corsOptions = {
@@ -46,8 +49,13 @@ app.use(
         /^\/properties\/\d+\/images$/,
         /^\/delete-property\/\d+$/, 
         /^\/update-property\/\d+$/, 
-        /^\/upload-images\/\d+$/, 
-    ] }) // Don't require JWT for the login route
+        /^\/upload-images\/\d+$/,
+        '/property-types',
+        '/transaction-methods',
+        '/transaction-status',
+        '/toilets-num',
+        '/properties/update',
+    ] }) 
 );
 
 const db = mysql.createPool({
@@ -69,12 +77,30 @@ const fetchExistingProperties = (callback) => {
     });
 };
 
-// Import CSV
+// Constant
+app.get('/property-types', (req, res) => {
+    res.json(PROPERTY_TYPES);  // Send the enum values to the frontend
+});
+
+app.get('/transaction-methods', (req, res) => {
+    res.json(TRANSACTION_METHOD);  // Send the enum values to the frontend
+});
+
+app.get('/transaction-status', (req, res) => {
+    res.json(TRANSACTION_STATUS);  // Send the enum values to the frontend
+});
+
+app.get('/toilets-num', (req, res) => {
+    res.json(TOILETS_NUM);  // Send the enum values to the frontend
+});
+
+// Import CSV / excel
 app.post('/import-csv', (req, res) => {
     const properties = req.body; // JSON data from the frontend
+    const uniqueFields = properties.map(item => item['순번']); // Using '순번' as the unique identifier
+    console.log(uniqueFields);
 
-    const uniqueFields = properties.map(item => item['순번']); // or use another unique field
-
+    // Query to fetch existing records with the same 순번
     const query = `SELECT 순번 FROM property WHERE 순번 IN (?)`;
 
     db.query(query, [uniqueFields], (err, results) => {
@@ -83,61 +109,129 @@ app.post('/import-csv', (req, res) => {
             return res.status(500).send('Error checking existing data');
         }
 
-        const existingFields = results.map(row => row['순번']);
-        const filteredProperties = properties.filter(item => !existingFields.includes(item['순번']));
+        const existingFields = results.map(row => row['순번']); // List of IDs that already exist in DB
+        const newRecords = properties.filter(item => !existingFields.includes(item['순번'])); // Records to insert
+        const updateRecords = properties.filter(item => existingFields.includes(item['순번'])); // Records to update
 
-        if (filteredProperties.length === 0) {
-            return res.status(200).send('No new data to insert (all duplicates).');
+        const promises = [];
+
+        // Insert new records
+        if (newRecords.length > 0) {
+            const insertValues = newRecords.map(item => [
+                item['순번'], 
+                item['등록일자'], 
+                item['부동산구분'], 
+                item['거래방식'], 
+                item['거래완료여부'], 
+                item['거래완료일자'], 
+                item['담당자'], 
+                item['구'], 
+                item['읍면동'], 
+                item['구상세주소'], 
+                item['도로명'], 
+                item['신상세주소'], 
+                item['건물명'], 
+                item['동'], 
+                item['호수'], 
+                item['보증금'], 
+                item['월세'], 
+                item['관리비'], 
+                item['전체m2'], 
+                item['전용m2'], 
+                item['전체평'], 
+                item['전용평'], 
+                item['EV유무'], 
+                item['화장실개수'], 
+                item['주차가능대수'], 
+                item['비밀번호'], 
+                item['이름'], 
+                item['휴대폰번호'], 
+                item['기타특이사항'], 
+                item['정산금액'], 
+                item['메모'],
+            ]);
+
+            const insertSql = `INSERT INTO property (순번, 등록일자, 부동산구분, 거래방식, 거래완료여부, 거래완료일자, 담당자, 구, 읍면동, 구상세주소, 도로명, 신상세주소, 건물명, 동, 호수, 보증금, 월세, 관리비, 전체m2, 전용m2, 전체평, 전용평, EV유무, 화장실개수, 주차가능대수, 비밀번호, 이름, 휴대폰번호, 기타특이사항, 정산금액, 메모) VALUES ?`;
+
+            promises.push(new Promise((resolve, reject) => {
+                db.query(insertSql, [insertValues], (err, result) => {
+                    if (err) {
+                        console.error('Error inserting data:', err);
+                        reject('Error inserting data');
+                    } else {
+                        console.log(`${newRecords.length} new records inserted successfully.`);
+                        resolve();
+                    }
+                });
+            }));
         }
 
-        const values = filteredProperties.map(item => [
-            item['순번'], 
-            item['등록일자'], 
-            item['부동산구분'], 
-            item['거래방식'], 
-            item['거래완료여부'], 
-            item['거래완료일자'], 
-            item['담당자'], 
-            item['구'], 
-            item['읍면동'], 
-            item['구상세주소'], 
-            item['도로명'], 
-            item['신상세주소'], 
-            item['건물명'], 
-            item['동'], 
-            item['호수'], 
-            item['보증금'], 
-            item['월세'], 
-            item['관리비'], 
-            item['전체m2'], 
-            item['전용m2'], 
-            item['전체평'], 
-            item['전용평'], 
-            item['EV유무'], 
-            item['화장실개수'], 
-            item['주차가능대수'], 
-            item['비밀번호'], 
-            item['이름'], 
-            item['휴대폰번호'], 
-            item['기타특이사항'], 
-            item['총수수료'], 
-            item['소장'], 
-            item['직원'],
-            item['메모'],
-            item['img_path'],
-        ]);
+        // Update existing records
+        if (updateRecords.length > 0) {
+            updateRecords.forEach(item => {
+                const updateFields = [];
 
-        const sql = `INSERT INTO property (순번, 등록일자, 부동산구분, 거래방식, 거래완료여부, 거래완료일자, 담당자, 구, 읍면동, 구상세주소, 도로명, 신상세주소, 건물명, 동, 호수, 보증금, 월세, 관리비, 전체m2, 전용m2, 전체평, 전용평, EV유무, 화장실개수, 주차가능대수, 비밀번호, 이름, 휴대폰번호, 기타특이사항, 총수수료, 소장, 직원, 메모, img_path) VALUES ?`;
+                // Loop through the fields you want to update
+                if (item['등록일자']) updateFields.push(`등록일자 = ${db.escape(item['등록일자'])}`);
+                if (item['부동산구분']) updateFields.push(`부동산구분 = ${db.escape(item['부동산구분'])}`);
+                if (item['거래방식']) updateFields.push(`거래방식 = ${db.escape(item['거래방식'])}`);
+                if (item['거래완료여부']) updateFields.push(`거래완료여부 = ${db.escape(item['거래완료여부'])}`);
+                if (item['거래완료일자']) updateFields.push(`거래완료일자 = ${db.escape(item['거래완료일자'])}`);
+                if (item['담당자']) updateFields.push(`담당자 = ${db.escape(item['담당자'])}`);
+                if (item['구']) updateFields.push(`구 = ${db.escape(item['구'])}`);
+                if (item['읍면동']) updateFields.push(`읍면동 = ${db.escape(item['읍면동'])}`);
+                if (item['구상세주소']) updateFields.push(`구상세주소 = ${db.escape(item['구상세주소'])}`);
+                if (item['도로명']) updateFields.push(`도로명 = ${db.escape(item['도로명'])}`);
+                if (item['신상세주소']) updateFields.push(`신상세주소 = ${db.escape(item['신상세주소'])}`);
+                if (item['건물명']) updateFields.push(`건물명 = ${db.escape(item['건물명'])}`);
+                if (item['동']) updateFields.push(`동 = ${db.escape(item['동'])}`);
+                if (item['호수']) updateFields.push(`호수 = ${db.escape(item['호수'])}`);
+                if (item['보증금']) updateFields.push(`보증금 = ${db.escape(item['보증금'])}`);
+                if (item['월세']) updateFields.push(`월세 = ${db.escape(item['월세'])}`);
+                if (item['관리비']) updateFields.push(`관리비 = ${db.escape(item['관리비'])}`);
+                if (item['전체m2']) updateFields.push(`전체m2 = ${db.escape(item['전체m2'])}`);
+                if (item['전용m2']) updateFields.push(`전용m2 = ${db.escape(item['전용m2'])}`);
+                if (item['전체평']) updateFields.push(`전체평 = ${db.escape(item['전체평'])}`);
+                if (item['전용평']) updateFields.push(`전용평 = ${db.escape(item['전용평'])}`);
+                if (item['EV유무']) updateFields.push(`EV유무 = ${db.escape(item['EV유무'])}`);
+                if (item['화장실개수']) updateFields.push(`화장실개수 = ${db.escape(item['화장실개수'])}`);
+                if (item['주차가능대수']) updateFields.push(`주차가능대수 = ${db.escape(item['주차가능대수'])}`);
+                if (item['비밀번호']) updateFields.push(`비밀번호 = ${db.escape(item['비밀번호'])}`);
+                if (item['이름']) updateFields.push(`이름 = ${db.escape(item['이름'])}`);
+                if (item['휴대폰번호']) updateFields.push(`휴대폰번호 = ${db.escape(item['휴대폰번호'])}`);
+                if (item['기타특이사항']) updateFields.push(`기타특이사항 = ${db.escape(item['기타특이사항'])}`);
+                if (item['정산금액']) updateFields.push(`정산금액 = ${db.escape(item['정산금액'])}`);
+                if (item['메모']) updateFields.push(`메모 = ${db.escape(item['메모'])}`);
 
-        db.query(sql, [values], (err, result) => {
-            if (err) {
-                console.error('Error inserting data:', err);
-                return res.status(500).send('Error inserting data');
-            }
-            res.status(200).send(`${filteredProperties.length} new records inserted successfully`);
-        });
+                if (updateFields.length > 0) {
+                    const updateSql = `UPDATE property SET ${updateFields.join(', ')} WHERE 순번 = ${db.escape(item['순번'])}`;
+
+                    promises.push(new Promise((resolve, reject) => {
+                        db.query(updateSql, (err, result) => {
+                            if (err) {
+                                console.error(`Error updating record with 순번 ${item['순번']}:`, err);
+                                reject(`Error updating record with 순번 ${item['순번']}`);
+                            } else {
+                                resolve();
+                            }
+                        });
+                    }));
+                }
+            });
+        }
+
+        // Wait for all queries to finish
+        Promise.all(promises)
+            .then(() => {
+                res.status(200).send('Records processed successfully.');
+            })
+            .catch((err) => {
+                console.error('Error processing records:', err);
+                res.status(500).send('Error processing records');
+            });
     });
 });
+
 
 
 
@@ -500,9 +594,16 @@ app.post('/memos/add', async (req, res) => {
 
 app.post('/properties/update', (req, res) => {
     const propertyData = req.body;
-  
+
+    // Convert the 정산금액 object to a JSON string if it's an object
+    if (typeof propertyData.정산금액 === 'object') {
+        propertyData.정산금액 = JSON.stringify(propertyData.정산금액);
+    }
+
+    console.log(propertyData.총수수료);
+
     db.query(
-      'INSERT INTO property SET ? ON DUPLICATE KEY UPDATE ?',
+      'INSERT INTO property SET ? ON DUPLICATE KEY UPDATE 정산금액 = VALUES(정산금액)',
       [propertyData, propertyData],
       (err, result) => {
         if (err) {
@@ -513,7 +614,47 @@ app.post('/properties/update', (req, res) => {
       }
     );
   });
-  
+
+  app.get('/get-favorites', (req, res) => {
+    const userId = req.auth.id; // Get user ID from JWT payload
+
+    db.query('SELECT favorite FROM users WHERE id = ?', [userId], (err, results) => {
+        if (err) {
+            console.error('Error fetching favorites:', err);
+            return res.status(500).json({ error: 'Failed to fetch favorites' });
+        }
+
+        if (results.length > 0) {
+            const favorites = JSON.parse(results[0].favorite); // Assuming 'favorite' is a JSON array
+            return res.status(200).json({ favorites });
+        } else {
+            return res.status(404).json({ message: 'User not found' });
+        }
+    });
+});
+
+app.post('/save-favorites', (req, res) => {
+    const userId = req.auth.id;  // Get user ID from JWT payload
+    const { favorites } = req.body;  // Get favorites array from the request body
+
+    // Convert the array of favorite IDs to a JSON string
+    const favoriteString = JSON.stringify(favorites);
+
+    // Update the 'favorite' column for the user in the 'users' table
+    db.query('UPDATE users SET favorite = ? WHERE id = ?', [favoriteString, userId], (err, result) => {
+        if (err) {
+            console.error('Error updating favorites:', err);
+            return res.status(500).json({ error: 'Failed to save favorites' });
+        }
+
+        if (result.affectedRows > 0) {
+            return res.status(200).json({ message: 'Favorites saved successfully' });
+        } else {
+            return res.status(404).json({ message: 'User not found' });
+        }
+    });
+});
+
 
 app.listen(8000, () => {
     console.log('Server is running on port 8000');
