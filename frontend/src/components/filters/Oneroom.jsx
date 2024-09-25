@@ -1,7 +1,7 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import DoubleRangeSlider from './doubleRangeSlider/DoubleRangeSlider';
+import DoubleRangeSlider from './DoubleRangeSlider/DoubleRangeSlider';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronDown } from '@fortawesome/free-solid-svg-icons';
 
