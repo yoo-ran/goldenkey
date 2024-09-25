@@ -1,9 +1,0 @@
-export declare const EditCoreModule: import("../interfaces/iModule").Module;
-export declare const EditApiModule: import("../interfaces/iModule").Module;
-export declare const UndoRedoEditModule: import("../interfaces/iModule").Module;
-export declare const FullRowEditModule: import("../interfaces/iModule").Module;
-export declare const DefaultEditorModule: import("../interfaces/iModule").Module;
-export declare const DataTypeEditorsModule: import("../interfaces/iModule").Module;
-export declare const SelectEditorModule: import("../interfaces/iModule").Module;
-export declare const LargeTextEditorModule: import("../interfaces/iModule").Module;
-export declare const EditModule: import("../interfaces/iModule").Module;
