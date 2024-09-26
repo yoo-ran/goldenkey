@@ -142,16 +142,17 @@ app.post('/import-csv', (req, res) => {
                 item['전용평'], 
                 item['EV유무'], 
                 item['화장실개수'], 
+                item['층수'], 
+                item['방개수'], 
                 item['주차가능대수'], 
                 item['비밀번호'], 
                 item['이름'], 
                 item['휴대폰번호'], 
-                item['기타특이사항'], 
                 item['정산금액'], 
                 item['메모'],
             ]);
 
-            const insertSql = `INSERT INTO property (순번, 등록일자, 부동산구분, 거래방식, 거래완료여부, 거래완료일자, 담당자, 구, 읍면동, 구상세주소, 도로명, 신상세주소, 건물명, 동, 호수, 보증금, 월세, 관리비, 전체m2, 전용m2, 전체평, 전용평, EV유무, 화장실개수, 주차가능대수, 비밀번호, 이름, 휴대폰번호, 기타특이사항, 정산금액, 메모) VALUES ?`;
+            const insertSql = `INSERT INTO property (순번, 등록일자, 부동산구분, 거래방식, 거래완료여부, 거래완료일자, 담당자, 구, 읍면동, 구상세주소, 도로명, 신상세주소, 건물명, 동, 호수, 보증금, 월세, 관리비, 전체m2, 전용m2, 전체평, 전용평, EV유무, 화장실개수, 층수, 방개수, 주차가능대수, 비밀번호, 이름, 휴대폰번호, 정산금액, 메모) VALUES ?`;
 
             promises.push(new Promise((resolve, reject) => {
                 db.query(insertSql, [insertValues], (err, result) => {
@@ -195,11 +196,12 @@ app.post('/import-csv', (req, res) => {
                 if (item['전용평']) updateFields.push(`전용평 = ${db.escape(item['전용평'])}`);
                 if (item['EV유무']) updateFields.push(`EV유무 = ${db.escape(item['EV유무'])}`);
                 if (item['화장실개수']) updateFields.push(`화장실개수 = ${db.escape(item['화장실개수'])}`);
+                if (item['층수']) updateFields.push(`층수 = ${db.escape(item['층수'])}`);
+                if (item['방개수']) updateFields.push(`방개수 = ${db.escape(item['방개수'])}`);
                 if (item['주차가능대수']) updateFields.push(`주차가능대수 = ${db.escape(item['주차가능대수'])}`);
                 if (item['비밀번호']) updateFields.push(`비밀번호 = ${db.escape(item['비밀번호'])}`);
                 if (item['이름']) updateFields.push(`이름 = ${db.escape(item['이름'])}`);
                 if (item['휴대폰번호']) updateFields.push(`휴대폰번호 = ${db.escape(item['휴대폰번호'])}`);
-                if (item['기타특이사항']) updateFields.push(`기타특이사항 = ${db.escape(item['기타특이사항'])}`);
                 if (item['정산금액']) updateFields.push(`정산금액 = ${db.escape(item['정산금액'])}`);
                 if (item['메모']) updateFields.push(`메모 = ${db.escape(item['메모'])}`);
 

@@ -81,6 +81,8 @@ const ImportExcel = ({onDataUpdate}) =>{
     },
     { field: "EV유무", headerName: "E/V 유무" },
     { field: "화장실개수", headerName: "화장실 개수" },
+    { field: "층수", headerName: "층 수" },
+    { field: "방개수", headerName: "방 개수" },
     { field: "주차가능대수", headerName: "주차 가능 대수" },
     { field: "비밀번호", headerName: "비밀번호" },
     {
@@ -90,7 +92,6 @@ const ImportExcel = ({onDataUpdate}) =>{
         { field: "휴대폰번호", headerName: "휴대폰 번호" },
       ],
     },
-    { field: "기타특이사항", headerName: "기타 특이사항" },
     {
       headerName: "정산금액",
       children: [
@@ -153,41 +154,48 @@ const ImportExcel = ({onDataUpdate}) =>{
     const firstSheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[firstSheetName];
     const columns = {
-        A: '순번',
-        B: '등록일자',
-        C: '부동산구분',
-        D: '거래방식',
-        E: '거래완료여부',
-        F: '거래완료일자',
-        G: '담당자',
-        H: '구',
-        I: '읍면동',
-        J: '구상세주소',
-        K: '도로명',
-        L: '신상세주소',
-        M: '건물명',
-        N: '동',
-        O: '호수',
-        P: '보증금',
-        Q: '월세',
-        R: '관리비',
-        S: '전체m2',
-        T: '전용m2',
-        U: '전체평',
-        V: '전용평',
-        W: 'EV유무',
-        X: '화장실개수',
-        Y: '주차가능대수',
-        Z: '비밀번호',
-        AA: '이름',
-        AB: '휴대폰번호',
-        AC: '기타특이사항',
-        AD: '총수수료',
-        AE: '소장',
-        AF: '직원1',
-        AG: '직원2',
-        AH: '메모',
-    };
+      A: '순번',
+      B: '등록일자',
+      C: '부동산구분',
+      D: '거래방식',
+      E: '거래완료여부',
+      F: '거래완료일자',
+      G: '담당자',
+  
+      H: '구',
+      I: '읍면동',
+      J: '구상세주소',
+      K: '도로명',
+      L: '신상세주소',
+      M: '건물명',
+      N: '동',
+      O: '호수',
+  
+      P: '보증금',
+      Q: '월세',
+      R: '관리비',
+      S: '전체m2',
+      T: '전용m2',
+      U: '전체평',
+      V: '전용평',
+  
+      W: 'EV유무',
+      X: '화장실개수',
+      Y: '층수',
+      Z: '방개수',
+      AA: '주차가능대수',
+  
+      AB: '비밀번호',
+      AC: '이름',
+      AD: '휴대폰번호',
+  
+      AE: '총수수료',
+      AF: '소장',
+      AG: '직원1',
+      AH: '직원2',
+      AI: '메모',
+  };
+  
 
     const rowData = [];
     const dbRowData = [];

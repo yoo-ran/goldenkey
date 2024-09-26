@@ -40,8 +40,8 @@ const PropertyUpload = () => {
         거래완료일자: '', 담당자: '', 구: '', 읍면동: '', 구상세주소: '',
         도로명: '', 신상세주소: '', 건물명: '', 동: '', 호수: '',
         보증금: 0, 월세: 0, 관리비: 0, 전체m2: 0, 전용m2: 0,
-        전체평: 0, 전용평: 0, EV유무: false, 화장실개수: 0, 주차가능대수: 0,
-        비밀번호: '', 이름: '', 휴대폰번호: '', 기타특이사항: '', img_path: "",
+        전체평: 0, 전용평: 0, EV유무: false, 화장실개수: 0, 층수:0, 방개수:0, 주차가능대수: 0,
+        비밀번호: '', 이름: '', 휴대폰번호: '', 메모:"", img_path: "",
         정산금액: {
             총수수료: 0,
             소장: 0,
@@ -352,7 +352,6 @@ console.log(propertyData);
                 <article className='w-full grid grid-cols-2 h-24'>
                     <div className='flexCol justify-end items-start'>
                         <h1 className=''>
-                            <label>건물명</label>
                             <input
                                 type="text"
                                 name="건물명"
@@ -476,7 +475,7 @@ console.log(propertyData);
                                         onChange={handleInputChange}
                                         className="bg-white text-primary rounded-full w-10/12"
                                     />
-                                    <p>원</p>
+                                    <p>{isConverted ? "만원" : "원"}</p>
                                 </div>
                                 </div>
                             );
@@ -601,7 +600,7 @@ console.log(propertyData);
                                     <input
                                         type="number"
                                         name="주차가능대수"
-                                        value={propertyData.주차가능대수}
+                                        value={propertyData.층수}
                                         onChange={handleInputChange}
                                         className='w-7/12'
                                     />
