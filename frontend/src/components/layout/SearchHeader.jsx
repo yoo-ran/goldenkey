@@ -25,10 +25,10 @@ const SearchHeader = ({ onSendSearchTerm  }) => {
                     return <House approvalDate={approvalDate} numOfFloors={numOfFloors} numOfRooms={numOfRooms} onOpen={onOpenFromChild}  />;
             
                 case "oneroom/tworoom":
-                    return <Oneroom />;
+                    return <Oneroom approvalDate={approvalDate} numOfFloors={numOfFloors} numOfRooms={numOfRooms} onOpen={onOpenFromChild}/>;
             
                 case "apartment":
-                    return <Apartment />;
+                    return <Apartment approvalDate={approvalDate} numOfFloors={numOfFloors} numOfRooms={numOfRooms} onOpen={onOpenFromChild}/>;
             
                 default:
     
@@ -58,21 +58,21 @@ const SearchHeader = ({ onSendSearchTerm  }) => {
                             <p className='mobile_5 text-primary-yellow'>옵션을 선택하세요</p>
                             <div className='grid grid-cols-3 md:grid-cols-1 md:grid-rows-3 gap-x-4 gap-y-8 mt-3'>
                                 <button
-                                    onClick={()=> filterType ==="" ? setFilterType("house/villa") : setFilterType("")} 
+                                    onClick={()=> filterType !=="house/villa" ? setFilterType("house/villa") : setFilterType("")} 
                                     className={`w-full  py-4 mobile_5 rounded-md md:rounded-r-none ${filterType ==="house/villa" ? "bg-secondary-yellow":"bg-secondary-light "}`}
                                 >
                                     <FontAwesomeIcon icon={faHouseChimneyWindow} className='mobile_1_bold'/>
                                     <p>주택 / 빌라</p>
                                 </button>
                                 <button
-                                    onClick={()=> filterType==="" ? setFilterType("oneroom/tworoom"): setFilterType("")} 
+                                    onClick={()=> filterType !=="oneroom/tworoom" ? setFilterType("oneroom/tworoom"): setFilterType("")} 
                                     className={`bg-secondary-light w-full py-4 mobile_5  rounded-md md:rounded-r-none ${filterType ==="oneroom/tworoom" ? "bg-secondary-yellow":"bg-secondary-light "}`}
                                 >
                                     <FontAwesomeIcon icon={faHouse} className='mobile_1_bold'/>
                                     <p>원룸 / 투룸</p>
                                 </button>
                                 <button
-                                    onClick={()=> filterType==="" ? setFilterType("apartment"): setFilterType("")} 
+                                    onClick={()=> filterType !=="apartment" ? setFilterType("apartment"): setFilterType("")} 
                                     className={`bg-secondary-light w-full  py-4 mobile_5 rounded-md md:rounded-r-none  ${filterType ==="apartment" ? "bg-secondary-yellow":"bg-secondary-light "}`}
                                 >
                                     <FontAwesomeIcon icon={faBuilding} className='mobile_1_bold'/>

@@ -2,13 +2,13 @@ import React, { useCallback, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import DoubleRangeSlider from './DoubleRangeSlider/DoubleRangeSlider';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronDown } from '@fortawesome/free-solid-svg-icons';
 
-const Oneroom = () => {
+
+const Oneroom = ({approvalDate, numOfFloors, numOfRooms, onOpen}) => {
   const navigate = useNavigate();
   const [selectedOption, setSelectedOption] = useState("거래유형을 선택하세요");
   const [open, setOpen] = useState(false);
+
   const [transactionMethods, setTransactionMethods] = useState([]);
   const [filteringData, setFilteringData] = useState({
     selectedMethod: '',
@@ -45,7 +45,6 @@ const Oneroom = () => {
     e.preventDefault();  // Prevent default behavior (like navigation)
     setFilteringData({ ...filteringData, selectedMethod: option });
     setSelectedOption(option);
-    setOpen(false);
   };
 
   const handleSubmit = (e) => {
@@ -68,93 +67,202 @@ const Oneroom = () => {
 
 
 
-
   return (
-    <main className="w-11/12 flexCol gap-y-20">
-      <form className="w-full flexCol gap-y-20 lg:flexRow items-start justify-between" onSubmit={handleSubmit}>
-        {/* 거래유형 */}
-        <section className="flexCol gap-y-8 items-start w-full">
-          <article>
-            <p className="mobile_1_bold">거래유형</p>
-          </article>
+    <main className={`w-full flexCol gap-y-8`}>
+      <h1 className='border-b w-full pb-4 text-center'>원룸</h1>
+      <form className="w-full flexCol gap-y-20 " onSubmit={handleSubmit}>
 
-          <article className="flexCol items-start gap-y-10  w-full">
-            <div className="relative w-full">
-              <button
-                    onClick={(e) => {
-                      e.preventDefault();  // Prevent default on button click
-                      setOpen(!open);
-                    }}
-                className="block w-full bg-white border border-gray-300 rounded-full px-4 py-2 text-left drop-shadow focus:outline-none focus:ring-1 focus:ring-primary-yellow focus:border-primary-yellow"
-              >
-                <p className='flexRow justify-between w-full'>{selectedOption} <FontAwesomeIcon icon={faChevronDown}/></p>
-              </button>
+        <section className="flexCol lg:flex-row gap-y-10 lg:gap-x-8 items-start lg:justify-betweeen w-11/12">
+                <article className='flexCol gap-y-10 justify-between w-full lg:w-1/2'>
 
-              {open && (
-                <ul className="flexCol gap-y-1 absolute mt-2 w-full bg-white z-50">
-                  {transactionMethods.map((option, index) => (
-                    <li
-                      key={index}
-                      onClick={(e) => handleSelect(e, option)}
-                      className="w-full cursor-pointer bg-secondary-light rounded-lg text-primary text-center py-1.5"
-                    >
-                      {option}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-            <div className="grid grid-rows-2">
-              <div>
-                <p className="mobile_3">보증금(전세금)</p>
-              </div>
-              <DoubleRangeSlider
-                min={0}
-                max={3000}
-                onChange={handleDepositRangeChange}
-              />
-            </div>
+                  <div className="flexCol gap-y-4 w-full">
+                      <div className='flexRow w-full gap-x-3'>
+                        <p className="mobile_3_bold text-left">거래유형</p>
+                        <p className='mobile_4'>중복선택가능</p>
+                      </div>
+                      <ul className="flexRow gap-x-3 mt-2 w-full z-50">
+                        {transactionMethods.map((option, index) => (
+                          <li
+                            key={index}
+                            onClick={(e) => handleSelect(e, option)}
+                            className="w-full cursor-pointer bg-secondary-blue rounded text-primary text-center py-1.5"
+                          >
+                            {option}
+                          </li>
+                        ))}
+                      </ul>
+                  </div>
+                  <div className="flexCol items-start gap-y-8 w-full">
+                      <p className='mobile_3_bold'>월세</p>
+                      <div className="grid grid-rows-2">
+                          <p className="mobile_4_bold">보증금</p>
+                          <DoubleRangeSlider
+                            min={0}
+                            max={3000}
+                            onChange={handleDepositRangeChange}
+                          />
+                      </div>
+                      <div className="grid grid-rows-2">
+                          <p className="mobile_4_bold">월세</p>
+                          <DoubleRangeSlider
+                            min={0}
+                            max={1000}
+                            onChange={handleRentRangeChange}
+                          />
+                      </div>
+                      <div className='w-full grid grid-cols-2 gap-x-4 mobile_4_bold_b'>
+                          <button className="btn_clear">
+                            초기화
+                          </button>
+                          <button className='btn_clear bg-primary-yellow'>
+                            적용
+                          </button>
+                      </div>
+                  </div>
+                  <div className="flexCol items-start gap-y-8 w-full ">
+                        <p className='mobile_3_bold'>전세</p>
+                        <div className="grid grid-rows-2">
+                          <p className="mobile_4_bold">보증금</p>
+                          <DoubleRangeSlider
+                            min={0}
+                            max={3000}
+                            onChange={handleDepositRangeChange}
+                          />
+                        </div>
 
-            <div className="grid grid-rows-2">
-              <div>
-                <p className="mobile_3">월세</p>
-              </div>
-              <DoubleRangeSlider
-                min={0}
-                max={1000}
-                onChange={handleRentRangeChange}
-              />
-            </div>
-          </article>
-        </section>
+                        <div className="grid grid-rows-2">
+                          <p className="mobile_4_bold">전세</p>
+                          <DoubleRangeSlider
+                            min={0}
+                            max={1000}
+                            onChange={handleRentRangeChange}
+                          />
+                        </div>
+                        <div className='w-full grid grid-cols-2 gap-x-4 mobile_4_bold_b'>
+                            <button className="btn_clear">
+                              초기화
+                            </button>
+                            <button className='btn_clear bg-primary-yellow'>
+                              적용
+                            </button>
+                        </div>
+                    </div>
 
-        {/* 방크기 */}
-        <section className="flexCol gap-y-8 items-start w-full">
-          <div>
-            <p className="mobile_1_bold">방크기</p>
-          </div>
-          <div className="">
-            <div className="flexRow">
-              <p>방크기</p>
-              <span>매물 유형별 기준면적</span>
-            </div>
-            <DoubleRangeSlider
-              min={0}
-              max={1000} 
-              onChange={handleRoomSizeRangeChange}
-            />
-          </div>
-        </section>
-        
-        <section className='w-full border border-primary-yellow rounded-full grid grid-cols-2 mobile_3_b'>
-          <button type="submit" className="rounded-full py-1 text-primary-yellow">
-            초기화
-          </button>
-          <button type="submit" className="bg-primary-yellow rounded-full py-1">
-            적용하기
-          </button>
-        </section>
+                </article>
+
+                {/* 방크기 */}
+                <article className="flexCol gap-y-10 items-start w-full lg:w-1/2">
+                <div className="flexCol items-start gap-y-8 w-full">
+                      <p className='mobile_3_bold'>매매</p>
+                      <div className="grid grid-rows-2 ">
+                          <p className="mobile_4_bold">매매금</p>
+                        <DoubleRangeSlider
+                          min={0}
+                          max={3000}
+                          onChange={handleDepositRangeChange}
+                        />
+                      </div>
+                      <div className='w-full grid grid-cols-2 gap-x-4 mobile_4_bold_b'>
+                        <button className="btn_clear">
+                          초기화
+                        </button>
+                        <button className='btn_clear bg-primary-yellow'>
+                          적용
+                        </button>
+                      </div>
+                  </div>
+                  <div>
+                    <p className="mobile_3_bold">방크기</p>
+                  </div>
+                  <div className="">
+                    <div className="flexRow">
+                      <span>매물 유형별 기준면적</span>
+                    </div>
+                    <DoubleRangeSlider
+                      min={0}
+                      max={1000} 
+                      onChange={handleRoomSizeRangeChange}
+                    />
+                  </div>
+              
+                  <div className='flexCol gap-y-4 w-full'>
+                    <p className='w-full mobile_4_bold'>사용 승인일</p>
+                    <div className='w-full flexRow justify-between gap-x-2'>
+                      {approvalDate.map((date, id)=>(
+                        <div 
+                          key={id}
+                          className='bg-secondary-blue px-3 py-2 text-center rounded mobile_5'
+                        >
+                          {date}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className='flexCol gap-y-4 w-full'>
+                    <div className='w-full flexRow gap-x-3'>
+                      <p className=' mobile_4_bold'>층 수</p>
+                      <p className='mobile_4'>중복선택가능</p>
+                    </div>
+                    <div className='w-full flexRow justify-between gap-x-2'>
+                      {numOfFloors.map((floor, id)=>(
+                        <div 
+                          key={id}
+                          className='bg-secondary-blue px-3 py-2 text-center rounded mobile_5'
+                        >
+                          {floor}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className='flexCol gap-y-4 w-full'>
+                    <p className='w-full mobile_4_bold'>방 개수</p>
+                    <div className='w-full flexRow justify-between gap-x-2'>
+                      {numOfRooms.map((room, id)=>(
+                        <div 
+                          key={id}
+                          className='bg-secondary-blue px-3 py-2 text-center rounded mobile_5'
+                        >
+                          {room}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className='flexCol gap-y-4 w-full'>
+                    <div className='w-full flexRow gap-x-3'>
+                      <p className=' mobile_4_bold'>추가필터</p>
+                      <p className='mobile_4'>중복선택가능</p>
+                    </div>
+                    <div className='w-full grid grid-cols-2 gap-x-2'>
+                        <button 
+                          className='bg-secondary-blue px-3 py-2 text-center rounded mobile_5'
+                        >
+                          주차가능
+                        </button>
+                        <button 
+                          className='bg-secondary-blue px-3 py-2 text-center rounded mobile_5'
+                        >
+                          엘리베이터
+                        </button>
+                    </div>
+                  </div>
+                  </article>
+
+          </section>
+          <section className='w-11/12 lg:w-8/12 grid grid-rows-3 gap-y-4 mobile_4_bold_b'>
+                    <button className='btn_clear' onClick={()=> {setOpen(false); onOpen(false)}}>
+                      취소
+                    </button>
+                    <button className="btn_clear">
+                      전체 초기화
+                    </button>
+                    <button type="submit" className="btn_save">
+                      전체 적용
+                    </button>
+          </section>
+
       </form>
+        
+     
     </main>
   );
 };

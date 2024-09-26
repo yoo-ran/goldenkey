@@ -2,8 +2,6 @@ import React, { useCallback, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import DoubleRangeSlider from './DoubleRangeSlider/DoubleRangeSlider';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronDown } from '@fortawesome/free-solid-svg-icons';
 
 
 const House = ({approvalDate, numOfFloors, numOfRooms, onOpen}) => {
@@ -71,7 +69,7 @@ const House = ({approvalDate, numOfFloors, numOfRooms, onOpen}) => {
 
   return (
     <main className={`w-full flexCol gap-y-8`}>
-      {/* <h1 className='border-b w-full pb-4 text-center'>거래 유형 설정</h1> */}
+      <h1 className='border-b w-full pb-4 text-center'>주택/빌라</h1>
       <form className="w-full flexCol gap-y-20 " onSubmit={handleSubmit}>
 
         <section className="flexCol lg:flex-row gap-y-10 lg:gap-x-8 items-start lg:justify-betweeen w-11/12">
