@@ -52,6 +52,15 @@ const PropertyUpload = () => {
         }
     });
 
+    const [priceManwon, setPriceManwon] = useState({
+        "보증금": propertyData.보증금 || "",
+        "월세": propertyData.월세 || "",
+        "전체 금액": (propertyData.보증금 || 0) + (propertyData.월세 || 0)
+      });
+    
+      const [isConverted, setIsConverted] = useState(false); // Toggle state to track conversion
+      const [originalPrices, setOriginalPrices] = useState({}); // Store original prices
+    
     useEffect(() => {
         console.log('Updated propertyData:', propertyData);
     }, [propertyData]);
@@ -112,9 +121,13 @@ const PropertyUpload = () => {
         let { name, type, value, checked } = e.target;
         console.log(name, value);
         let formattedValue;
+
         // Converting input if necessary
         if (name === 'EV유무') {
             formattedValue = value;
+        }
+        else if(type === 'number'){
+            formattedValue = value === '' ? 0 : Number(value);
         }
         else if (name === "전체m2") {
             formattedValue = Number(value);
@@ -132,6 +145,11 @@ const PropertyUpload = () => {
         else {
             formattedValue = value;
         }
+
+        setPriceManwon((prevData) => ({
+            ...prevData,
+            [name]: value
+          }));
     
         // Handling 정산금액
         if (name.startsWith('정산금액.')) {
@@ -273,6 +291,37 @@ const PropertyUpload = () => {
 
 
     
+    
+    const convertToManwon = () => {
+        if (!isConverted) {
+          // Store original prices
+          setOriginalPrices({
+            "보증금": propertyData.보증금,
+            "월세": propertyData.월세,
+            "전체 금액": propertyData.보증금 + propertyData.월세
+          });
+    
+          // Convert to 만원 (divide by 10,000)
+          const convertedData = {
+            "보증금": (propertyData.보증금 / 10000).toString(),
+            "월세": (propertyData.월세 / 10000).toString(),
+            "전체 금액": ((propertyData.보증금 + propertyData.월세) / 10000).toString()
+          };
+    
+          setPriceManwon(convertedData);
+          setIsConverted(true); // Mark as converted
+        } else {
+          // Restore original prices
+          setPriceManwon(originalPrices);
+          setIsConverted(false); // Mark as not converted
+        }
+      };
+    
+
+    console.log(priceManwon);
+    
+console.log(propertyData);
+    
     return (
         <main className='gap-y-10 w-full'>
             <SearchHeader/>
@@ -392,22 +441,24 @@ const PropertyUpload = () => {
                             const renderFields = (fields) => {
                             return (
                                 <div className='w-full flexCol items-start gap-y-4'>
-                                    <p className='mobile_3_bold'>{fields[1].name} 금액</p>
+                                    <p className='mobile_3_bold'>{fields[1]} 금액</p>
                                 {fields.map((field, index) => (
                                     <div key={index} className='w-full grid grid-rows-2'>
-                                        <p className=''>{field.label}</p>
+                                        <p className=''>{field}</p>
                                         <div className='flexRow w-full justify-between'>
                                             <input
                                             type="number"
-                                            name={field.name}
+                                            name={field}
+                                            value={priceManwon[field] || ""} // Bind value from state
                                             onChange={handleInputChange}
                                             className="bg-white text-primary rounded-full w-10/12"
                                             />
-                                            <p>원</p>
+                                            <p>{isConverted ? "만원" : "원"}</p>
                                         </div>
+                                        {index === 1 && <p className='w-full border-b border-primary mt-8'></p>}
+
                                     </div>
                                 ))}
-                                <p className='w-full border border-primary'></p>
                                 </div>
                             );
                             };
@@ -421,6 +472,7 @@ const PropertyUpload = () => {
                                     <input
                                         type="number"
                                         name="보증금"
+                                        value={priceManwon["보증금"] || ""} // Bind value from priceManwon state
                                         onChange={handleInputChange}
                                         className="bg-white text-primary rounded-full w-10/12"
                                     />
@@ -431,18 +483,15 @@ const PropertyUpload = () => {
                             } else if (propertyData.거래방식 === "월세") {
                             // For 월세
                                 const fields = [
-                                    { label: "보증금", name: "보증금" },
-                                    { label: "월세", name: "월세" },
-                                    { label: "전체금액", name: "전체금액" },
+                                   "보증금", "월세", "전체 금액"
                                 ];
+                    
                                 return renderFields(fields);
 
                             } else if (propertyData.거래방식 === "전세") {
                             // For 전세
                                 const fields = [
-                                    { label: "보증금", name: "보증금" },
-                                    { label: "전세", name: "전세" },
-                                    { label: "전체금액", name: "전체금액" },
+                                    "보증금", "전세", "전체 금액"
                                 ];
                                 return renderFields(fields);
                             }
@@ -451,8 +500,16 @@ const PropertyUpload = () => {
 
                    
                     </article>
+                    <article className='w-6/12'>
+                        <button 
+                            className='btn_clear w-full bg-secondary-yellow'
+                            onClick={convertToManwon}
+                        >
+                            {isConverted ? "원" : "만원"}
+                        </button>
+                    </article>
                     <article className='grid grid-rows-2 w-6/12 gap-y-4'>
-                        <button type="submit" className="btn_clear">
+                        <button className="btn_clear">
                             초기화
                         </button>
                         <button type="submit" className="btn_save" onClick={handleSave}>
