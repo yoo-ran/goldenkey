@@ -15,27 +15,25 @@ const numOfRooms = ["상관없음", "1개", "2개", "3개", "4개 이상"]
 const SearchHeader = ({ onSendSearchTerm  }) => {
     const [openFilter, setOpenFilter] = useState(false);
     const [filterType, setFilterType] = useState("");
-    const [isOpen, setIsOpen] = useState(true); // Control isOpen independently
 
 
     const filterPropertyType = () => {
 
-        const closeFilter = openFilter ? "" : openFilter
         
-        switch (filterType) {
-            case "house/villa":
-                return <House approvalDate={approvalDate} numOfFloors={numOfFloors} numOfRooms={numOfRooms}  isOpen={true} closeFilter={closeFilter}/>;
-        
-            case "oneroom/tworoom":
-                return <Oneroom />;
-        
-            case "apartment":
-                return <Apartment />;
-        
-            default:
-
-                return null; // or any default component you'd like to render
-        }
+            switch (filterType) {
+                case "house/villa":
+                    return <House approvalDate={approvalDate} numOfFloors={numOfFloors} numOfRooms={numOfRooms} onOpen={onOpenFromChild}  />;
+            
+                case "oneroom/tworoom":
+                    return <Oneroom />;
+            
+                case "apartment":
+                    return <Apartment />;
+            
+                default:
+    
+                    return null; // or any default component you'd like to render
+            }
         
     }
 
@@ -46,65 +44,74 @@ const SearchHeader = ({ onSendSearchTerm  }) => {
         onSendSearchTerm(searchTerm);
     };
 
+    const onOpenFromChild = (openFromChild) => {
+       if(openFromChild === false) setFilterType("")
+    }
 
 
     return (
-          <section className='w-11/12 lg:w-10/12 flexRow justify-between relative z-40'>
-                <div className={`absolute border-2 rounded-lg drop-shadow p-4 top-14 flexCol bg-primary gap-y-4 mobile_6 w-full overflow-hidden transition-[all]  ${openFilter ? "translate-y-1.5": "opacity-0"}`}>
-                    <article className='mobile_4_bold border-b w-full text-center text-primary-yellow pb-4'><p>거주유형선택</p></article>
-                    <article className='w-full'>
-                        <p className='mobile_4 text-primary-yellow'>옵션을 선택하세요</p>
-                        <div className='grid grid-cols-3 gap-x-4 mt-3'>
-                            <button
-                                onClick={()=> setFilterType("house/villa")} 
-                                className={`w-full  py-4 mobile_5 rounded-lg ${filterType ==="house/villa" ? "bg-secondary-yellow":"bg-secondary-light "}`}
-                            >
-                                <FontAwesomeIcon icon={faHouseChimneyWindow} className='mobile_1_bold'/>
-                                <p>주택 / 빌라</p>
-                            </button>
-                            <button
-                                onClick={()=> setFilterType("oneroom/tworoom")} 
-                                className={`bg-secondary-light w-full py-4 mobile_5  rounded-lg ${filterType ==="oneroom/tworoom" ? "bg-secondary-yellow":"bg-secondary-light "}`}
-                            >
-                                <FontAwesomeIcon icon={faHouse} className='mobile_1_bold'/>
-                                <p>원룸 / 투룸</p>
-                            </button>
-                            <button
-                                onClick={()=> setFilterType("apartment")} 
-                                className={`bg-secondary-light w-full  py-4 mobile_5 rounded-lg  ${filterType ==="apartment" ? "bg-secondary-yellow":"bg-secondary-light "}`}
-                            >
-                                <FontAwesomeIcon icon={faBuilding} className='mobile_1_bold'/>
-                                <p>아파트 / 오피스텔</p>
-                            </button>
+          <section className='w-11/12 md:w-full relative  z-50 flexCol'>
+                <div className={`relative w-full  top-14  flexCol gap-y-4`} >
+                    <article className={`absolute  z-50 top-0 md:left-0 bg-primary border-2 rounded-md drop-shadow p-4 md:p-0 md:pb-4  mobile_6 w-full md:w-2/12 transition-[all]  ${openFilter ? "translate-y-1.5": "opacity-0"}`}>
+                        <div className='mobile_4_bold border-b w-full text-center text-primary-yellow pb-4 md:py-4'><p>거주유형선택</p></div>
+                        <div className='w-full  md:pl-4'>
+                            <p className='mobile_5 text-primary-yellow'>옵션을 선택하세요</p>
+                            <div className='grid grid-cols-3 md:grid-cols-1 md:grid-rows-3 gap-x-4 gap-y-8 mt-3'>
+                                <button
+                                    onClick={()=> filterType ==="" ? setFilterType("house/villa") : setFilterType("")} 
+                                    className={`w-full  py-4 mobile_5 rounded-md md:rounded-r-none ${filterType ==="house/villa" ? "bg-secondary-yellow":"bg-secondary-light "}`}
+                                >
+                                    <FontAwesomeIcon icon={faHouseChimneyWindow} className='mobile_1_bold'/>
+                                    <p>주택 / 빌라</p>
+                                </button>
+                                <button
+                                    onClick={()=> filterType==="" ? setFilterType("oneroom/tworoom"): setFilterType("")} 
+                                    className={`bg-secondary-light w-full py-4 mobile_5  rounded-md md:rounded-r-none ${filterType ==="oneroom/tworoom" ? "bg-secondary-yellow":"bg-secondary-light "}`}
+                                >
+                                    <FontAwesomeIcon icon={faHouse} className='mobile_1_bold'/>
+                                    <p>원룸 / 투룸</p>
+                                </button>
+                                <button
+                                    onClick={()=> filterType==="" ? setFilterType("apartment"): setFilterType("")} 
+                                    className={`bg-secondary-light w-full  py-4 mobile_5 rounded-md md:rounded-r-none  ${filterType ==="apartment" ? "bg-secondary-yellow":"bg-secondary-light "}`}
+                                >
+                                    <FontAwesomeIcon icon={faBuilding} className='mobile_1_bold'/>
+                                    <p>아파트 / 오피스텔</p>
+                                </button>
+                            </div>
                         </div>
                     </article>
+                    <article className={`absolute flexCol top-44 md:top-2 z-40 md:right-0 border w-full md:w-10/12 py-8 bg-white transition-all overflow-hidden transform ${filterType === "" || openFilter===false ? "scale-y-0":"" }`}>
+                        { filterPropertyType()}
+                    </article>
                 </div>
-                <div className='flexCol'>
-                    <button
-                        className='flexCol bg-primary-yellow rounded-lg aspect-square w-10 px-3 py-2 '
-                        onClick={()=> {
-                            setOpenFilter(!openFilter)
-                        }}
-                    >
-                        <FontAwesomeIcon icon={faHouse}/>
-                    </button>
-                </div>
+               
+                <article className='flexRow justify-between md:w-10/12'>
+                    <div className='flexCol'>
+                        <button
+                            className='flexCol bg-primary-yellow rounded-md aspect-square w-10 px-3 py-2 '
+                            onClick={()=> {
+                                setOpenFilter(!openFilter)
+                            }}
+                        >
+                            <FontAwesomeIcon icon={faHouse}/>
+                        </button>
+                    </div>
 
-                <div className='flexRow gap-x-2 mobile_4 text-secondary bg-secondary-light p-2 rounded-lg lg:rounded-full lg:pl-8 lg:py-2 w-8/12'>
-                    <FontAwesomeIcon icon={faSearch}/>
-                    <input
-                        type='search'
-                        placeholder='검색어를 입력하세요'
-                        className='bg-transparent text-primary mobile_3'
-                        onChange={searchHandle}
-                    />
-                </div>
-                <button className='mobile_3'>
-                    검색
-                </button>
-                {/* <div className={`absolute flexCol z-50 top-32 border w-full pt-4 pb-8 bg-white ${filterType == "" ? "hidden":"" }`}> */}
-                    { filterPropertyType()}
-                {/* </div> */}
+                    <div className='flexRow gap-x-2 mobile_4 text-secondary bg-secondary-light p-2 rounded-md md:rounded-full md:pl-8 md:py-2 w-8/12'>
+                        <FontAwesomeIcon icon={faSearch}/>
+                        <input
+                            type='search'
+                            placeholder='검색어를 입력하세요'
+                            className='bg-transparent text-primary mobile_3'
+                            onChange={searchHandle}
+                        />
+                    </div>
+                    <button className='mobile_3'>
+                        검색
+                    </button>
+                </article>
+              
         </section>
     );
 };
