@@ -14,12 +14,17 @@ const numOfRooms = ["상관없음", "1개", "2개", "3개", "4개 이상"]
 
 const SearchHeader = ({ onSendSearchTerm  }) => {
     const [openFilter, setOpenFilter] = useState(false);
-    const [filterType, setFilterType] = useState("")
+    const [filterType, setFilterType] = useState("");
+    const [isOpen, setIsOpen] = useState(true); // Control isOpen independently
+
 
     const filterPropertyType = () => {
+
+        const closeFilter = openFilter ? "" : openFilter
+        
         switch (filterType) {
             case "house/villa":
-                return <House approvalDate={approvalDate} numOfFloors={numOfFloors} numOfRooms={numOfRooms}/>;
+                return <House approvalDate={approvalDate} numOfFloors={numOfFloors} numOfRooms={numOfRooms}  isOpen={true} closeFilter={closeFilter}/>;
         
             case "oneroom/tworoom":
                 return <Oneroom />;
@@ -28,10 +33,12 @@ const SearchHeader = ({ onSendSearchTerm  }) => {
                 return <Apartment />;
         
             default:
+
                 return null; // or any default component you'd like to render
         }
         
     }
+
 
     const searchHandle = (e) => {
         const searchTerm = e.target.value;
@@ -50,21 +57,21 @@ const SearchHeader = ({ onSendSearchTerm  }) => {
                         <div className='grid grid-cols-3 gap-x-4 mt-3'>
                             <button
                                 onClick={()=> setFilterType("house/villa")} 
-                                className={`bg-secondary-light w-full  py-4 mobile_5 rounded-lg`}
+                                className={`w-full  py-4 mobile_5 rounded-lg ${filterType ==="house/villa" ? "bg-secondary-yellow":"bg-secondary-light "}`}
                             >
                                 <FontAwesomeIcon icon={faHouseChimneyWindow} className='mobile_1_bold'/>
                                 <p>주택 / 빌라</p>
                             </button>
                             <button
                                 onClick={()=> setFilterType("oneroom/tworoom")} 
-                                className={`bg-secondary-light w-full py-4 mobile_5  rounded-lg`}
+                                className={`bg-secondary-light w-full py-4 mobile_5  rounded-lg ${filterType ==="oneroom/tworoom" ? "bg-secondary-yellow":"bg-secondary-light "}`}
                             >
                                 <FontAwesomeIcon icon={faHouse} className='mobile_1_bold'/>
                                 <p>원룸 / 투룸</p>
                             </button>
                             <button
                                 onClick={()=> setFilterType("apartment")} 
-                                className={`bg-secondary-light w-full  py-4 mobile_5 rounded-lg `}
+                                className={`bg-secondary-light w-full  py-4 mobile_5 rounded-lg  ${filterType ==="apartment" ? "bg-secondary-yellow":"bg-secondary-light "}`}
                             >
                                 <FontAwesomeIcon icon={faBuilding} className='mobile_1_bold'/>
                                 <p>아파트 / 오피스텔</p>
@@ -77,7 +84,6 @@ const SearchHeader = ({ onSendSearchTerm  }) => {
                         className='flexCol bg-primary-yellow rounded-lg aspect-square w-10 px-3 py-2 '
                         onClick={()=> {
                             setOpenFilter(!openFilter)
-                            console.log("lo");
                         }}
                     >
                         <FontAwesomeIcon icon={faHouse}/>
@@ -94,11 +100,11 @@ const SearchHeader = ({ onSendSearchTerm  }) => {
                     />
                 </div>
                 <button className='mobile_3'>
-                    Cancel
+                    검색
                 </button>
-                <div className={`absolute flexCol z-50 top-32 border w-full pt-4 pb-8 bg-white ${filterType == "" ? "hidden":"" }`}>
+                {/* <div className={`absolute flexCol z-50 top-32 border w-full pt-4 pb-8 bg-white ${filterType == "" ? "hidden":"" }`}> */}
                     { filterPropertyType()}
-                </div>
+                {/* </div> */}
         </section>
     );
 };
