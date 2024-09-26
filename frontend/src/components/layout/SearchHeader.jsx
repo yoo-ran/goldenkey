@@ -7,6 +7,10 @@ import Oneroom from '../filters/Oneroom.jsx';
 import House from '../filters/House.jsx';
 import Apartment from '../filters/Apartment.jsx';
 
+const approvalDate = ["15년 이내", "10년 이내", "5년 이내", "15년 이상"]
+const numOfFloors = ["반지하", "1층", "2층 이상", "옥탑"]
+const numOfRooms = ["상관없음", "1개", "2개", "3개", "4개 이상"]
+
 
 const SearchHeader = ({ onSendSearchTerm  }) => {
     const [openFilter, setOpenFilter] = useState(false);
@@ -15,7 +19,7 @@ const SearchHeader = ({ onSendSearchTerm  }) => {
     const filterPropertyType = () => {
         switch (filterType) {
             case "house/villa":
-                return <House />;
+                return <House approvalDate={approvalDate} numOfFloors={numOfFloors} numOfRooms={numOfRooms}/>;
         
             case "oneroom/tworoom":
                 return <Oneroom />;
@@ -92,10 +96,7 @@ const SearchHeader = ({ onSendSearchTerm  }) => {
                 <button className='mobile_3'>
                     Cancel
                 </button>
-                <div className={`absolute flexCol z-50 top-32 border w-full py-20 bg-white ${filterType == "" ? "hidden":"" }`}>
-                    <button
-                        onClick={()=> setFilterType("")}
-                    >X</button>
+                <div className={`absolute flexCol z-50 top-32 border w-full pt-4 pb-8 bg-white ${filterType == "" ? "hidden":"" }`}>
                     { filterPropertyType()}
                 </div>
         </section>
