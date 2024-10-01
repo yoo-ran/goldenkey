@@ -55,6 +55,7 @@ app.use(
         '/transaction-status',
         '/toilets-num',
         '/properties/update',
+        '/addresses'
     ] }) 
 );
 
@@ -653,6 +654,42 @@ app.post('/save-favorites', (req, res) => {
             return res.status(404).json({ message: 'User not found' });
         }
     });
+});
+
+// Address
+app.get('/addresses', async (req, res) => {
+    const { searchText } = req.query;
+    const query = `
+    SELECT 
+      new_address.구군 AS new_district, 
+      new_address.로 AS new_street,
+      old_address.구군 AS old_district, 
+      old_address.읍면동 AS old_street,
+      old_address.지번본번 AS old_number,
+      old_address.시군구용건물명 AS old_building_name
+
+
+    FROM new_address
+    JOIN old_address ON new_address.address_id = old_address.address_id
+    WHERE new_address.구군 LIKE ? OR new_address.로 LIKE ?
+    OR old_address.구군 LIKE ? OR old_address.읍면동 LIKE ?`;
+
+  // Execute the query, applying the searchText for partial matching
+  db.query(query, [
+    `%${searchText}%`,  // new_address.구군
+    `%${searchText}%`,  // new_address.로
+    `%${searchText}%`,  // old_address.구군
+    `%${searchText}%`   // old_address.읍면동
+  ], (err, results) => {
+    if (err) {
+      console.error('Error executing query:', err);
+      return res.status(500).json({ error: 'Database query failed' });
+    }
+  
+    // Send the results back as JSON
+    res.json(results);
+
+});
 });
 
 
