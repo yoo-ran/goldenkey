@@ -661,24 +661,35 @@ app.get('/addresses', async (req, res) => {
     const { searchText } = req.query;
     const query = `
     SELECT 
-      new_address.구군 AS new_district, 
-      new_address.로 AS new_street,
-      old_address.구군 AS old_district, 
-      old_address.읍면동 AS old_street,
-      old_address.지번본번 AS old_number,
-      old_address.시군구용건물명 AS old_building_name
+    new_address.구군 AS new_district, 
+    new_address.읍면 AS new_town, 
+    new_address.로길 AS new_road_name, 
+    new_address.건물본번 AS new_building_main_number, 
+    new_address.건물부번 AS new_building_sub_number,
+    new_address.address_id AS new_address_id,
+    
+    old_address.구군 AS old_district,
+    old_address.읍면동 AS old_town, 
+    old_address.리 AS old_village, 
+    old_address.지번본번 AS old_lot_main_number,
+    old_address.지번부번 AS old_lot_sub_number,
+    old_address.시군구용건물명 AS old_building_name
 
 
     FROM new_address
     JOIN old_address ON new_address.address_id = old_address.address_id
-    WHERE new_address.구군 LIKE ? OR new_address.로 LIKE ?
-    OR old_address.구군 LIKE ? OR old_address.읍면동 LIKE ?`;
+    WHERE new_address.구군 LIKE ? OR new_address.읍면 LIKE ? OR new_address.로길 LIKE ?
+    OR old_address.구군 LIKE ? OR old_address.읍면동 LIKE ?  OR old_address.리 LIKE ?
+    
+    `;
 
   // Execute the query, applying the searchText for partial matching
   db.query(query, [
     `%${searchText}%`,  // new_address.구군
     `%${searchText}%`,  // new_address.로
     `%${searchText}%`,  // old_address.구군
+    `%${searchText}%`,   // old_address.읍면동
+    `%${searchText}%`,   // old_address.읍면동
     `%${searchText}%`   // old_address.읍면동
   ], (err, results) => {
     if (err) {

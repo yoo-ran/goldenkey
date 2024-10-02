@@ -36,19 +36,20 @@ const PropertyUpload = () => {
     const [selectedToilet, setSelectedToilet] = useState('');
 
     // Address 
-    const [newAddressSuggestions, setNewAddressSuggestions] = useState([]); // Suggestions for new addresses
-    const [oldAddressSuggestions, setOldAddressSuggestions] = useState([]); // Suggestions for old addresses
-    const [selectedNewAddress, setSelectedNewAddress] = useState(''); // Selected new address
-    const [selectedOldAddress, setSelectedOldAddress] = useState(''); // Selected old address
-
+    const [newAddress, setNewAddress] = useState('');  // Local state for new address input
+    const [oldAddress, setOldAddress] = useState('');  // Local state for old address input
+    const [newAddressSuggestions, setNewAddressSuggestions] = useState([]);  // New address suggestions
+    const [oldAddressSuggestions, setOldAddressSuggestions] = useState([]);  // Old address suggestions
+    
 
 
     const [propertyData, setPropertyData] = useState({
         등록일자: '', 부동산구분: '', 거래방식: '', 거래완료여부: '',
-        거래완료일자: '', 담당자: '', 건물명: '', 동: '', 호수: '',
+        거래완료일자: '', 담당자: '', 구: '', 읍면동: '', 구상세주소: '',
+        도로명: '', 신상세주소: '', 건물명: '', 동: '', 호수: '',
         보증금: 0, 월세: 0, 관리비: 0, 전체m2: 0, 전용m2: 0,
-        전체평: 0, 전용평: 0, EV유무: false, 화장실개수: 0, 주차가능대수: 0,
-        비밀번호: '', 이름: '', 휴대폰번호: '', 기타특이사항: '', img_path: "",
+        전체평: 0, 전용평: 0, EV유무: false, 화장실개수: 0, 층수:0, 방개수:0, 주차가능대수: 0,
+        비밀번호: '', 이름: '', 휴대폰번호: '', 메모:"", img_path: "",
         정산금액: {
             총수수료: 0,
             소장: 0,
@@ -138,15 +139,15 @@ const PropertyUpload = () => {
             formattedValue = Number(value);
             propertyData["전용m2"] = convertPyeongToM2(value); // Convert 평 to m²
         }  
-        // else if (name === "도로명" && value === "") {
-        //     setNewAddressSuggestions([]);  // Clear new address suggestions
-        //     setSelectedNewAddress("");  // Clear the selected new address
-        // }
+        else if (name === "도로명" && value === "") {
+            setNewAddressSuggestions([]);  // Clear new address suggestions
+            setSelectedNewAddress("");  // Clear the selected new address
+        }
         
-        // else if (name === "구" && value === "") {
-        //     setOldAddressSuggestions([]);  // Clear old address suggestions
-        //     setSelectedOldAddress("");  // Clear the selected old address
-        //   }
+        else if (name === "구" && value === "") {
+            setOldAddressSuggestions([]);  // Clear old address suggestions
+            setSelectedOldAddress("");  // Clear the selected old address
+          }
         else {
             formattedValue = value;
         }
@@ -317,71 +318,86 @@ const PropertyUpload = () => {
         }
       };
     
-
       const handleNewAddressSearch = async (e) => {
         const searchText = e.target.value;
-        setPropertyData({ ...propertyData, 도로명: searchText });
+        setNewAddress(searchText);  // Update local state for new address input
       
         if (searchText.length > 0) {
           try {
             const response = await axios.get(`http://localhost:8000/addresses?searchText=${searchText}`);
-            setNewAddressSuggestions(response.data);
+            setNewAddressSuggestions(response.data);  // Set suggestions for new address
+            console.log(response.data);
           } catch (error) {
             console.error('Error fetching new address suggestions:', error);
           }
         } else {
-          setNewAddressSuggestions([]);
+          setNewAddressSuggestions([]);  // Clear suggestions when input is less than 3 characters
         }
       };
       
+      // Handle the selection of a new address
       const handleNewAddressSelect = (selectedAddress) => {
-        setSelectedNewAddress(selectedAddress.new_street);
-        setSelectedOldAddress(selectedAddress.old_street);  // Autofill old address
+         // Format the new address by combining different parts
+         const formattedNewAddress = `${selectedAddress.new_district} ${selectedAddress.new_town} ${selectedAddress.new_road_name} ${selectedAddress.new_building_main_number}${selectedAddress.new_building_sub_number!=0 ? "-" + selectedAddress.new_building_sub_number : ""}`;
+         setNewAddress(formattedNewAddress);  // Auto-fill the corresponding new address
+
+         // Set the old address in the local state
+         const formattedOldAddress = `${selectedAddress.old_district} ${selectedAddress.old_town} ${selectedAddress.old_village} ${selectedAddress.old_lot_main_number}${selectedAddress.old_lot_sub_number!=0 ? "-" + selectedAddress.old_lot_sub_number : ""}`;
+         setOldAddress(formattedOldAddress);  //
       
-        // Update form data
+         let addressId = selectedAddress.new_address_id        ;  // Scientific notation
+
+        // Convert to string representation of the full number
+        let addressIdString = addressId.toLocaleString('fullwide', { useGrouping: false }); 
+        console.log(addressId);
+        console.log(addressIdString);
+        // Update propertyData with the selected new address_id
         setPropertyData({
           ...propertyData,
-          도로명: selectedAddress.new_street,
-          구: selectedAddress.old_district,
-          구상세주소: selectedAddress.old_street
+          address_id: addressIdString     // Convert address_id to string
         });
       
-        // Clear suggestions
-        setNewAddressSuggestions([]);
+        setNewAddressSuggestions([]);  // Clear suggestions
       };
+      
 
       const handleOldAddressSearch = async (e) => {
         const searchText = e.target.value;
-        setPropertyData({ ...propertyData, 구: searchText });
+        setOldAddress(searchText);  // Update local state for old address input
       
         if (searchText.length > 0) {
           try {
             const response = await axios.get(`http://localhost:8000/addresses?searchText=${searchText}`);
-            setOldAddressSuggestions(response.data);
+            setOldAddressSuggestions(response.data);  // Set suggestions for old address
           } catch (error) {
             console.error('Error fetching old address suggestions:', error);
           }
         } else {
-          setOldAddressSuggestions([]);
+          setOldAddressSuggestions([]);  // Clear suggestions when input is less than 3 characters
         }
       };
       
+      // Handle the selection of an old address
       const handleOldAddressSelect = (selectedAddress) => {
-        setSelectedOldAddress(selectedAddress.old_street);
-        setSelectedNewAddress(selectedAddress.new_street);  // Autofill new address
-      
-        // Update form data
+        // Format the new address by combining different parts
+        const formattedNewAddress = `${selectedAddress.new_district} ${selectedAddress.new_town} ${selectedAddress.new_road_name} ${selectedAddress.new_building_main_number}${selectedAddress.new_building_sub_number!=0 ? "-" + selectedAddress.new_building_sub_number : ""}`;
+        setNewAddress(formattedNewAddress);  // Auto-fill the corresponding new address
+
+        const formattedOldAddress = `${selectedAddress.old_district} ${selectedAddress.old_town} ${selectedAddress.old_village} ${selectedAddress.old_lot_main_number}${selectedAddress.old_lot_sub_number!=0 ? "-" + selectedAddress.old_lot_sub_number : ""}`;
+        setOldAddress(formattedOldAddress);  // Auto-fill the corresponding old address
+
+        // Update propertyData with the selected old address_id
         setPropertyData({
           ...propertyData,
-          구: selectedAddress.old_street,
-          도로명: selectedAddress.new_street
+          address_id: selectedAddress.new_address_id    // Save address_id only
         });
       
-        // Clear suggestions
-        setOldAddressSuggestions([]);
+        setOldAddressSuggestions([]);  // Clear suggestions
       };
       
       
+      
+console.log(newAddressSuggestions);
 
     return (
         <main className='gap-y-10 w-full'>
@@ -653,8 +669,8 @@ const PropertyUpload = () => {
                                     <p className='mobile_3_bold flexRow gap-x-2 w-3/12'><FontAwesomeIcon icon={faBuilding}/>건물층</p>
                                     <input
                                         type="number"
-                                        name="주차가능대수"
-                                        value={propertyData.주차가능대수}
+                                        name="건물층"
+                                        value={propertyData.건물층}
                                         onChange={handleInputChange}
                                         className='w-7/12'
                                     />
@@ -706,26 +722,59 @@ const PropertyUpload = () => {
                                 <p className='mobile_3_bold flexRow gap-x-2'><FontAwesomeIcon icon={faHouse}/>신 주소</p>
                                 <div className='w-full'>
                                     <input
-                                            type="text"
-                                            name="도로명"
-                                            value={propertyData.도로명 || ""}  // Set to an empty string if undefined
-                                            onChange={handleInputChange}
-                                            className="w-1/2"
-                                            placeholder="Search for a new address"
-                                        />
-                                        {newAddressSuggestions.length > 0 && (
-                                            <ul className="dropdown">
-                                            {newAddressSuggestions.map((address, index) => (
-                                                <li
-                                                key={index}
-                                                onClick={() => handleNewAddressSelect(address)}
-                                                className="dropdown-item"
-                                                >
-                                                {address.new_district} {address.new_street}
-                                                </li>
-                                            ))}
-                                            </ul>
-                                        )}
+                                    type="text"
+                                    name="newAddress"
+                                    value={newAddress || ""}  // Ensure value is never undefined
+                                    onChange={handleNewAddressSearch}
+                                    className="w-1/2"
+                                    placeholder="Search for a new address"
+                                    />
+                                    {newAddressSuggestions.length > 0 && (
+                                        <ul className="dropdown">
+                                        {newAddressSuggestions.map((address, index) => (
+                                            <li
+                                            key={index}
+                                            onClick={() => handleNewAddressSelect(address)}  // Select and store address_id
+                                            className=""
+                                            >
+                                            {address.new_district} {address.new_town} {address.new_road_name} {address.new_building_main_number} {address.new_building_sub_number ? "-"+new_building_sub_number:""}
+                                            </li>
+                                        ))}
+                                        </ul>
+                                    )}
+                
+                                </div>
+                            </div>
+                            <div className='grid grid-rows-2 w-full'>
+                                <p className='mobile_3_bold flexRow gap-x-2'><FontAwesomeIcon icon={faHouse}/>구 주소</p>
+                                <div className='w-full'>
+                                    <input
+                                        type="text"
+                                        name="oldAddress"
+                                        value={oldAddress || ""}  // Ensure value is never undefined
+                                        onChange={handleOldAddressSearch}
+                                        className="w-1/2"
+                                        placeholder="Search for an old address"
+                                    />
+                                    {oldAddressSuggestions.length > 0 && (
+                                        <ul className="dropdown">
+                                        {oldAddressSuggestions.map((address, index) => (
+                                            <li
+                                            key={index}
+                                            onClick={() => handleOldAddressSelect(address)}  // Select and store address_id
+                                            className="dropdown-item"
+                                            >
+                                            {address.old_district} {address.old_town} {address.old_village} {address.old_lot_main_number} {address.old_lot_sub_number!=0 ? "-"+old_lot_sub_number:""} {address.old_building_name}
+                                            </li>
+                                        ))}
+                                        </ul>
+                                    )}
+                        
+                                </div>
+                            </div>
+                            <div className='grid grid-rows-2 w-full'>
+                                <p className='mobile_3_bold flexRow gap-x-2'><FontAwesomeIcon icon={faHouse}/>상세주소</p>
+                                <div className='w-full'>
                                     <input
                                         type="text"
                                         name="신상세주소"
@@ -733,42 +782,6 @@ const PropertyUpload = () => {
                                         onChange={handleInputChange}
                                         className=" w-1/2"
                                     />
-                                </div>
-                            </div>
-                            <div className='grid grid-rows-2 w-full'>
-                                <p className='mobile_3_bold flexRow gap-x-2'><FontAwesomeIcon icon={faHouse}/>구 주소</p>
-                                <div className='w-full'>
-                                        {/* Old Address Input */}
-                                        <input
-                                            type="text"
-                                            name="구"
-                                            value={propertyData.구 || ""}  // Set to an empty string if undefined
-                                            onChange={handleInputChange}
-                                            className="w-1/2"
-                                            placeholder="Search for an old address"
-                                        />
-                                        {oldAddressSuggestions.length > 0 && (
-                                            <ul className="dropdown">
-                                            {oldAddressSuggestions.map((address, index) => (
-                                                <li
-                                                key={index}
-                                                onClick={() => handleOldAddressSelect(address)}
-                                                className="dropdown-item"
-                                                >
-                                                {address.old_district} {address.old_street}
-                                                </li>
-                                            ))}
-                                            </ul>
-                                        )}
-                                    <input
-                                        type="text"
-                                        name="구상세주소"
-                                        value={propertyData.구상세주소 || selectedOldAddress.old_street}
-                                        onChange={handleInputChange}
-                                        className="w-1/3"
-                                        placeholder="Old street"
-                                    />
-                        
                                 </div>
                             </div>
                             <div className='grid grid-rows-2 w-full'>
