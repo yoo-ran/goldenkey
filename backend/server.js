@@ -49,7 +49,8 @@ app.use(
         /^\/properties\/\d+\/images$/,
         /^\/delete-property\/\d+$/, 
         /^\/update-property\/\d+$/, 
-        /^\/upload-images\/\d+$/,
+        /^\/upload-images\/.*$/,
+        '/upload-images',
         '/property-types',
         '/transaction-methods',
         '/transaction-status',
@@ -506,7 +507,12 @@ app.post('/upload-images/:propertyId', upload.array('images', 10), async (req, r
 });
 
 app.post('/upload-images', upload.array('images'), (req, res) => {
-    const imagePaths = req.files.map(file => file.path); // Get the paths of uploaded images
+    const imagePaths = req.files.map(file => {
+        // Extract the part of the path that starts with '/uploads/'
+        const relativePath = file.path.split('/uploads/')[1];
+        return `/uploads/${relativePath}`;
+    });
+
     res.json({ images: imagePaths });
 });
 
