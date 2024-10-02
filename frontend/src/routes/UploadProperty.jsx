@@ -732,7 +732,7 @@ console.log(newAddressSuggestions);
                                     placeholder="Search for a new address"
                                     />
                                     {newAddressSuggestions.length > 0 && (
-                                        <ul className="absolute w-full  bg-white divide-y-2 border">
+                                        <ul className="absolute w-full  bg-white divide-y-2 border max-h-48 overflow-y-auto">
                                         {newAddressSuggestions.map((address, index) => (
                                             <li
                                             key={index}
@@ -759,14 +759,14 @@ console.log(newAddressSuggestions);
                                         placeholder="Search for an old address"
                                     />
                                     {oldAddressSuggestions.length > 0 && (
-                                        <ul className="absolute w-full  bg-white divide-y-2 border">
+                                        <ul className="absolute w-full  bg-white divide-y-2 border max-h-48 overflow-y-auto">
                                         {oldAddressSuggestions.map((address, index) => (
                                             <li
                                             key={index}
                                             onClick={() => handleOldAddressSelect(address)}  // Select and store address_id
                                             className="py-1 pl-1 hover:bg-secondary-light"
                                             >
-                                            {address.old_district} {address.old_town} {address.old_village} {address.old_lot_main_number} {address.old_lot_sub_number!=0 ? "-"+old_lot_sub_number:""} {address.old_building_name}
+                                            {address.old_district} {address.old_town} {address.old_village} {address.old_lot_main_number} {address.old_building_name}
                                             </li>
                                         ))}
                                         </ul>
