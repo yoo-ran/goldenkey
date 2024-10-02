@@ -55,7 +55,8 @@ app.use(
         '/transaction-status',
         '/toilets-num',
         '/properties/update',
-        '/addresses'
+        '/addresses',
+        '/generate-sql'
     ] }) 
 );
 
@@ -661,25 +662,25 @@ app.get('/addresses', async (req, res) => {
     const { searchText } = req.query;
     const query = `
     SELECT 
-    new_address.구군 AS new_district, 
+    new_address.시군구 AS new_district, 
     new_address.읍면 AS new_town, 
-    new_address.로길 AS new_road_name, 
-    new_address.건물본번 AS new_building_main_number, 
-    new_address.건물부번 AS new_building_sub_number,
-    new_address.address_id AS new_address_id,
+    new_address.도로명 AS new_road_name, 
+    new_address.건물번호본번 AS new_building_main_number, 
+    new_address.건물번호부번 AS new_building_sub_number,
+    new_address.건물관리번호 AS new_address_id,
     
-    old_address.구군 AS old_district,
-    old_address.읍면동 AS old_town, 
-    old_address.리 AS old_village, 
+    old_address.시군구 AS old_district,
+    old_address.읍면 AS old_town, 
+    old_address.리명 AS old_village, 
     old_address.지번본번 AS old_lot_main_number,
     old_address.지번부번 AS old_lot_sub_number,
     old_address.시군구용건물명 AS old_building_name
 
 
     FROM new_address
-    JOIN old_address ON new_address.address_id = old_address.address_id
-    WHERE new_address.구군 LIKE ? OR new_address.읍면 LIKE ? OR new_address.로길 LIKE ?
-    OR old_address.구군 LIKE ? OR old_address.읍면동 LIKE ?  OR old_address.리 LIKE ?
+    JOIN old_address ON new_address.건물관리번호 = old_address.건물관리번호
+    WHERE new_address.시군구 LIKE ? OR new_address.읍면 LIKE ? OR new_address.도로명 LIKE ?
+    OR old_address.시군구 LIKE ? OR old_address.읍면 LIKE ?  OR old_address.리명 LIKE ?
     
     `;
 
@@ -702,6 +703,68 @@ app.get('/addresses', async (req, res) => {
 
 });
 });
+
+// SQL table name
+const tableName = 'new_address';
+
+function generateSQLInsert(jsonData) {
+    return jsonData.map(item => {
+        // Exclude '우편번호' and '시도' from columns and values
+        const filteredItem = Object.keys(item)
+            .filter(key => key !== '우편번호' && key !== '시도')
+            .reduce((obj, key) => {
+                obj[key] = item[key];
+                return obj;
+            }, {});
+
+        const columns = Object.keys(filteredItem).join(", ");
+        const values = Object.values(filteredItem)
+            .map(value => `'${value}'`)
+            .join(", ");
+
+        return `INSERT INTO ${tableName} (${columns}) VALUES (${values});`;
+    });
+}
+
+
+
+
+// Route to read the JSON file, convert it to SQL, and send it as a response
+app.get('/generate-sql', (req, res) => {
+    const filePath = path.join(__dirname, '신주소.json'); // Your JSON file location
+
+    fs.readFile(filePath, 'utf8', (err, data) => {
+        if (err) {
+            return res.status(500).send("Error reading the file");
+        }
+
+        try {
+            // Parse JSON data
+            const jsonData = JSON.parse(data);
+
+            // Generate SQL statements
+            const sqlStatements = generateSQLInsert(jsonData);
+
+            // Insert each statement into the database
+            sqlStatements.forEach(sql => {
+                db.query(sql, (err, result) => {
+                    if (err) {
+                        console.error('Error executing query:', err);
+                        return res.status(500).send("Error executing query");
+                    }
+                    console.log('Data inserted:', result);
+                });
+            });
+
+            res.send('Data inserted successfully into the database!');
+        } catch (jsonError) {
+            console.error("Error parsing JSON:", jsonError);
+            return res.status(500).send("Error parsing JSON");
+        }
+    });
+});
+
+
 
 
 app.listen(8000, () => {

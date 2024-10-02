@@ -97,6 +97,10 @@ const PropertyUpload = () => {
 
                 const toiletsNum = await axios.get(`http://localhost:8000/toilets-num`);
                 setToiletsNum(toiletsNum.data); 
+
+                // const response = await fetch('http://localhost:8000/generate-sql'); // URL of the Node.js backend
+                // const sqlData = await response.text();
+                // console.log(sqlData);
     
             } catch (error) {
                 console.error('Error fetching dropdown data', error); // Add error handling
@@ -349,8 +353,6 @@ const PropertyUpload = () => {
 
         // Convert to string representation of the full number
         let addressIdString = addressId.toLocaleString('fullwide', { useGrouping: false }); 
-        console.log(addressId);
-        console.log(addressIdString);
         // Update propertyData with the selected new address_id
         setPropertyData({
           ...propertyData,
@@ -720,24 +722,24 @@ console.log(newAddressSuggestions);
                     <article className='w-11/12 flexCol gap-y-4'>
                             <div className='grid grid-rows-2 w-full'>
                                 <p className='mobile_3_bold flexRow gap-x-2'><FontAwesomeIcon icon={faHouse}/>신 주소</p>
-                                <div className='w-full'>
+                                <div className='w-full relative'>
                                     <input
                                     type="text"
                                     name="newAddress"
                                     value={newAddress || ""}  // Ensure value is never undefined
                                     onChange={handleNewAddressSearch}
-                                    className="w-1/2"
+                                    className="w-full"
                                     placeholder="Search for a new address"
                                     />
                                     {newAddressSuggestions.length > 0 && (
-                                        <ul className="dropdown">
+                                        <ul className="absolute w-full  bg-white divide-y-2 border">
                                         {newAddressSuggestions.map((address, index) => (
                                             <li
                                             key={index}
                                             onClick={() => handleNewAddressSelect(address)}  // Select and store address_id
-                                            className=""
+                                            className="py-1 pl-1 hover:bg-secondary-light"
                                             >
-                                            {address.new_district} {address.new_town} {address.new_road_name} {address.new_building_main_number} {address.new_building_sub_number ? "-"+new_building_sub_number:""}
+                                            {address.new_district} {address.new_town} {address.new_road_name} {address.new_building_main_number}
                                             </li>
                                         ))}
                                         </ul>
@@ -747,22 +749,22 @@ console.log(newAddressSuggestions);
                             </div>
                             <div className='grid grid-rows-2 w-full'>
                                 <p className='mobile_3_bold flexRow gap-x-2'><FontAwesomeIcon icon={faHouse}/>구 주소</p>
-                                <div className='w-full'>
+                                <div className='w-full relative'>
                                     <input
                                         type="text"
                                         name="oldAddress"
                                         value={oldAddress || ""}  // Ensure value is never undefined
                                         onChange={handleOldAddressSearch}
-                                        className="w-1/2"
+                                        className="w-full"
                                         placeholder="Search for an old address"
                                     />
                                     {oldAddressSuggestions.length > 0 && (
-                                        <ul className="dropdown">
+                                        <ul className="absolute w-full  bg-white divide-y-2 border">
                                         {oldAddressSuggestions.map((address, index) => (
                                             <li
                                             key={index}
                                             onClick={() => handleOldAddressSelect(address)}  // Select and store address_id
-                                            className="dropdown-item"
+                                            className="py-1 pl-1 hover:bg-secondary-light"
                                             >
                                             {address.old_district} {address.old_town} {address.old_village} {address.old_lot_main_number} {address.old_lot_sub_number!=0 ? "-"+old_lot_sub_number:""} {address.old_building_name}
                                             </li>
