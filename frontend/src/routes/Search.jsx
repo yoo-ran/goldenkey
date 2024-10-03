@@ -27,14 +27,18 @@ const Search = () => {
     const [filteredProperties, setFilteredProperties] = useState([]); 
     const location = useLocation(); // Retrieve the state (data) from navigation
     const rangeValues = location.state || {
-        selectedMethod: '',
+        transactionMethod: '',
         depositRange: { min: 0, max: 3000 },
         rentRange: { min: 0, max: 150 },
         roomSizeRange: { min: 0, max: 1000 },
-        거래방식: '',
-        거래완료여부: '',
-    }; // Fallback to an empty object if no state is provided
+        approvalDate:"",
+        numOfFloor:"",
+        numOfRoom:"",
+        isParking:false,
+        isEV:false
+    }; 
     
+    console.log(rangeValues);
 
     useEffect(() => {
         const fetchProperties = async () => {
@@ -90,7 +94,7 @@ const Search = () => {
                 property.전용m2 <= rangeValues.roomSizeRange.max;
 
             const matchesSelectedMethod =
-                property.거래방식 === rangeValues.selectedMethod || rangeValues.selectedMethod === 'all';
+                property.거래방식 === rangeValues.transactionMethod === 'all';
 
             return withinDepositRange && withinRentRange && withinRoomSizeRange && matchesSelectedMethod;
         });

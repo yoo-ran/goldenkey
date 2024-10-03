@@ -6,18 +6,23 @@ import DoubleRangeSlider from './DoubleRangeSlider/DoubleRangeSlider';
 
 const House = ({approvalDate, numOfFloors, numOfRooms, onOpen}) => {
   const navigate = useNavigate();
-  const [selectedOption, setSelectedOption] = useState("거래유형을 선택하세요");
   const [open, setOpen] = useState(false);
 
+  const [isParking, setIsParking] = useState(false)
+  const [isEV, setIsEV] = useState(false)
   const [transactionMethods, setTransactionMethods] = useState([]);
   const [filteringData, setFilteringData] = useState({
-    selectedMethod: '',
+    transactionMethod: '',
     depositRange: { min: 0, max: 3000 },
     rentRange: { min: 0, max: 150 },
     roomSizeRange: { min: 0, max: 1000 },
-    거래방식: '',
-    거래완료여부: '',
+    approvalDate:"",
+    numOfFloor:"",
+    numOfRoom:"",
+    isParking:false,
+    isEV:false
   });
+  
 
   const handleDepositRangeChange = useCallback(({ min, max }) => {
     setFilteringData((prev) => ({
@@ -40,11 +45,25 @@ const House = ({approvalDate, numOfFloors, numOfRooms, onOpen}) => {
     }));
   }, []);
 
-  const handleSelect = (e, option) => {
-    console.log(e.target);
+  const handleSelect = (e) => {
+    var name = e.target.name
+    var value = e.target.value
+    console.log(name, value);
     e.preventDefault();  // Prevent default behavior (like navigation)
-    setFilteringData({ ...filteringData, selectedMethod: option });
-    setSelectedOption(option);
+    if(name === "isParking"){
+      setIsParking(!isParking)
+      setFilteringData({ ...filteringData, [name]: isParking });
+    }
+    else if(name==="isEV"){
+      setIsEV(!isEV)
+      setFilteringData({ ...filteringData, [name]: isEV });
+
+    }
+    else{
+      setFilteringData({ ...filteringData, [name]: value });
+    }
+
+    console.log(isEV);
   };
 
   const handleSubmit = (e) => {
@@ -65,6 +84,7 @@ const House = ({approvalDate, numOfFloors, numOfRooms, onOpen}) => {
     fetchConstantVariable();
   }, []);
 
+  console.log(filteringData);
 
 
   return (
@@ -80,17 +100,19 @@ const House = ({approvalDate, numOfFloors, numOfRooms, onOpen}) => {
                         <p className="mobile_3_bold text-left">거래유형</p>
                         <p className='mobile_4'>중복선택가능</p>
                       </div>
-                      <ul className="flexRow gap-x-3 mt-2 w-full z-50">
-                        {transactionMethods.map((option, index) => (
-                          <li
+                      <div className="grid grid-cols-3 gap-x-2 mt-2 w-full z-50">
+                        {transactionMethods.map((method, index) => (
+                          <button
                             key={index}
-                            onClick={(e) => handleSelect(e, option)}
-                            className="w-full cursor-pointer bg-secondary-blue rounded text-primary text-center py-1.5"
-                          >
-                            {option}
-                          </li>
+                            name={"transactionMethod"}
+                            value={method}
+                            onClick={handleSelect}
+                            className={`py-2 text-center rounded mobile_5 ${filteringData.transactionMethod===method ? "bg-secondary-yellow":"bg-secondary-blue"}`}
+                            >
+                            {method}
+                          </button>
                         ))}
-                      </ul>
+                      </div>
                   </div>
                   <div className="flexCol items-start gap-y-8 w-full">
                       <p className='mobile_3_bold'>월세</p>
@@ -189,12 +211,15 @@ const House = ({approvalDate, numOfFloors, numOfRooms, onOpen}) => {
                     <p className='w-full mobile_4_bold'>사용 승인일</p>
                     <div className='w-full flexRow justify-between gap-x-2'>
                       {approvalDate.map((date, id)=>(
-                        <div 
+                        <button 
                           key={id}
-                          className='bg-secondary-blue px-3 py-2 text-center rounded mobile_5'
+                          name='approvalDate'
+                          value={date}
+                          onClick={handleSelect}
+                          className={`px-3 py-2 text-center rounded mobile_5 ${filteringData.approvalDate===date ? "bg-secondary-yellow":"bg-secondary-blue"}`}
                         >
                           {date}
-                        </div>
+                        </button>
                       ))}
                     </div>
                   </div>
@@ -205,12 +230,15 @@ const House = ({approvalDate, numOfFloors, numOfRooms, onOpen}) => {
                     </div>
                     <div className='w-full flexRow justify-between gap-x-2'>
                       {numOfFloors.map((floor, id)=>(
-                        <div 
+                        <button 
                           key={id}
-                          className='bg-secondary-blue px-3 py-2 text-center rounded mobile_5'
+                          name={"numOfFloor"}
+                          value={floor}
+                          onClick={handleSelect}
+                          className={`px-3 py-2 text-center rounded mobile_5 ${filteringData.numOfFloor===floor ? "bg-secondary-yellow":"bg-secondary-blue"}`}
                         >
                           {floor}
-                        </div>
+                        </button>
                       ))}
                     </div>
                   </div>
@@ -218,12 +246,15 @@ const House = ({approvalDate, numOfFloors, numOfRooms, onOpen}) => {
                     <p className='w-full mobile_4_bold'>방 개수</p>
                     <div className='w-full flexRow justify-between gap-x-2'>
                       {numOfRooms.map((room, id)=>(
-                        <div 
+                        <button 
                           key={id}
-                          className='bg-secondary-blue px-3 py-2 text-center rounded mobile_5'
+                          name={"numOfRoom"}
+                          value={room}
+                          onClick={handleSelect}
+                          className={`px-3 py-2 text-center rounded mobile_5 ${filteringData.numOfRoom===room ? "bg-secondary-yellow":"bg-secondary-blue"}`}
                         >
                           {room}
-                        </div>
+                        </button>
                       ))}
                     </div>
                   </div>
@@ -234,12 +265,16 @@ const House = ({approvalDate, numOfFloors, numOfRooms, onOpen}) => {
                     </div>
                     <div className='w-full grid grid-cols-2 gap-x-2'>
                         <button 
-                          className='bg-secondary-blue px-3 py-2 text-center rounded mobile_5'
+                          name={"isParking"}
+                          onClick={handleSelect}
+                          className={` px-3 py-2 text-center rounded mobile_5 ${isParking ? "bg-secondary-yellow":"bg-secondary-blue"}`}
                         >
                           주차가능
                         </button>
-                        <button 
-                          className='bg-secondary-blue px-3 py-2 text-center rounded mobile_5'
+                        <button
+                          name={"isEV"}
+                          onClick={handleSelect}
+                          className={`bg-secondary-blue px-3 py-2 text-center rounded mobile_5 ${isEV ? "bg-secondary-yellow":"bg-secondary-blue"}`}
                         >
                           엘리베이터
                         </button>
