@@ -94,7 +94,7 @@ const Search = () => {
                 property.전용m2 <= rangeValues.roomSizeRange.max;
 
             const matchesSelectedMethod =
-                property.거래방식 === rangeValues.transactionMethod === 'all';
+                property.거래방식 === rangeValues.selectedMethod || rangeValues.selectedMethod === 'all';
 
             return withinDepositRange && withinRentRange && withinRoomSizeRange && matchesSelectedMethod;
         });

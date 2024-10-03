@@ -4,7 +4,7 @@ import axios from 'axios';
 import DoubleRangeSlider from './DoubleRangeSlider/DoubleRangeSlider';
 
 
-const Oneroom = ({approvalDate, numOfFloors, numOfRooms, onOpen}) => {
+const Oneroom = ({approvalDate, onOpen}) => {
   const navigate = useNavigate();
   const [selectedOption, setSelectedOption] = useState("거래유형을 선택하세요");
   const [open, setOpen] = useState(false);
@@ -194,35 +194,6 @@ const Oneroom = ({approvalDate, numOfFloors, numOfRooms, onOpen}) => {
                           className='bg-secondary-blue px-3 py-2 text-center rounded mobile_5'
                         >
                           {date}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className='flexCol gap-y-4 w-full'>
-                    <div className='w-full flexRow gap-x-3'>
-                      <p className=' mobile_4_bold'>층 수</p>
-                      <p className='mobile_4'>중복선택가능</p>
-                    </div>
-                    <div className='w-full flexRow justify-between gap-x-2'>
-                      {numOfFloors.map((floor, id)=>(
-                        <div 
-                          key={id}
-                          className='bg-secondary-blue px-3 py-2 text-center rounded mobile_5'
-                        >
-                          {floor}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className='flexCol gap-y-4 w-full'>
-                    <p className='w-full mobile_4_bold'>방 개수</p>
-                    <div className='w-full flexRow justify-between gap-x-2'>
-                      {numOfRooms.map((room, id)=>(
-                        <div 
-                          key={id}
-                          className='bg-secondary-blue px-3 py-2 text-center rounded mobile_5'
-                        >
-                          {room}
                         </div>
                       ))}
                     </div>

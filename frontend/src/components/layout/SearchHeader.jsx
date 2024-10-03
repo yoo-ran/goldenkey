@@ -8,8 +8,6 @@ import House from '../filters/House.jsx';
 import Apartment from '../filters/Apartment.jsx';
 
 const approvalDate = ["15년 이내", "10년 이내", "5년 이내", "15년 이상"]
-const numOfFloors = ["반지하", "1층", "2층 이상", "옥탑"]
-const numOfRooms = ["상관없음", "1개", "2개", "3개", "4개 이상"]
 
 
 const SearchHeader = ({ onSendSearchTerm  }) => {
@@ -22,13 +20,13 @@ const SearchHeader = ({ onSendSearchTerm  }) => {
         
             switch (filterType) {
                 case "house/villa":
-                    return <House approvalDate={approvalDate} numOfFloors={numOfFloors} numOfRooms={numOfRooms} onOpen={onOpenFromChild}  />;
+                    return <House approvalDate={approvalDate} onOpen={onOpenFromChild}  />;
             
                 case "oneroom/tworoom":
-                    return <Oneroom approvalDate={approvalDate} numOfFloors={numOfFloors} numOfRooms={numOfRooms} onOpen={onOpenFromChild}/>;
+                    return <Oneroom approvalDate={approvalDate} onOpen={onOpenFromChild}/>;
             
                 case "apartment":
-                    return <Apartment approvalDate={approvalDate} numOfFloors={numOfFloors} numOfRooms={numOfRooms} onOpen={onOpenFromChild}/>;
+                    return <Apartment approvalDate={approvalDate} onOpen={onOpenFromChild}/>;
             
                 default:
     

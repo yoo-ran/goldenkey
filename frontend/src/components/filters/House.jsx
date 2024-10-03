@@ -4,7 +4,7 @@ import axios from 'axios';
 import DoubleRangeSlider from './DoubleRangeSlider/DoubleRangeSlider';
 
 
-const House = ({approvalDate, numOfFloors, numOfRooms, onOpen}) => {
+const House = ({approvalDate, onOpen}) => {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
@@ -17,8 +17,6 @@ const House = ({approvalDate, numOfFloors, numOfRooms, onOpen}) => {
     rentRange: { min: 0, max: 150 },
     roomSizeRange: { min: 0, max: 1000 },
     approvalDate:"",
-    numOfFloor:"",
-    numOfRoom:"",
     isParking:false,
     isEV:false
   });
@@ -219,41 +217,6 @@ const House = ({approvalDate, numOfFloors, numOfRooms, onOpen}) => {
                           className={`px-3 py-2 text-center rounded mobile_5 ${filteringData.approvalDate===date ? "bg-secondary-yellow":"bg-secondary-blue"}`}
                         >
                           {date}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className='flexCol gap-y-4 w-full'>
-                    <div className='w-full flexRow gap-x-3'>
-                      <p className=' mobile_4_bold'>층 수</p>
-                      <p className='mobile_4'>중복선택가능</p>
-                    </div>
-                    <div className='w-full flexRow justify-between gap-x-2'>
-                      {numOfFloors.map((floor, id)=>(
-                        <button 
-                          key={id}
-                          name={"numOfFloor"}
-                          value={floor}
-                          onClick={handleSelect}
-                          className={`px-3 py-2 text-center rounded mobile_5 ${filteringData.numOfFloor===floor ? "bg-secondary-yellow":"bg-secondary-blue"}`}
-                        >
-                          {floor}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className='flexCol gap-y-4 w-full'>
-                    <p className='w-full mobile_4_bold'>방 개수</p>
-                    <div className='w-full flexRow justify-between gap-x-2'>
-                      {numOfRooms.map((room, id)=>(
-                        <button 
-                          key={id}
-                          name={"numOfRoom"}
-                          value={room}
-                          onClick={handleSelect}
-                          className={`px-3 py-2 text-center rounded mobile_5 ${filteringData.numOfRoom===room ? "bg-secondary-yellow":"bg-secondary-blue"}`}
-                        >
-                          {room}
                         </button>
                       ))}
                     </div>
