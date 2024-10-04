@@ -27,15 +27,13 @@ const Search = () => {
     const [filteredProperties, setFilteredProperties] = useState([]); 
     const location = useLocation(); // Retrieve the state (data) from navigation
     const rangeValues = location.state || {
-        transactionMethod: '',
-        depositRange: { min: 0, max: 3000 },
-        rentRange: { min: 0, max: 150 },
-        roomSizeRange: { min: 0, max: 1000 },
-        approvalDate:"",
-        numOfFloor:"",
-        numOfRoom:"",
-        isParking:false,
-        isEV:false
+        transactionMethod: [],
+        depositRange: [],  // Array of objects with {transactionMethod, min, max}
+        rentRange: [],     // Array of objects with {transactionMethod, min, max}
+        roomSizeRange: { min: 10, max: 60 },
+        approvalDate: "",
+        isParking: false,
+        isEV: false,
     }; 
     
     console.log(rangeValues);
@@ -46,7 +44,7 @@ const Search = () => {
                 const response = await axios.get('http://localhost:8000/listing');
                 const propertyList = response.data;
                 setProperties(propertyList);
-                setFilteredProperties(propertyList); // Initially, show all properties
+                // setFilteredProperties(propertyList); // Initially, show all properties
         
                 // Fetch images for each property
                 for (const property of propertyList) {
@@ -78,34 +76,103 @@ const Search = () => {
 
     }, []);
 
-      // Filter properties based on rangeValues
-      const filterProperties = () => {
+    const filterProperties = () => {
         const filtered = properties.filter((property) => {
-            const withinDepositRange =
-                property.보증금 >= rangeValues.depositRange.min &&
-                property.보증금 <= rangeValues.depositRange.max;
-            
-            const withinRentRange =
-                property.월세 >= rangeValues.rentRange.min &&
-                property.월세 <= rangeValues.rentRange.max;
-            
+            // Ensure the property matches one of the selected transaction methods
+            const matchesSelectedMethod = rangeValues.transactionMethod.includes(property.거래방식);
+    
+    
+            // Check if the property falls within any deposit range in the depositRange array
+            const withinDepositRange = rangeValues.depositRange.some((range) => {
+                const method = Object.keys(range)[0]; // Get the transaction method (e.g., '매매', '월세')
+                const { min, max } = range[method];   // Get min and max for this transaction method
+                return (
+                    rangeValues.transactionMethod.includes(method) && 
+                    property.보증금 / 10000 >= min && 
+                    property.보증금 / 10000 <= max
+                );
+            });
+    
+            // Check if the property falls within any rent range in the rentRange array
+            const withinRentRange = ['월세', '전세'].includes(property.거래방식)
+            ? rangeValues.rentRange.some((range) => {
+                const method = Object.keys(range)[0]; // Get the transaction method (e.g., '월세', '전세')
+                const { min, max } = range[method];   // Get min and max for this transaction method
+                return (
+                    rangeValues.transactionMethod.includes(method) &&
+                    property.월세 / 10000 >= min &&
+                    property.월세 / 10000 <= max
+                );
+            })
+            : true; // Skip rentRange check for 매매
+
+    
+            // Check if the property falls within the room size range
             const withinRoomSizeRange =
-                property.전용m2 >= rangeValues.roomSizeRange.min &&
-                property.전용m2 <= rangeValues.roomSizeRange.max;
+                property.전용평 >= rangeValues.roomSizeRange.min &&
+                property.전용평 <= rangeValues.roomSizeRange.max;
+    
+            // Filter based on whether the property has parking, if the user has selected parking
+            const haveParking = rangeValues.isParking === true 
+                ? property.주차가능대수 > 0  // If parking is required, ensure parking spaces are available
+                : true;  // If parking isn't required, allow all properties
+    
+            // Filter based on whether the property has an elevator, if the user has selected elevator
+            const haveElevator = rangeValues.isEV === true 
+                ? property.EV유무 === 1  // If elevator is required, check if the property has it
+                : true;  // If elevator isn't required, allow all properties regardless of elevator
+    
+            const isWithinApprovalDateRange = (() => {
+                if (!rangeValues.approvalDate) return true; // No filter applied for approval date
+                
+                const currentYear = new Date().getFullYear(); // Get current year
+                const approvalYear = new Date(property.사용승인일자).getFullYear(); // Get the approval year from the property
+    
+                const yearDifference = currentYear - approvalYear; // Calculate the year difference
+    
+                console.log(currentYear);
+                console.log(approvalYear);
+                console.log(yearDifference);
+                switch (rangeValues.approvalDate) {
+                    case "5년 이내":
+                        return yearDifference <= 5;
+                    case "10년 이내":
+                        return yearDifference <= 10;
+                    case "15년 이내":
+                        return yearDifference <= 15;
+                    case "15년 이상":
+                        return yearDifference > 15;
+                    default:
+                        return true; // If no valid approval date range, allow the property
+                }
+            })();
+            
 
-            const matchesSelectedMethod =
-                property.거래방식 === rangeValues.selectedMethod || rangeValues.selectedMethod === 'all';
-
-            return withinDepositRange && withinRentRange && withinRoomSizeRange && matchesSelectedMethod;
+            // Return true if all the conditions are met
+            return (
+                matchesSelectedMethod &&
+                withinDepositRange &&
+                withinRentRange &&
+                withinRoomSizeRange &&
+                haveParking &&  
+                haveElevator &&
+                isWithinApprovalDateRange 
+            );
         });
-
+    
         setFilteredProperties(filtered); // Update the filtered properties state
     };
+    
+    
+    console.log(filteredProperties);
+    
 
-    // Call the filter function when rangeValues or properties change
+    
+
     useEffect(() => {
-        filterProperties(); // Filter properties when values change
-    }, [properties]); // Dependencies
+        filterProperties();
+        console.log(filteredProperties);
+    }, [rangeValues]);
 
 
     const formatToKoreanCurrency = (number) => {

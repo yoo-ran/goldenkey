@@ -7,7 +7,7 @@ import Oneroom from '../filters/Oneroom.jsx';
 import House from '../filters/House.jsx';
 import Apartment from '../filters/Apartment.jsx';
 
-const approvalDate = ["15년 이내", "10년 이내", "5년 이내", "15년 이상"]
+const approvalDate = [ "15년 이상", "15년 이내", "10년 이내", "5년 이내"]
 
 
 const SearchHeader = ({ onSendSearchTerm  }) => {
@@ -43,7 +43,7 @@ const SearchHeader = ({ onSendSearchTerm  }) => {
     };
 
     const onOpenFromChild = (openFromChild) => {
-       if(openFromChild === false) setFilterType("")
+       if(openFromChild === false) setFilterType(""); setOpenFilter(false)
     }
 
 
