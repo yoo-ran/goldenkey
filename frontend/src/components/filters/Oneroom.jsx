@@ -6,7 +6,6 @@ import DoubleRangeSlider from './DoubleRangeSlider/DoubleRangeSlider';
 
 const Oneroom = ({approvalDate, onOpen}) => {
   const navigate = useNavigate();
-  const [selectedOption, setSelectedOption] = useState("거래유형을 선택하세요");
   const [open, setOpen] = useState(false);
 
   const [transactionMethods, setTransactionMethods] = useState([]);
