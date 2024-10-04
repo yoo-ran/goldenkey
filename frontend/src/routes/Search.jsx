@@ -36,7 +36,6 @@ const Search = () => {
         isEV: false,
     }; 
     
-    console.log(rangeValues);
 
     useEffect(() => {
         const fetchProperties = async () => {
@@ -164,7 +163,6 @@ const Search = () => {
     };
     
     
-    console.log(filteredProperties);
     
 
     
