@@ -49,7 +49,7 @@ app.use(
         /^\/properties\/\d+\/images$/,
         /^\/delete-property\/\d+$/, 
         /^\/update-property\/\d+$/, 
-        /^\/upload-images\/\d+$/,
+        /^\/upload-images(\/\d+)?$/,
         '/property-types',
         '/transaction-methods',
         '/transaction-status',
@@ -478,7 +478,9 @@ const upload = multer({
 app.post('/upload-images/:propertyId', upload.array('images', 10), async (req, res) => {
     try {
         const propertyId = req.params.propertyId;
-        const newImagePaths = req.files.map(file => `/uploads/${path.basename(file.path)}`); // Get relative paths
+
+        // Get relative paths by stripping the full local path
+        const newImagePaths = req.files.map(file => `/uploads/${path.basename(file.path)}`); 
 
         // Retrieve the current image paths for the given propertyId
         const currentResult = await query('SELECT img_path FROM property WHERE 순번 = ?', [propertyId]);
@@ -487,7 +489,10 @@ app.post('/upload-images/:propertyId', upload.array('images', 10), async (req, r
             return res.status(404).json({ error: 'Property not found' });
         }
 
-        const currentImagePaths = currentResult[0].img_path ? currentResult[0].img_path.split(',') : [];
+        const currentImagePaths = currentResult[0].img_path ? currentResult[0].img_path.split(',').map(imgPath => {
+            // Clean current image paths in case they contain full paths
+            return imgPath.includes('/uploads/') ? imgPath.trim() : `/uploads/${path.basename(imgPath.trim())}`;
+        }) : [];
 
         // Combine current and new image paths
         const updatedImagePaths = [...currentImagePaths, ...newImagePaths];
@@ -496,12 +501,15 @@ app.post('/upload-images/:propertyId', upload.array('images', 10), async (req, r
         // Update the property with the new image paths
         await query('UPDATE property SET img_path = ? WHERE 순번 = ?', [updatedImagePathsString, propertyId]);
 
-        res.status(200).json({ imageUrls: newImagePaths });
+        // Return the updated image URLs (all relative paths)
+        res.status(200).json({ imageUrls: updatedImagePaths });
     } catch (error) {
         console.error('Error uploading images:', error);
         res.status(500).json({ error: 'Failed to upload images' });
     }
 });
+
+
 
 app.post('/upload-images', upload.array('images'), (req, res) => {
     const imagePaths = req.files.map(file => file.path); // Get the paths of uploaded images
