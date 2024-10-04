@@ -35,13 +35,21 @@ const PropertyUpload = () => {
     const [toiletsNum, setToiletsNum] = useState([]);
     const [selectedToilet, setSelectedToilet] = useState('');
 
+    // Address 
+    const [newAddress, setNewAddress] = useState('');  // Local state for new address input
+    const [oldAddress, setOldAddress] = useState('');  // Local state for old address input
+    const [newAddressSuggestions, setNewAddressSuggestions] = useState([]);  // New address suggestions
+    const [oldAddressSuggestions, setOldAddressSuggestions] = useState([]);  // Old address suggestions
+    
+
+
     const [propertyData, setPropertyData] = useState({
         등록일자: '', 부동산구분: '', 거래방식: '', 거래완료여부: '',
         거래완료일자: '', 담당자: '', 구: '', 읍면동: '', 구상세주소: '',
         도로명: '', 신상세주소: '', 건물명: '', 동: '', 호수: '',
         보증금: 0, 월세: 0, 관리비: 0, 전체m2: 0, 전용m2: 0,
-        전체평: 0, 전용평: 0, EV유무: false, 화장실개수: 0, 주차가능대수: 0,
-        비밀번호: '', 이름: '', 휴대폰번호: '', 기타특이사항: '', img_path: "",
+        전체평: 0, 전용평: 0, EV유무: false, 화장실개수: 0, 층수:0, 방개수:0, 주차가능대수: 0,
+        비밀번호: '', 이름: '', 휴대폰번호: '', 메모:"", img_path: "",
         정산금액: {
             총수수료: 0,
             소장: 0,
@@ -89,6 +97,10 @@ const PropertyUpload = () => {
 
                 const toiletsNum = await axios.get(`http://localhost:8000/toilets-num`);
                 setToiletsNum(toiletsNum.data); 
+
+                // const response = await fetch('http://localhost:8000/generate-sql'); // URL of the Node.js backend
+                // const sqlData = await response.text();
+                // console.log(sqlData);
     
             } catch (error) {
                 console.error('Error fetching dropdown data', error); // Add error handling
@@ -110,7 +122,6 @@ const PropertyUpload = () => {
      // Handle input changes
      const handleInputChange = (e) => {
         let { name, type, value, checked } = e.target;
-        console.log(name, value);
         let formattedValue;
         // Converting input if necessary
         if (name === 'EV유무') {
@@ -119,16 +130,28 @@ const PropertyUpload = () => {
         else if (name === "전체m2") {
             formattedValue = Number(value);
             propertyData["전체평"] = convertM2ToPyeong(value); // Convert m² to 평
-        } else if (name === "전용m2") {
+        } 
+        else if (name === "전용m2") {
             formattedValue = Number(value);
             propertyData["전용평"] = convertM2ToPyeong(value); // Convert m² to 평
-        } else if (name === "전체평") {
+        } 
+        else if (name === "전체평") {
             formattedValue = Number(value);
             propertyData["전체m2"] = convertPyeongToM2(value); // Convert 평 to m²
-        } else if (name === "전용평") {
+        } 
+        else if (name === "전용평") {
             formattedValue = Number(value);
             propertyData["전용m2"] = convertPyeongToM2(value); // Convert 평 to m²
+        }  
+        else if (name === "도로명" && value === "") {
+            setNewAddressSuggestions([]);  // Clear new address suggestions
+            setSelectedNewAddress("");  // Clear the selected new address
         }
+        
+        else if (name === "구" && value === "") {
+            setOldAddressSuggestions([]);  // Clear old address suggestions
+            setSelectedOldAddress("");  // Clear the selected old address
+          }
         else {
             formattedValue = value;
         }
@@ -273,6 +296,111 @@ const PropertyUpload = () => {
 
 
     
+    
+    const convertToManwon = () => {
+        if (!isConverted) {
+          // Store original prices
+          setOriginalPrices({
+            "보증금": propertyData.보증금,
+            "월세": propertyData.월세,
+            "전체 금액": propertyData.보증금 + propertyData.월세
+          });
+    
+          // Convert to 만원 (divide by 10,000)
+          const convertedData = {
+            "보증금": (propertyData.보증금 / 10000).toString(),
+            "월세": (propertyData.월세 / 10000).toString(),
+            "전체 금액": ((propertyData.보증금 + propertyData.월세) / 10000).toString()
+          };
+    
+          setPriceManwon(convertedData);
+          setIsConverted(true); // Mark as converted
+        } else {
+          // Restore original prices
+          setPriceManwon(originalPrices);
+          setIsConverted(false); // Mark as not converted
+        }
+      };
+    
+      const handleNewAddressSearch = async (e) => {
+        const searchText = e.target.value;
+        setNewAddress(searchText);  // Update local state for new address input
+      
+        if (searchText.length > 0) {
+          try {
+            const response = await axios.get(`http://localhost:8000/addresses?searchText=${searchText}`);
+            setNewAddressSuggestions(response.data);  // Set suggestions for new address
+            console.log(response.data);
+          } catch (error) {
+            console.error('Error fetching new address suggestions:', error);
+          }
+        } else {
+          setNewAddressSuggestions([]);  // Clear suggestions when input is less than 3 characters
+        }
+      };
+      
+      // Handle the selection of a new address
+      const handleNewAddressSelect = (selectedAddress) => {
+         // Format the new address by combining different parts
+         const formattedNewAddress = `${selectedAddress.new_district} ${selectedAddress.new_town} ${selectedAddress.new_road_name} ${selectedAddress.new_building_main_number}${selectedAddress.new_building_sub_number!=0 ? "-" + selectedAddress.new_building_sub_number : ""}`;
+         setNewAddress(formattedNewAddress);  // Auto-fill the corresponding new address
+
+         // Set the old address in the local state
+         const formattedOldAddress = `${selectedAddress.old_district} ${selectedAddress.old_town} ${selectedAddress.old_village} ${selectedAddress.old_lot_main_number}${selectedAddress.old_lot_sub_number!=0 ? "-" + selectedAddress.old_lot_sub_number : ""}`;
+         setOldAddress(formattedOldAddress);  //
+      
+         let addressId = selectedAddress.new_address_id        ;  // Scientific notation
+
+        // Convert to string representation of the full number
+        let addressIdString = addressId.toLocaleString('fullwide', { useGrouping: false }); 
+        // Update propertyData with the selected new address_id
+        setPropertyData({
+          ...propertyData,
+          address_id: addressIdString     // Convert address_id to string
+        });
+      
+        setNewAddressSuggestions([]);  // Clear suggestions
+      };
+      
+
+      const handleOldAddressSearch = async (e) => {
+        const searchText = e.target.value;
+        setOldAddress(searchText);  // Update local state for old address input
+      
+        if (searchText.length > 0) {
+          try {
+            const response = await axios.get(`http://localhost:8000/addresses?searchText=${searchText}`);
+            setOldAddressSuggestions(response.data);  // Set suggestions for old address
+          } catch (error) {
+            console.error('Error fetching old address suggestions:', error);
+          }
+        } else {
+          setOldAddressSuggestions([]);  // Clear suggestions when input is less than 3 characters
+        }
+      };
+      
+      // Handle the selection of an old address
+      const handleOldAddressSelect = (selectedAddress) => {
+        // Format the new address by combining different parts
+        const formattedNewAddress = `${selectedAddress.new_district} ${selectedAddress.new_town} ${selectedAddress.new_road_name} ${selectedAddress.new_building_main_number}${selectedAddress.new_building_sub_number!=0 ? "-" + selectedAddress.new_building_sub_number : ""}`;
+        setNewAddress(formattedNewAddress);  // Auto-fill the corresponding new address
+
+        const formattedOldAddress = `${selectedAddress.old_district} ${selectedAddress.old_town} ${selectedAddress.old_village} ${selectedAddress.old_lot_main_number}${selectedAddress.old_lot_sub_number!=0 ? "-" + selectedAddress.old_lot_sub_number : ""}`;
+        setOldAddress(formattedOldAddress);  // Auto-fill the corresponding old address
+
+        // Update propertyData with the selected old address_id
+        setPropertyData({
+          ...propertyData,
+          address_id: selectedAddress.new_address_id    // Save address_id only
+        });
+      
+        setOldAddressSuggestions([]);  // Clear suggestions
+      };
+      
+      
+      
+console.log(newAddressSuggestions);
+
     return (
         <main className='gap-y-10 w-full'>
             <SearchHeader/>
@@ -543,8 +671,8 @@ const PropertyUpload = () => {
                                     <p className='mobile_3_bold flexRow gap-x-2 w-3/12'><FontAwesomeIcon icon={faBuilding}/>건물층</p>
                                     <input
                                         type="number"
-                                        name="주차가능대수"
-                                        value={propertyData.주차가능대수}
+                                        name="건물층"
+                                        value={propertyData.건물층}
                                         onChange={handleInputChange}
                                         className='w-7/12'
                                     />
@@ -594,14 +722,61 @@ const PropertyUpload = () => {
                     <article className='w-11/12 flexCol gap-y-4'>
                             <div className='grid grid-rows-2 w-full'>
                                 <p className='mobile_3_bold flexRow gap-x-2'><FontAwesomeIcon icon={faHouse}/>신 주소</p>
-                                <div className='w-full'>
+                                <div className='w-full relative'>
+                                    <input
+                                    type="text"
+                                    name="newAddress"
+                                    value={newAddress || ""}  // Ensure value is never undefined
+                                    onChange={handleNewAddressSearch}
+                                    className="w-full"
+                                    placeholder="Search for a new address"
+                                    />
+                                    {newAddressSuggestions.length > 0 && (
+                                        <ul className="absolute w-full  bg-white divide-y-2 border max-h-48 overflow-y-auto">
+                                        {newAddressSuggestions.map((address, index) => (
+                                            <li
+                                            key={index}
+                                            onClick={() => handleNewAddressSelect(address)}  // Select and store address_id
+                                            className="py-1 pl-1 hover:bg-secondary-light"
+                                            >
+                                            {address.new_district} {address.new_town} {address.new_road_name} {address.new_building_main_number}
+                                            </li>
+                                        ))}
+                                        </ul>
+                                    )}
+                
+                                </div>
+                            </div>
+                            <div className='grid grid-rows-2 w-full'>
+                                <p className='mobile_3_bold flexRow gap-x-2'><FontAwesomeIcon icon={faHouse}/>구 주소</p>
+                                <div className='w-full relative'>
                                     <input
                                         type="text"
-                                        name="도로명"
-                                        value={propertyData.도로명}
-                                        onChange={handleInputChange}
-                                        className=" w-1/2"
+                                        name="oldAddress"
+                                        value={oldAddress || ""}  // Ensure value is never undefined
+                                        onChange={handleOldAddressSearch}
+                                        className="w-full"
+                                        placeholder="Search for an old address"
                                     />
+                                    {oldAddressSuggestions.length > 0 && (
+                                        <ul className="absolute w-full  bg-white divide-y-2 border max-h-48 overflow-y-auto">
+                                        {oldAddressSuggestions.map((address, index) => (
+                                            <li
+                                            key={index}
+                                            onClick={() => handleOldAddressSelect(address)}  // Select and store address_id
+                                            className="py-1 pl-1 hover:bg-secondary-light"
+                                            >
+                                            {address.old_district} {address.old_town} {address.old_village} {address.old_lot_main_number} {address.old_building_name}
+                                            </li>
+                                        ))}
+                                        </ul>
+                                    )}
+                        
+                                </div>
+                            </div>
+                            <div className='grid grid-rows-2 w-full'>
+                                <p className='mobile_3_bold flexRow gap-x-2'><FontAwesomeIcon icon={faHouse}/>상세주소</p>
+                                <div className='w-full'>
                                     <input
                                         type="text"
                                         name="신상세주소"
@@ -612,34 +787,10 @@ const PropertyUpload = () => {
                                 </div>
                             </div>
                             <div className='grid grid-rows-2 w-full'>
-                                <p className='mobile_3_bold flexRow gap-x-2'><FontAwesomeIcon icon={faHouse}/>구 주소</p>
-                                <div className='w-full'>
-                                    <input
-                                        type="text"
-                                        name="구"
-                                        value={propertyData.구}
-                                        onChange={handleInputChange}
-                                        className="w-1/3"
-                                    />
-                                    <input
-                                        type="text"
-                                        name="읍면동"
-                                        value={propertyData.읍면동}
-                                        onChange={handleInputChange}
-                                        className="w-1/3"
-                                    />
-                                    <input
-                                        type="text"
-                                        name="구상세주소"
-                                        value={propertyData.구상세주소}
-                                        onChange={handleInputChange}
-                                        className="w-1/3"
-                                    />
-                                </div>
-                            </div>
-                            <div className='grid grid-rows-2 w-full'>
                                 <p className='mobile_3_bold flexRow gap-x-2'><FontAwesomeIcon icon={faHouse}/>동 / 호수</p>
                                 <div className='w-full grid grid-cols-2 justify-between gap-x-8'>
+                                    
+
                                     <div className='flexRow gap-x-2'>
                                         <input
                                             type="text"
