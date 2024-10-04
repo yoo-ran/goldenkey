@@ -95,6 +95,26 @@ Make sure you have the following installed on your system:
     - Open MAMP (or another database tool like XAMPP or Docker).
     - Start your MySQL server through MAMP.
 
+## Testing the Code
+
+1. **Frontend Testing:**
+
+   - Ensure the frontend server is running (`npm run dev`), and check the application in the browser (default: `http://localhost:5173`).
+   - Test the UI elements like property uploads, filtering, and managing (CRUD operations) to ensure they are working as expected.
+   - **Login Information:** Use the following credentials to log in:
+     - **Email:** `a@mail.com`
+     - **Password:** `aaaa`
+
+2. **Backend Testing:**
+
+   - Use tools like [Postman](https://www.postman.com/) or cURL to test API endpoints on `http://localhost:8000`.
+   - Send requests to the backend and check that the property data is being correctly fetched, created, updated, and deleted from the database.
+
+3. **Database Testing:**
+
+   - Open phpMyAdmin (or use a MySQL client) to verify that data is being correctly inserted, updated, and deleted in the `userlists` database.
+
+
 
 ## Technologies Used
 
