@@ -10,9 +10,10 @@ import Apartment from '../filters/Apartment.jsx';
 const approvalDate = [ "15년 이상", "15년 이내", "10년 이내", "5년 이내"]
 
 
-const SearchHeader = ({ onSendSearchTerm  }) => {
+const SearchHeader = ({ onSendSearchTerm }) => {
     const [openFilter, setOpenFilter] = useState(false);
     const [filterType, setFilterType] = useState("");
+    const [searchTerm, setSearchTerm] = useState("");
 
 
     const filterPropertyType = () => {
@@ -38,8 +39,14 @@ const SearchHeader = ({ onSendSearchTerm  }) => {
 
     const searchHandle = (e) => {
         const searchTerm = e.target.value;
-        // Pass the search term to the parent component (Search)
-        onSendSearchTerm(searchTerm);
+        console.log("Search Term in SearchHeader:", searchTerm);
+
+        // Pass the search term to the parent component
+        if (onSendSearchTerm) {
+            onSendSearchTerm(searchTerm);  
+        } else {
+            console.error("onSendSearchTerm is not defined!");
+        }
     };
 
     const onOpenFromChild = (openFromChild) => {

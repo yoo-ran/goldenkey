@@ -18,12 +18,11 @@ import 'swiper/css/scrollbar';
 import SearchHeader from '../components/layout/SearchHeader';
 
 
-const Search = () => {
+const Search = ({ searchTerm }) => {
     const [favoriteIds, setFavoriteIds] = useState([])
     const [propertyId, setPropertyId] = useState()
     const [properties, setProperties] = useState([]);
     const [propertyImages, setPropertyImages] = useState({}); // Store images by property ID
-    const [searchTerm, setSearchTerm] = useState(""); // Search term state
     const [filteredProperties, setFilteredProperties] = useState([]); 
     const location = useLocation(); // Retrieve the state (data) from navigation
     const rangeValues = location.state || {
@@ -163,15 +162,6 @@ const Search = () => {
     };
     
     
-    
-
-    
-
-    useEffect(() => {
-        filterProperties();
-        console.log(filteredProperties);
-    }, [rangeValues]);
-
 
     const formatToKoreanCurrency = (number) => {
         const billion = Math.floor(number / 100000000); // Extract the 억 (billion) part
@@ -195,15 +185,32 @@ const Search = () => {
         return result.trim(); // Return the formatted string, removing any unnecessary spaces
     };
     
-    const handleSearchTerm = (term) => {
-        setSearchTerm(term);
-        const filtered = properties.filter((property) => 
-            property.건물명.includes(term) ||  property.도로명.includes(term) // Assuming property names are in Korean
-        );
-    
-        setFilteredProperties(filtered);
-    };
+    useEffect(() => {
+        const fetchAddresses = async () => {
+            if (searchTerm) {
+                try {
+                    const response = await axios.get(`http://localhost:8000/search-address?q=${searchTerm}`);
+                    const { addressIds } = response.data;
 
+                    if (addressIds.length > 0 && properties.length > 0) {
+                        const filtered = properties.filter(property => 
+                            addressIds.includes(property.address_id) // Assuming `주소_ID` is the foreign key in your properties
+                        );
+                        setFilteredProperties(filtered);
+                    } else {
+                        setFilteredProperties(properties); // If no addressIds or properties, display all
+                    }
+            
+                } catch (error) {
+                    console.error('Error fetching addresses:', error);
+                }
+            }
+        };
+
+        fetchAddresses();
+    }, [searchTerm]); 
+
+    
 
 
     const fetchFavoriteIds = async () => {
@@ -259,8 +266,6 @@ const Search = () => {
 
     return (
         <main className='w-full gap-y-16'>
-
-            <SearchHeader onSendSearchTerm={handleSearchTerm} />
 
             {/* 검색결과 */}
             <section className='w-11/12 flexCol gap-y-4'>
