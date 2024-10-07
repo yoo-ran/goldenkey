@@ -281,7 +281,7 @@ const Search = ({ searchTerm }) => {
             {/* 검색결과 */}
             <section className='w-11/12 flexCol gap-y-4'>
                 <h2 className='w-full'>{filteredProperties.length > 0 ? filteredProperties.length : properties.length}개의 검색결과</h2>
-                <article className='w-full grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8'>
+                <article className='w-full grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8 min-h-96'>
 
                 {(filteredProperties.length > 0 ? filteredProperties : properties).map((property) => {                        
                     const { 순번: propertyId } = property; // Assuming '순번' is the unique property ID
