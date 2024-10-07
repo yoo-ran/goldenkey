@@ -191,15 +191,26 @@ const Search = ({ searchTerm }) => {
                 try {
                     const response = await axios.get(`http://localhost:8000/search-address?q=${searchTerm}`);
                     const { addressIds } = response.data;
+                    console.log(addressIds);
+                     // Initialize filtered properties
+                let filtered = [];
 
-                    if (addressIds.length > 0 && properties.length > 0) {
-                        const filtered = properties.filter(property => 
-                            addressIds.includes(property.address_id) // Assuming `주소_ID` is the foreign key in your properties
-                        );
-                        setFilteredProperties(filtered);
-                    } else {
-                        setFilteredProperties(properties); // If no addressIds or properties, display all
-                    }
+                // Case 1: Filter by addressIds if they are returned (meaning it's a 주소)
+                if (addressIds.length > 0 && properties.length > 0) {
+                    filtered = properties.filter(property => 
+                        addressIds.includes(property.address_id) // Assuming `address_id` is the correct field
+                    );
+                } 
+
+                // Case 2: If no addressIds (meaning searchTerm might be 건물명), filter by 건물명
+                if (addressIds.length === 0) {
+                    filtered = properties.filter(property => 
+                        property.건물명 && property.건물명.includes(searchTerm) // Filter by 건물명
+                    );
+                }
+
+                // Set filtered properties if there are matches, otherwise show all properties
+                setFilteredProperties(filtered.length > 0 ? filtered : properties);
             
                 } catch (error) {
                     console.error('Error fetching addresses:', error);
