@@ -10,7 +10,6 @@ import apartmentImg from "../assets/home/apartment.jpg";
 import houseImg from "../assets/home/house.jpg";
 import officeTellImg from "../assets/home/officetell.jpg";
 import oneroomImg from "../assets/home/oneroom.jpg";
-import SearchHeader from '../components/layout/SearchHeader';
 
 
 const propertyType = [
@@ -90,7 +89,6 @@ const Home = () => {
                 </article>
             </section>    
 
-            <SearchHeader/>
             
             {/* 추천태그 */}
             <section className='w-11/12 lg:w-10/12 flexCol gap-y-4'>
