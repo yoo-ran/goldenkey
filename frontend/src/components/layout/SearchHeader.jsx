@@ -57,7 +57,7 @@ const SearchHeader = ({ onSendSearchTerm }) => {
     return (
           <section className='w-11/12 md:w-full relative  z-50 flexCol'>
                 <div className={`relative w-full  top-14  flexCol gap-y-4`} >
-                    <article className={`absolute  z-50 top-0 md:left-0 bg-primary border-2 rounded-md drop-shadow p-4 md:p-0 md:pb-4  mobile_6 w-full md:w-2/12 transition-[all]  ${openFilter ? "translate-y-1.5": "opacity-0"}`}>
+                    <article className={`absolute  z-50 top-0 md:left-0 bg-primary border-2 rounded-md drop-shadow p-4 md:p-0 md:pb-4  mobile_6 w-full md:w-2/12 transition-[all]  ${openFilter ? "translate-y-1.5": "hidden"}`}>
                         <div className='mobile_4_bold border-b w-full text-center text-primary-yellow pb-4 md:py-4'><p>거주유형선택</p></div>
                         <div className='w-full  md:pl-4'>
                             <p className='mobile_5 text-primary-yellow'>옵션을 선택하세요</p>

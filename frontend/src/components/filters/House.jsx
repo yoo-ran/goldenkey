@@ -2,27 +2,18 @@ import React, { useCallback, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import DoubleRangeSlider from './DoubleRangeSlider/DoubleRangeSlider';
+import DoubleRangeSection from './DoubleRangeSection';
 
-// Reusable component for DoubleRangeSection
-const DoubleRangeSection = ({ title, subTitle1, subTitle2, min1, max1, min2, max2, onChange1, onChange2 }) => (
-  <div className="flexCol items-start gap-y-8 w-full  border-t border-primary-yellow pt-8">
-    <p className='mobile_3_bold'>{title}</p>
-    <div className="grid grid-rows-2">
-      <p className="mobile_4_bold">{subTitle1}</p>
-      <DoubleRangeSlider name={title} min={min1} max={max1} onChange={onChange1} />
-    </div>
-    {subTitle2 && (
-      <div className="grid grid-rows-2">
-        <p className="mobile_4_bold">{subTitle2}</p>
-        <DoubleRangeSlider name={title} min={min2} max={max2} onChange={onChange2} />
-      </div>
-    )}
-    <div className='w-full grid grid-cols-2 gap-x-4 mobile_4_bold_b'>
-      <button className="btn_clear">초기화</button>
-      <button className='btn_clear bg-primary-yellow'>적용</button>
-    </div>
-  </div>
-);
+
+const defaultFilteringData = {
+  transactionMethod: [],
+  depositRange: [],  // Array of objects with {transactionMethod, min, max}
+  rentRange: [],     // Array of objects with {transactionMethod, min, max}
+  roomSizeRange: { min: 10, max: 60 },
+  approvalDate: "",
+  isParking: "",
+  isEV: "",
+};
 
 const House = ({ approvalDate, onOpen }) => {
   const navigate = useNavigate();
@@ -30,19 +21,36 @@ const House = ({ approvalDate, onOpen }) => {
   const [isParking, setIsParking] = useState(false);
   const [isEV, setIsEV] = useState(false);
   const [transactionMethods, setTransactionMethods] = useState([]);
-  const [filteringData, setFilteringData] = useState({
-    transactionMethod: [],
-    depositRange: [],  // Array of objects with {transactionMethod, min, max}
-    rentRange: [],     // Array of objects with {transactionMethod, min, max}
-    roomSizeRange: { min: 10, max: 60 },
-    approvalDate: "",
-    isParking: false,
-    isEV: false,
-  });
+  const [filteringData, setFilteringData] = useState(defaultFilteringData);
+
+  const handleSubmit = useCallback((e) => {
+    e.preventDefault();
+    onOpen(false)
+    navigate('/search', { state: filteringData });
+  }, [filteringData, navigate]);
+
+  const handleClear = (e) => {
+    e.preventDefault();
+    
+    const { name } = e.target;  // Get the name of the clicked element (if any)
+    
+    // If there is a `name`, remove that key from the transactionMethod array
+    if (name) {
+      setFilteringData(prevState => ({
+        ...prevState,
+        transactionMethod: prevState.transactionMethod.filter(item => item !== name),
+        depositRange: prevState.depositRange.filter(item => !item[name]),
+        rentRange: prevState.rentRange.filter(item => !item[name])
+      }));
+    } else {
+      // Reset the whole filteringData if no specific name is provided
+      setFilteringData(defaultFilteringData); // Reset to default state
+    }
+  };
   
+  console.log(filteringData);
 
   const handleDepositRangeChange = useCallback(({ name, min = 0, max = 3000 } = {}) => {
-    console.log(name, min, max);
     setFilteringData(prevState => {
       // Check if the transactionMethod (name) already exists in the depositRange
       const existingEntryIndex = prevState.depositRange.findIndex(item => item[name]);
@@ -71,6 +79,7 @@ const House = ({ approvalDate, onOpen }) => {
     setFilteringData(prevState => {
       // Check if the transactionMethod (name) already exists in the rentRange
       const existingEntryIndex = prevState.rentRange.findIndex(item => item[name]);
+      console.log(existingEntryIndex);
   
       if (existingEntryIndex !== -1) {
         // If transactionMethod exists, update min and max
@@ -90,9 +99,6 @@ const House = ({ approvalDate, onOpen }) => {
       }
     });
   }, []);
-  
-  
-  
   
   
   
@@ -119,9 +125,11 @@ const House = ({ approvalDate, onOpen }) => {
             transactionMethod: [...prevState.transactionMethod, value]
           };
         } else {
-          return {
+          return { 
             ...prevState,
-            transactionMethod: prevState.transactionMethod.filter(item => item !== value)
+            transactionMethod: prevState.transactionMethod.filter(item => item !== value),
+            depositRange: prevState.depositRange.filter(item => !item[value]),
+            rentRange: prevState.rentRange.filter(item => !item[value])
           };
         }
       });
@@ -131,11 +139,6 @@ const House = ({ approvalDate, onOpen }) => {
   }, [isParking, isEV]);
   
 
-  const handleSubmit = useCallback((e) => {
-    e.preventDefault();
-    onOpen(false)
-    navigate('/search', { state: filteringData });
-  }, [filteringData, navigate]);
 
   const fetchConstantVariable = useCallback(async () => {
     try {
@@ -146,11 +149,14 @@ const House = ({ approvalDate, onOpen }) => {
     }
   }, []);
 
+
+
   useEffect(() => {
     fetchConstantVariable();
   }, [fetchConstantVariable]);
 
-  console.log(filteringData);
+
+
   return (
     <main className="w-full flexCol gap-y-8">
       <h1 className='border-b w-full pb-4 text-center'>주택/빌라</h1>
@@ -187,6 +193,8 @@ const House = ({ approvalDate, onOpen }) => {
                     min1={0}
                     max1={3000}
                     onChange1={handleDepositRangeChange}
+                    handleClear={handleClear}
+                    handleSubmit={handleSubmit}
                   />
                 )}
 
@@ -201,6 +209,8 @@ const House = ({ approvalDate, onOpen }) => {
                     max2={1000}
                     onChange1={handleDepositRangeChange}
                     onChange2={handleRentRangeChange}
+                    handleClear={handleClear}
+                    handleSubmit={handleSubmit}
                   />
                 )}
 
@@ -215,6 +225,8 @@ const House = ({ approvalDate, onOpen }) => {
                     max2={1000}
                     onChange1={handleDepositRangeChange}
                     onChange2={handleRentRangeChange}
+                    handleClear={handleClear}
+                    handleSubmit={handleSubmit}
                   />
                 )}
             </div>
@@ -261,14 +273,14 @@ const House = ({ approvalDate, onOpen }) => {
                 <button
                   name="isParking"
                   onClick={handleSelect}
-                  className={`px-3 py-2 text-center rounded mobile_5 ${isParking ? "bg-secondary-yellow" : "bg-secondary-blue"}`}
+                  className={`px-3 py-2 text-center rounded mobile_5 ${filteringData.isParking ? "bg-secondary-yellow" : "bg-secondary-blue"}`}
                 >
                   주차가능
                 </button>
                 <button
                   name="isEV"
                   onClick={handleSelect}
-                  className={`px-3 py-2 text-center rounded mobile_5 ${isEV ? "bg-secondary-yellow" : "bg-secondary-blue"}`}
+                  className={`px-3 py-2 text-center rounded mobile_5 ${filteringData.isEV ? "bg-secondary-yellow" : "bg-secondary-blue"}`}
                 >
                   엘리베이터
                 </button>
@@ -277,12 +289,14 @@ const House = ({ approvalDate, onOpen }) => {
           </article>
         </section>
 
+      </form>
         <section className='w-11/12 lg:w-8/12 grid grid-rows-3 gap-y-4 mobile_4_bold_b'>
           <button className='btn_clear' onClick={() => { setOpen(false); onOpen(false); }}>취소</button>
-          <button className="btn_clear">전체 초기화</button>
+          <button className="btn_clear" onClick={handleClear}>
+            전체 초기화
+          </button>
           <button type="submit" className="btn_save">전체 적용</button>
         </section>
-      </form>
     </main>
   );
 };
