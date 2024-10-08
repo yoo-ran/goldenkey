@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom'; // For navigation to the login page
 
-import Memo from '../components/feature/Memo';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBuilding, faCalendar, faCar, faChevronDown, faCircleCheck, faElevator, faHourglass, faHouse, faKey, faDroplet, faMoneyBill, faMoneyBills, faRulerCombined, faRulerVertical, faTag, faUserPlus, faMoneyBillTransfer } from '@fortawesome/free-solid-svg-icons';
 
@@ -41,9 +40,6 @@ const PropertyUpload = () => {
 
     // 거래완료여부
     const [transactionStatus, setTransactionStatus] = useState([]);
-
-    // 거래완료여부
-    const [toiletsNum, setToiletsNum] = useState([]);
 
     const contactFieldsMap = {
         매매: ['매도인', '매수인', '부동산'],

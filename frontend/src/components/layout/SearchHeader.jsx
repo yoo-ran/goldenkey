@@ -39,7 +39,7 @@ const SearchHeader = ({ onSendSearchTerm  }) => {
 
     return (
           <section className='w-11/12 lg:w-10/12 flexRow justify-between relative z-40'>
-                <div className={`absolute top-12 flexCol bg-white gap-y-4 mobile_6 w-full overflow-hidden transition-[all]  ${openFilter ? "translate-y-1.5": "opacity-0"}`}>
+                <div className={`absolute top-12 flexCol bg-white gap-y-4 mobile_6 w-full overflow-hidden transition-[all]  ${openFilter ? "translate-y-1.5": "hidden"}`}>
                     <article className='mobile_4 border-b w-full text-center py-2'><p>거주유형선택</p></article>
                     <article className='w-full'>
                         <p className='mobile_4_bold'>옵션을 선택하세요</p>
