@@ -53,7 +53,7 @@ main{
       @apply  mobile_4_bold;
     }
     input, textarea {
-      @apply bg-secondary-yellow text-secondary rounded-lg mobile_5 p-2;
+      @apply bg-white text-secondary rounded-lg mobile_5 p-2;
     }
 
   }
@@ -119,6 +119,9 @@ main{
     }
     .btn_save {
       @apply bg-primary mobile_3_bold text-primary-yellow rounded-lg py-3
+    }
+    .inputBox{
+      @apply flexCol w-full  gap-y-6 bg-secondary-yellow rounded-xl py-8 px-3
     }
   }
 
