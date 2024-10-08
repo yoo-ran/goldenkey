@@ -1,5 +1,7 @@
 // src/components/Home.jsx
 import {useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
 import axios from 'axios';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -24,6 +26,7 @@ const recommendTag = [
 ]
 
 const Home = () => {
+    const navigate = useNavigate();
     const [isLogin, setIsLogin] = useState(true);
     const [properties, setProperties] = useState([]);
     const [openFilter, setOpenFilter] = useState(false);
@@ -74,6 +77,10 @@ const Home = () => {
         setIsLogin(!isLogin);
     };
 
+    const handleFilterPropertyType = (type)=> {
+            navigate('/search', { state: type });
+    }
+
 
 
     return (
@@ -108,17 +115,18 @@ const Home = () => {
             <section className='w-11/12 lg:w-10/12'>
                 <article className='grid grid-cols-1 lg:grid-cols-2 gap-x-4 gap-y-6'>
                 {propertyType.map((item, id) => (
-                    <div
+                    <button
                         key={id}
                         style={{ backgroundImage: `url(${item.img})` }}
+                        onClick={() => handleFilterPropertyType(item.type)}
                         className="relative overflow-hidden flexCol w-full lg: bg-cover bg-center rounded-4xl px-2 py-14"
                     >
-                        <div className="absolute bg-black w-full h-full bg-opacity-50"></div>
+                        <p className="absolute bg-black w-full h-full bg-opacity-50"></p>
                         <div className="border-l-8 pl-2 border-primary-yellow w-10/12 z-40 flexCol items-start gap-y-2 mobile_3_bold pl-8">
                             <p className="text-primary-yellow ">{item.type}</p>
                             <span className="text-white">{item.typeDescrp}</span>
                         </div>
-                    </div>
+                    </button>
                 ))}
                 </article>
             </section>

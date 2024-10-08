@@ -15,7 +15,6 @@ import 'swiper/css';
 // import 'swiper/swiper-bundle.css'; // Swiper core styles
 import 'swiper/css/pagination';
 import 'swiper/css/scrollbar';
-import SearchHeader from '../components/layout/SearchHeader';
 
 
 const Search = ({ searchTerm }) => {
@@ -33,7 +32,9 @@ const Search = ({ searchTerm }) => {
         approvalDate: "",
         isParking: false,
         isEV: false,
-    }; 
+    };
+    const typeFromHome = location.state
+    console.log(typeFromHome);
     
 
     useEffect(() => {
@@ -127,10 +128,6 @@ const Search = ({ searchTerm }) => {
                 const approvalYear = new Date(property.사용승인일자).getFullYear(); // Get the approval year from the property
     
                 const yearDifference = currentYear - approvalYear; // Calculate the year difference
-    
-                console.log(currentYear);
-                console.log(approvalYear);
-                console.log(yearDifference);
                 switch (rangeValues.approvalDate) {
                     case "5년 이내":
                         return yearDifference <= 5;
@@ -221,6 +218,43 @@ const Search = ({ searchTerm }) => {
         fetchAddresses();
     }, [searchTerm]); 
 
+    useEffect(() => {
+        const filtered = properties.filter((property) => {
+    
+            // Filter by 부동산구분 based on the value of typeFromHome
+            const matchesTypeFromHome = (() => {
+                if (typeFromHome === "원룸 / 투룸") {
+                    // Return true if 부동산구분 is either 원룸 or 투룸
+                    return property.부동산구분 === "원룸" || property.부동산구분 === "투룸";
+                } 
+                else if (typeFromHome === "아파트") {
+                    // Return true if 부동산구분 is 아파트
+                    return property.부동산구분 === "아파트";
+                } 
+                else if (typeFromHome === "주택, 빌라") {
+                    // Return true if 부동산구분 is 주택 or 빌라
+                    return property.부동산구분 === "주택" || property.부동산구분 === "빌라";
+                } 
+                else if (typeFromHome === "오피스텔") {
+                    // Return true if 부동산구분 is 오피스텔
+                    return property.부동산구분 === "오피스텔";
+                } 
+                else {
+                    // If typeFromHome does not match any condition, return false
+                    return false;
+                }
+            })();
+            
+            // Return true if the 부동산구분 matches the typeFromHome
+            return matchesTypeFromHome;
+        });
+    
+        console.log(filtered);
+        setFilteredProperties(filtered); // Update the filtered properties state
+    }, [typeFromHome, properties]);
+    
+    
+    console.log(properties);
     
 
 
