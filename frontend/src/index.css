@@ -115,19 +115,19 @@ main{
         line-height: calc(6px / 10px);
     }
     .btn_clear {
-      @apply bg-secondary-light mobile_3_bold text-primary rounded-lg py-3
+      @apply bg-secondary-light mobile_3_bold text-primary rounded-lg py-3;
     }
     .btn_save {
-      @apply bg-primary mobile_3_bold text-primary-yellow rounded-lg py-3
+      @apply bg-primary mobile_3_bold text-primary-yellow rounded-lg py-3;
     }
     .boxEdit{
-      @apply flexCol w-full  gap-y-6 bg-secondary-yellow rounded-xl py-8 px-3
+      @apply  bg-secondary-yellow rounded-xl py-8 px-3;
     }
     .boxDisplay{
-      @apply flexCol w-full  gap-y-6 bg-white rounded-xl border
+      @apply bg-white rounded-xl  ;
     }
-    .pDiplay {
-      @apply bg-secondary-yellow text-primary rounded-lg p-2
+    .pDisplay {
+      @apply bg-secondary-yellow text-primary rounded-lg p-2 w-9/12 ;
     }
   }
 

@@ -417,32 +417,46 @@ const PropertyDetail = () => {
 
             <section className='w-11/12 flexCol gap-y-4'>
                     <p className='mobile_3_bold w-full'>매물 기본 정보</p>
-                    <article className={`${isEditing? "boxEdit": "boxDiplay"}`}>
+                    <article className={`w-full flexCol gap-y-6 ${isEditing? "boxEdit": "boxDiplay"}`}>
                             <div className='w-full grid grid-rows-3 gap-y-2'>
                                 <p className='mobile_3_bold flexRow gap-x-2'><FontAwesomeIcon icon={faRulerCombined}/> 공급면적</p>
                                 <div className='flexRow justify-between'>
-                                    <input
-                                        type="number"
-                                        name="전체m2"
-                                        min={0}
-                                        value={propertyData.전체m2}
-                                        onChange={handleInputChange}
-                                        className='w-10/12'
-                                        />
+                                    {
+                                        isEditing ? (
+                                            <input
+                                            type="number"
+                                            name="전체m2"
+                                            min={0}
+                                            value={propertyData.전체m2}
+                                            onChange={handleInputChange}
+                                            className='w-10/12'
+                                            />
+                                        ) : (
+                                            <p className='pDisplay'>{propertyData.전체m2}</p>
+                                        )
+                                    }
+                                   
                                     <p className='w-1/12'>
                                         m<sup>2</sup>
                                     </p>
                                 </div>
                                 <div className='flexRow justify-between'>
-                                    <input
-                                        type="number"
-                                        name="전체평"
-                                        min={0}
-                                        value={propertyData.전체평}
-                                        onChange={handleInputChange}
-                                        className='w-10/12'
-                                        placeholder='숫자를 입력하세요'
-                                    />
+                                    {
+                                        isEditing ? (
+                                            <input
+                                                type="number"
+                                                name="전체평"
+                                                min={0}
+                                                value={propertyData.전체평}
+                                                onChange={handleInputChange}
+                                                className='w-10/12'
+                                                placeholder='숫자를 입력하세요'
+                                            />
+                                        ):(
+                                            <p className='pDisplay'>{propertyData.전체평}</p>
+                                        )
+                                    }
+                                    
                                     <p className='w-1/12'>평</p>
                                 </div>
                                     
@@ -450,28 +464,42 @@ const PropertyDetail = () => {
                             <div className='w-full grid grid-rows-3 gap-y-2'>
                                 <p className='mobile_3_bold flexRow gap-x-2'><FontAwesomeIcon icon={faRulerCombined}/>전용면적 </p>
                                 <div className='flexRow justify-between'>
-                                    <input
-                                        type="number"
-                                        name="전용m2"
-                                        min={0}
-                                        value={propertyData.전용m2}
-                                        onChange={handleInputChange}
-                                        className='w-10/12'
-                                    />
+                                    {
+                                        isEditing ? (
+                                            <input
+                                                type="number"
+                                                name="전용m2"
+                                                min={0}
+                                                value={propertyData.전용m2}
+                                                onChange={handleInputChange}
+                                                className='w-10/12'
+                                            />
+                                        ) : (
+                                            <p className='pDisplay'>{propertyData.전용m2}</p>
+                                        )
+                                    }
+                                    
                                     <p className='w-1/12'>
                                         m<sup>2</sup>
                                     </p>
                                 </div>
                                 <div className='flexRow justify-between'>
-                                    <input
-                                        type="number"
-                                        name="전용평"
-                                        min={0}
+                                    {
+                                        isEditing ? (
+                                            <input
+                                                type="number"
+                                                name="전용평"
+                                                min={0}
 
-                                        value={propertyData.전용평}
-                                        onChange={handleInputChange}
-                                        className='w-10/12'
-                                    />
+                                                value={propertyData.전용평}
+                                                onChange={handleInputChange}
+                                                className='w-10/12'
+                                            />
+                                        ) : (
+                                            <p className='pDisplay'>{propertyData.전용평}</p>
+                                        )
+                                    }
+                                    
                                     <p className='w-1/12'>평</p>
                                 </div>
                             </div>
@@ -499,63 +527,94 @@ const PropertyDetail = () => {
 
                             <div className='w-full flexRow justify-between'>
                                 <p className='mobile_3_bold flexRow gap-x-2 w-3/12'><FontAwesomeIcon icon={faBuilding}/>건물층</p>
-                                <input
-                                    type="number"
-                                    name="층수"
-                                    min="0"
-                                    value={propertyData.층수}
-                                    onChange={handleInputChange}
-                                    className='w-7/12'
-                                />
+                                {
+                                    isEditing ? (
+                                        <input
+                                            type="number"
+                                            name="층수"
+                                            min="0"
+                                            value={propertyData.층수}
+                                            onChange={handleInputChange}
+                                            className='w-7/12'
+                                        />
+                                    ):(
+                                        <p className="pDisplay">{propertyData.층수}</p>
+                                    )
+                                }
+                                
                                 <p>층</p>
                             </div>
 
                             <div className='w-full flexRow justify-between'>
                                 <p className='mobile_3_bold flexRow gap-x-2 w-3/12'><FontAwesomeIcon icon={faCar}/>주차</p>
-                                <input
-                                    type="number"
-                                    name="주차가능대수"
-                                    min="0"
-                                    value={propertyData.주차가능대수}
-                                    onChange={handleInputChange}
-                                    className='w-7/12'
-                                />
+                                {
+                                    isEditing ? (
+                                        <input
+                                            type="number"
+                                            name="주차가능대수"
+                                            min="0"
+                                            value={propertyData.주차가능대수}
+                                            onChange={handleInputChange}
+                                            className='w-7/12'
+                                        />
+                                    ):(
+                                        <p className="pDisplay">{propertyData.주차가능대수}</p>
+                                    )
+                                }
                                 <p>대</p>
                             </div>
 
                             <div className='w-full flexRow justify-between'>
                                 <p className='mobile_3_bold flexRow gap-x-2 w-3/12'><FontAwesomeIcon icon={faDroplet} />화장실</p>
-                                <input
-                                    type="number"
-                                    name="화장실개수"
-                                    min="0"
-                                    value={propertyData.화장실개수}
-                                    onChange={handleInputChange}
-                                    className='w-7/12'
-                                />
+                                {
+                                    isEditing ? (
+                                        <input
+                                            type="number"
+                                            name="화장실개수"
+                                            min="0"
+                                            value={propertyData.화장실개수}
+                                            onChange={handleInputChange}
+                                            className='w-7/12'
+                                        />
+                                    ):(
+                                        <p className="pDisplay">{propertyData.화장실개수}</p>
+                                    )
+                                }
                                 <p>개</p>
                             </div>
                             
                             <div className='w-full flexRow justify-between'>
                                 <p className='mobile_3_bold flexRow gap-x-2 w-3/12'><FontAwesomeIcon icon={faKey}/>비밀번호</p>
-                                <input
-                                    type="text"
-                                    name="비밀번호"
-                                    value={propertyData.비밀번호}
-                                    onChange={handleInputChange}
-                                    className='w-7/12'
-                                />
+                                {
+                                    isEditing ? (
+                                        <input
+                                            type="text"
+                                            name="비밀번호"
+                                            value={propertyData.비밀번호}
+                                            onChange={handleInputChange}
+                                            className='w-7/12'
+                                        />
+                                    ):(
+                                        <p className="pDisplay">{propertyData.비밀번호}</p>
+                                    )
+                                }
                                 <p>번</p>
                             </div>
                             <div className='w-full flexRow justify-between'>
                                 <p className='mobile_3_bold flexRow gap-x-2 w-3/12'><FontAwesomeIcon icon={faMoneyBill}/>관리비</p>
-                                <input
-                                    type="text"
-                                    name="관리비"
-                                    value={propertyData.관리비}
-                                    onChange={handleInputChange}
-                                    className='w-7/12'
-                                />
+                                {
+                                    isEditing ? (
+                                        <input
+                                            type="text"
+                                            name="관리비"
+                                            value={propertyData.관리비}
+                                            onChange={handleInputChange}
+                                            className='w-7/12'
+                                        />
+                                    ):(
+                                        <p className="pDisplay">{propertyData.관리비}</p>
+                                    )
+                                }
                                 <p>원</p>
                             </div>
                 </article>
@@ -565,7 +624,7 @@ const PropertyDetail = () => {
 
             <section className='w-11/12 flexCol py-6 gap-y-8'>
                 <p className='mobile_3_bold w-full'>주소</p>
-                <article className='inputBox'>
+                <article className={`w-full flexCol gap-y-6 ${isEditing? "boxEdit": "boxDiplay"}`}>
                         <div className='grid grid-rows-2 w-full'>
                             <p className='mobile_3_bold flexRow gap-x-2'><FontAwesomeIcon icon={faHouse}/>신 주소</p>
                             <div className='w-full'>
@@ -582,22 +641,36 @@ const PropertyDetail = () => {
                             <p className='mobile_3_bold flexRow gap-x-2'><FontAwesomeIcon icon={faHouse}/>동 / 호수</p>
                             <div className='w-full grid grid-cols-2 justify-between gap-x-8'>
                                 <div className='flexRow gap-x-2'>
-                                    <input
-                                        type="text"
-                                        name="동"
-                                        value={propertyData.동}
-                                        onChange={handleInputChange}
-                                        className='w-11/12'
-                                    />동
+                                    {
+                                        isEditing ? (
+                                            <input
+                                                type="text"
+                                                name="동"
+                                                value={propertyData.동}
+                                                onChange={handleInputChange}
+                                                className='w-11/12'
+                                            />
+                                        ):(
+                                            <p className="pDisplay">{propertyData.동}</p>
+                                        )
+                                    }
+                                    <p>동</p>
                                 </div>
                                 <div className='flexRow gap-x-2'>
-                                    <input
-                                        type="text"
-                                        name="호수"
-                                        value={propertyData.호수}
-                                        onChange={handleInputChange}
-                                        className='w-11/12'
-                                    />호
+                                    {
+                                        isEditing ? (
+                                            <input
+                                                type="text"
+                                                name="호수"
+                                                value={propertyData.호수}
+                                                onChange={handleInputChange}
+                                                className='w-11/12'
+                                            />
+                                        ):(
+                                            <p className="pDisplay">{propertyData.호수}</p>
+                                        )
+                                    }
+                                    <p>호</p>
                                 </div>
                             </div>
                     </div>
@@ -606,7 +679,7 @@ const PropertyDetail = () => {
 
             <section className='w-11/12 flexCol py-6 gap-y-8'>
                 <p className='mobile_3_bold w-full'>연락처 정보</p>
-                <article className='inputBox'>
+                <article className={`w-full flexCol gap-y-6 ${isEditing? "boxEdit": "boxDiplay"}`}>
                     { propertyData.연락처 && Object.keys(propertyData.연락처).length > 0 ? (
                         Object.keys(propertyData.연락처).map((contactType, index) => (
                             <div key={index} className='flexCol gap-y-6 w-full items-start'>
@@ -614,24 +687,35 @@ const PropertyDetail = () => {
                                     <FontAwesomeIcon icon={faUserPlus} />
                                     {contactType}
                                 </p>
-                                <div className="flexCol gap-y-3 w-full">
-                                    <input
-                                        type="text"
-                                        name="이름"
-                                        value={propertyData.연락처[contactType]?.이름 || ''}
-                                        onChange={(e) => handleInputChange(e, contactType)}
-                                        placeholder={`${contactType} 이름을 입력하세요`}
-                                        className="w-full"
-                                    />
-                                    <input
-                                        type="text"
-                                        name="전화번호"
-                                        value={propertyData.연락처[contactType]?.전화번호 || ''}
-                                        onChange={(e) => handleInputChange(e, contactType)}
-                                        placeholder={`${contactType} 전화번호를 입력하세요`}
-                                        className="w-full"
-                                    />
-                                </div>
+                                    {
+                                        isEditing ? (
+                                            <div className="flexCol gap-y-3 w-full">
+                                                <input
+                                                    type="text"
+                                                    name="이름"
+                                                    value={propertyData.연락처[contactType]?.이름 || ''}
+                                                    onChange={(e) => handleInputChange(e, contactType)}
+                                                    placeholder={`${contactType} 이름을 입력하세요`}
+                                                    className="w-full"
+                                                />
+                                                <input
+                                                    type="text"
+                                                    name="전화번호"
+                                                    value={propertyData.연락처[contactType]?.전화번호 || ''}
+                                                    onChange={(e) => handleInputChange(e, contactType)}
+                                                    placeholder={`${contactType} 전화번호를 입력하세요`}
+                                                    className="w-full"
+                                                />
+                                            </div>
+                                        ):(
+                                            <div className="flexCol gap-y-3 w-full">
+                                                <p className='pDisplay w-full'>{propertyData.연락처[contactType]?.이름 || ''}</p>
+                                                <p className='pDisplay w-full'>{propertyData.연락처[contactType]?.전화번호 || ''}</p>
+                                            </div>
+
+                                        )
+                                    }
+                                    
                             </div>
                         ))
                     ) : (
