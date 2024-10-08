@@ -120,8 +120,14 @@ main{
     .btn_save {
       @apply bg-primary mobile_3_bold text-primary-yellow rounded-lg py-3
     }
-    .inputBox{
+    .boxEdit{
       @apply flexCol w-full  gap-y-6 bg-secondary-yellow rounded-xl py-8 px-3
+    }
+    .boxDisplay{
+      @apply flexCol w-full  gap-y-6 bg-white rounded-xl border
+    }
+    .pDiplay {
+      @apply bg-secondary-yellow text-primary rounded-lg p-2
     }
   }
 

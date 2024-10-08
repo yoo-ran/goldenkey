@@ -230,14 +230,21 @@ const PropertyDetail = () => {
                     <p className='bg-primary-yellow px-5 py-0.5 rounded mobile_4_bold'>{propertyData.부동산구분 ? propertyData.부동산구분:"부동산 구분"}</p>
                 </div>
                 <div className='flexCol w-full'>
-                    <input
-                        type="text"
-                        name="건물명"
-                        value={propertyData.건물명}
-                        onChange={handleInputChange}
-                        placeholder='건물명을 입력하세요'
-                        className="bg-secondary-yellow w-full"
-                    />
+                    {
+                        isEditing ? (
+                            <input
+                                type="text"
+                                name="건물명"
+                                value={propertyData.건물명}
+                                onChange={handleInputChange}
+                                placeholder='건물명을 입력하세요'
+                                className="bg-secondary-yellow w-full"
+                            />
+                        ) : (
+                            <p className='pDiplay mobile_1_bold w-full bg-white'>{propertyData.건물명}</p>
+                        )
+                    }
+                    
                 </div>
                 <div className='w-full flexRow justify-end'>
                     <button className='btn_save px-2' onClick={()=> setIsEditing(true)}>
@@ -410,7 +417,7 @@ const PropertyDetail = () => {
 
             <section className='w-11/12 flexCol gap-y-4'>
                     <p className='mobile_3_bold w-full'>매물 기본 정보</p>
-                    <article className='inputBox'>
+                    <article className={`${isEditing? "boxEdit": "boxDiplay"}`}>
                             <div className='w-full grid grid-rows-3 gap-y-2'>
                                 <p className='mobile_3_bold flexRow gap-x-2'><FontAwesomeIcon icon={faRulerCombined}/> 공급면적</p>
                                 <div className='flexRow justify-between'>

@@ -269,7 +269,6 @@ console.log(propertyData);
     
     return (
         <main className='gap-y-10 w-full'>
-            <SearchHeader/>
 
             <section className='w-11/12 flexCol gap-y-12'>
                 <article className='flexCol items-start gap-y-8 w-full'>
@@ -483,7 +482,7 @@ console.log(propertyData);
 
                 <section className='w-11/12 flexCol gap-y-4'>
                         <p className='mobile_3_bold w-full'>매물 기본 정보</p>
-                        <article className='inputBox'>
+                        <article className='boxEdit'>
                                 <div className='w-full grid grid-rows-3 gap-y-2'>
                                     <p className='mobile_3_bold flexRow gap-x-2'><FontAwesomeIcon icon={faRulerCombined}/> 공급면적</p>
                                     <div className='flexRow justify-between'>
@@ -631,7 +630,7 @@ console.log(propertyData);
 
                 <section className='w-11/12 flexCol py-6 gap-y-8'>
                     <p className='mobile_3_bold w-full'>주소</p>
-                    <article className='inputBox'>
+                    <article className='boxEdit'>
                             <div className='grid grid-rows-2 w-full'>
                                 <p className='mobile_3_bold flexRow gap-x-2'><FontAwesomeIcon icon={faHouse}/>신 주소</p>
                                 <div className='w-full'>
@@ -672,7 +671,7 @@ console.log(propertyData);
 
                 <section className='w-11/12 flexCol py-6 gap-y-8'>
                     <p className='mobile_3_bold w-full'>연락처 정보</p>
-                    <article className='inputBox'>
+                    <article className='boxEdit'>
                     { contactFields.length>0 ? (
                     contactFields.map((contactType, index) => (
                             <div key={index} className='flexCol gap-y-6 w-full items-start'>
@@ -712,7 +711,7 @@ console.log(propertyData);
 
                 <section className='w-11/12 flexCol py-6 gap-y-8'>
                     <p className='mobile_3_bold w-full'>등록 / 기타 정보</p>
-                    <article className='inputBox'>
+                    <article className='boxEdit'>
                         <div className='flexRow w-full justify-between'>
                             <p className='mobile_3_bold flexRow gap-x-2'><FontAwesomeIcon icon={faCalendarCheck}/>거래완료</p>
                             <input
