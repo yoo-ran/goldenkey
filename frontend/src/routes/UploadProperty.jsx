@@ -29,11 +29,9 @@ const PropertyUpload = () => {
 
     const [images, setImages] = useState([]); // State for storing uploaded images
     const [selectedFiles, setSelectedFiles] = useState([]); // Store selected files for upload
-    const [memo, setMemo] = useState(''); // State for memo content
 
     // 부동산구분
     const [propertyTypes, setPropertyTypes] = useState([]);
-    const [selectedType, setSelectedType] = useState('');
 
     // 거래방식
     const [transactionMethod, setTransactionMethod] = useState([]);
