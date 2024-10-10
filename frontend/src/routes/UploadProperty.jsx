@@ -480,7 +480,7 @@ console.log(propertyData);
 
                 <section className='w-11/12 flexCol gap-y-4'>
                         <p className='mobile_3_bold w-full'>매물 기본 정보</p>
-                        <article className='boxEdit'>
+                        <article className='boxEdit w-full flexCol gap-y-6'>
                                 <div className='w-full grid grid-rows-3 gap-y-2'>
                                     <p className='mobile_3_bold flexRow gap-x-2'><FontAwesomeIcon icon={faRulerCombined}/> 공급면적</p>
                                     <div className='flexRow justify-between'>
@@ -669,10 +669,10 @@ console.log(propertyData);
 
                 <section className='w-11/12 flexCol py-6 gap-y-8'>
                     <p className='mobile_3_bold w-full'>연락처 정보</p>
-                    <article className='boxEdit'>
+                    <article className='boxEdit w-full flexCol gap-y-6'>
                     { contactFields.length>0 ? (
                     contactFields.map((contactType, index) => (
-                            <div key={index} className='flexCol gap-y-6 w-full items-start'>
+                            <div key={index} className='flexCol gap-y-4 w-full items-start'>
                                 <p className='mobile_3_bold flexRow gap-x-2'>
                                     <FontAwesomeIcon icon={faUserPlus} />
                                     {contactType}
@@ -709,7 +709,7 @@ console.log(propertyData);
 
                 <section className='w-11/12 flexCol py-6 gap-y-8'>
                     <p className='mobile_3_bold w-full'>등록 / 기타 정보</p>
-                    <article className='boxEdit'>
+                    <article className='boxEdit w-full flexCol gap-y-4'>
                         <div className='flexRow w-full justify-between'>
                             <p className='mobile_3_bold flexRow gap-x-2'><FontAwesomeIcon icon={faCalendarCheck}/>거래완료</p>
                             <input
