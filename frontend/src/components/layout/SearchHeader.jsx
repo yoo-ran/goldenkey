@@ -3,9 +3,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHouseChimneyWindow, faHouse, faBuilding, faSearch } from '@fortawesome/free-solid-svg-icons';
 
 
-import Oneroom from '../filters/Oneroom.jsx';
+// import Oneroom from '../filters/Oneroom.jsx';
 import House from '../filters/House.jsx';
-import Apartment from '../filters/Apartment.jsx';
+// import Apartment from '../filters/Apartment.jsx';
 
 const approvalDate = [ "15년 이상", "15년 이내", "10년 이내", "5년 이내"]
 
@@ -24,10 +24,10 @@ const SearchHeader = ({ onSendSearchTerm }) => {
                     return <House approvalDate={approvalDate} onOpen={onOpenFromChild}  />;
             
                 case "oneroom/tworoom":
-                    return <Oneroom approvalDate={approvalDate} onOpen={onOpenFromChild}/>;
+                    // return <Oneroom approvalDate={approvalDate} onOpen={onOpenFromChild}/>;
             
                 case "apartment":
-                    return <Apartment approvalDate={approvalDate} onOpen={onOpenFromChild}/>;
+                    // return <Apartment approvalDate={approvalDate} onOpen={onOpenFromChild}/>;
             
                 default:
     

@@ -24,7 +24,7 @@ const Search = ({ searchTerm }) => {
     const [propertyImages, setPropertyImages] = useState({}); // Store images by property ID
     const [filteredProperties, setFilteredProperties] = useState([]); 
     const location = useLocation(); // Retrieve the state (data) from navigation
-    const rangeValues = location.state || {
+    const rangeValues = location.state && location.state.transactionMethod ? location.state : {
         transactionMethod: [],
         depositRange: [],  // Array of objects with {transactionMethod, min, max}
         rentRange: [],     // Array of objects with {transactionMethod, min, max}
@@ -33,8 +33,7 @@ const Search = ({ searchTerm }) => {
         isParking: false,
         isEV: false,
     };
-    const typeFromHome = location.state
-    console.log(typeFromHome);
+    const typeFromHome = location.state && typeof location.state === 'string' ? location.state : "";
     
 
     useEffect(() => {
@@ -77,14 +76,11 @@ const Search = ({ searchTerm }) => {
 
     const filterProperties = () => {
         const filtered = properties.filter((property) => {
-            // Ensure the property matches one of the selected transaction methods
             const matchesSelectedMethod = rangeValues.transactionMethod.includes(property.거래방식);
     
-    
-            // Check if the property falls within any deposit range in the depositRange array
             const withinDepositRange = rangeValues.depositRange.some((range) => {
-                const method = Object.keys(range)[0]; // Get the transaction method (e.g., '매매', '월세')
-                const { min, max } = range[method];   // Get min and max for this transaction method
+                const method = Object.keys(range)[0];
+                const { min, max } = range[method];
                 return (
                     rangeValues.transactionMethod.includes(method) && 
                     property.보증금 / 10000 >= min && 
@@ -92,42 +88,35 @@ const Search = ({ searchTerm }) => {
                 );
             });
     
-            // Check if the property falls within any rent range in the rentRange array
             const withinRentRange = ['월세', '전세'].includes(property.거래방식)
-            ? rangeValues.rentRange.some((range) => {
-                const method = Object.keys(range)[0]; // Get the transaction method (e.g., '월세', '전세')
-                const { min, max } = range[method];   // Get min and max for this transaction method
-                return (
-                    rangeValues.transactionMethod.includes(method) &&
-                    property.월세 / 10000 >= min &&
-                    property.월세 / 10000 <= max
-                );
-            })
-            : true; // Skip rentRange check for 매매
-
+                ? rangeValues.rentRange.some((range) => {
+                    const method = Object.keys(range)[0];
+                    const { min, max } = range[method];
+                    return (
+                        rangeValues.transactionMethod.includes(method) &&
+                        property.월세 / 10000 >= min &&
+                        property.월세 / 10000 <= max
+                    );
+                })
+                : false;
     
-            // Check if the property falls within the room size range
             const withinRoomSizeRange =
                 property.전용평 >= rangeValues.roomSizeRange.min &&
                 property.전용평 <= rangeValues.roomSizeRange.max;
     
-            // Filter based on whether the property has parking, if the user has selected parking
             const haveParking = rangeValues.isParking === true 
-                ? property.주차가능대수 > 0  // If parking is required, ensure parking spaces are available
-                : true;  // If parking isn't required, allow all properties
+                ? property.주차가능대수 > 0
+                : true;  // Changed to `true` to allow all if not selected
     
-            // Filter based on whether the property has an elevator, if the user has selected elevator
             const haveElevator = rangeValues.isEV === true 
-                ? property.EV유무 === 1  // If elevator is required, check if the property has it
-                : true;  // If elevator isn't required, allow all properties regardless of elevator
+                ? property.EV유무 === 1
+                : true;  // Changed to `true` to allow all if not selected
     
             const isWithinApprovalDateRange = (() => {
-                if (!rangeValues.approvalDate) return true; // No filter applied for approval date
-                
-                const currentYear = new Date().getFullYear(); // Get current year
-                const approvalYear = new Date(property.사용승인일자).getFullYear(); // Get the approval year from the property
-    
-                const yearDifference = currentYear - approvalYear; // Calculate the year difference
+                if (!rangeValues.approvalDate) return true;
+                const currentYear = new Date().getFullYear();
+                const approvalYear = new Date(property.사용승인일자).getFullYear();
+                const yearDifference = currentYear - approvalYear;
                 switch (rangeValues.approvalDate) {
                     case "5년 이내":
                         return yearDifference <= 5;
@@ -138,27 +127,32 @@ const Search = ({ searchTerm }) => {
                     case "15년 이상":
                         return yearDifference > 15;
                     default:
-                        return true; // If no valid approval date range, allow the property
+                        return true; // Allow if no valid selection
                 }
             })();
-            
-
-            // Return true if all the conditions are met
+    
             return (
-                matchesSelectedMethod &&
+                matchesSelectedMethod && 
                 withinDepositRange &&
                 withinRentRange &&
                 withinRoomSizeRange &&
                 haveParking &&  
                 haveElevator &&
-                isWithinApprovalDateRange 
+                isWithinApprovalDateRange
             );
         });
     
+        console.log("Filtered Properties: ", filtered); // Log filtered result before setting state
         setFilteredProperties(filtered); // Update the filtered properties state
     };
     
     
+    useEffect(() => {
+        filterProperties();
+    }, [rangeValues]);
+    
+
+    console.log(rangeValues);
 
     const formatToKoreanCurrency = (number) => {
         const billion = Math.floor(number / 100000000); // Extract the 억 (billion) part
@@ -249,12 +243,11 @@ const Search = ({ searchTerm }) => {
             return matchesTypeFromHome;
         });
     
-        console.log(filtered);
         setFilteredProperties(filtered); // Update the filtered properties state
-    }, [typeFromHome, properties]);
+    }, [typeFromHome]);
     
+    console.log(typeFromHome);
     
-    console.log(properties);
     
 
 

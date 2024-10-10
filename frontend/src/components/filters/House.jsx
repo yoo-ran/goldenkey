@@ -295,7 +295,7 @@ const House = ({ approvalDate, onOpen }) => {
           <button className="btn_clear" onClick={handleClear}>
             전체 초기화
           </button>
-          <button type="submit" className="btn_save">전체 적용</button>
+          <button onClick={handleSubmit} className="btn_save">전체 적용</button>
         </section>
     </main>
   );
