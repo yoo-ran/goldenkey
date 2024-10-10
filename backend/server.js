@@ -55,6 +55,7 @@ app.use(
         '/transaction-status',
         '/toilets-num',
         '/properties/update',
+        '/search-address'
     ] }) 
 );
 
@@ -652,6 +653,37 @@ app.post('/save-favorites', (req, res) => {
         } else {
             return res.status(404).json({ message: 'User not found' });
         }
+    });
+});
+
+app.get('/search-address', (req, res) => {
+    const searchText = req.query.q;  // Get the search term from query parameters
+
+    const query = `
+        SELECT 건물관리번호 
+        
+        FROM old_address
+        WHERE 시군구 LIKE ? OR 읍면 LIKE ? OR 리명 LIKE ?
+        UNION
+        SELECT 건물관리번호
+        FROM new_address
+        WHERE 시군구 LIKE ? OR 읍면 LIKE ? OR 도로명 LIKE ?;
+    `;
+    
+    const searchPattern = `%${searchText}%`;
+
+    // Use the connection pool to execute the query
+    db.query(query, [
+        searchPattern, searchPattern, searchPattern,  // For old_address
+        searchPattern, searchPattern, searchPattern   // For new_address
+    ], (error, results) => {
+        if (error) {
+            console.error('Error retrieving addresses:', error);
+            return res.status(500).json({ error: 'Failed to retrieve addresses' });
+        }
+
+        const addressIds = results.map(row => row.건물관리번호);  // Extract 건물관리번호
+        res.json({ addressIds });  // Send the address IDs back to the frontend
     });
 });
 

@@ -15,25 +15,25 @@ import 'swiper/css';
 // import 'swiper/swiper-bundle.css'; // Swiper core styles
 import 'swiper/css/pagination';
 import 'swiper/css/scrollbar';
-import SearchHeader from '../components/layout/SearchHeader';
 
 
-const Search = () => {
+const Search = ({ searchTerm }) => {
     const [favoriteIds, setFavoriteIds] = useState([])
     const [propertyId, setPropertyId] = useState()
     const [properties, setProperties] = useState([]);
     const [propertyImages, setPropertyImages] = useState({}); // Store images by property ID
-    const [searchTerm, setSearchTerm] = useState(""); // Search term state
     const [filteredProperties, setFilteredProperties] = useState([]); 
     const location = useLocation(); // Retrieve the state (data) from navigation
-    const rangeValues = location.state || {
-        selectedMethod: '',
-        depositRange: { min: 0, max: 3000 },
-        rentRange: { min: 0, max: 150 },
-        roomSizeRange: { min: 0, max: 1000 },
-        거래방식: '',
-        거래완료여부: '',
-    }; // Fallback to an empty object if no state is provided
+    const rangeValues = location.state && location.state.transactionMethod ? location.state : {
+        transactionMethod: [],
+        depositRange: [],  // Array of objects with {transactionMethod, min, max}
+        rentRange: [],     // Array of objects with {transactionMethod, min, max}
+        roomSizeRange: { min: 10, max: 60 },
+        approvalDate: "",
+        isParking: false,
+        isEV: false,
+    };
+    const typeFromHome = location.state && typeof location.state === 'string' ? location.state : "";
     
 
     useEffect(() => {
@@ -42,7 +42,7 @@ const Search = () => {
                 const response = await axios.get('http://localhost:8000/listing');
                 const propertyList = response.data;
                 setProperties(propertyList);
-                setFilteredProperties(propertyList); // Initially, show all properties
+                // setFilteredProperties(propertyList); // Initially, show all properties
         
                 // Fetch images for each property
                 for (const property of propertyList) {
@@ -74,35 +74,85 @@ const Search = () => {
 
     }, []);
 
-      // Filter properties based on rangeValues
-      const filterProperties = () => {
+    const filterProperties = () => {
         const filtered = properties.filter((property) => {
-            const withinDepositRange =
-                property.보증금 >= rangeValues.depositRange.min &&
-                property.보증금 <= rangeValues.depositRange.max;
-            
-            const withinRentRange =
-                property.월세 >= rangeValues.rentRange.min &&
-                property.월세 <= rangeValues.rentRange.max;
-            
+            const matchesSelectedMethod = rangeValues.transactionMethod.includes(property.거래방식);
+    
+            const withinDepositRange = rangeValues.depositRange.some((range) => {
+                const method = Object.keys(range)[0];
+                const { min, max } = range[method];
+                return (
+                    rangeValues.transactionMethod.includes(method) && 
+                    property.보증금 / 10000 >= min && 
+                    property.보증금 / 10000 <= max
+                );
+            });
+    
+            const withinRentRange = ['월세', '전세'].includes(property.거래방식)
+                ? rangeValues.rentRange.some((range) => {
+                    const method = Object.keys(range)[0];
+                    const { min, max } = range[method];
+                    return (
+                        rangeValues.transactionMethod.includes(method) &&
+                        property.월세 / 10000 >= min &&
+                        property.월세 / 10000 <= max
+                    );
+                })
+                : false;
+    
             const withinRoomSizeRange =
-                property.전용m2 >= rangeValues.roomSizeRange.min &&
-                property.전용m2 <= rangeValues.roomSizeRange.max;
-
-            const matchesSelectedMethod =
-                property.거래방식 === rangeValues.selectedMethod || rangeValues.selectedMethod === 'all';
-
-            return withinDepositRange && withinRentRange && withinRoomSizeRange && matchesSelectedMethod;
+                property.전용평 >= rangeValues.roomSizeRange.min &&
+                property.전용평 <= rangeValues.roomSizeRange.max;
+    
+            const haveParking = rangeValues.isParking === true 
+                ? property.주차가능대수 > 0
+                : true;  // Changed to `true` to allow all if not selected
+    
+            const haveElevator = rangeValues.isEV === true 
+                ? property.EV유무 === 1
+                : true;  // Changed to `true` to allow all if not selected
+    
+            const isWithinApprovalDateRange = (() => {
+                if (!rangeValues.approvalDate) return true;
+                const currentYear = new Date().getFullYear();
+                const approvalYear = new Date(property.사용승인일자).getFullYear();
+                const yearDifference = currentYear - approvalYear;
+                switch (rangeValues.approvalDate) {
+                    case "5년 이내":
+                        return yearDifference <= 5;
+                    case "10년 이내":
+                        return yearDifference <= 10;
+                    case "15년 이내":
+                        return yearDifference <= 15;
+                    case "15년 이상":
+                        return yearDifference > 15;
+                    default:
+                        return true; // Allow if no valid selection
+                }
+            })();
+    
+            return (
+                matchesSelectedMethod && 
+                withinDepositRange &&
+                withinRentRange &&
+                withinRoomSizeRange &&
+                haveParking &&  
+                haveElevator &&
+                isWithinApprovalDateRange
+            );
         });
-
+    
+        console.log("Filtered Properties: ", filtered); // Log filtered result before setting state
         setFilteredProperties(filtered); // Update the filtered properties state
     };
-
-    // Call the filter function when rangeValues or properties change
+    
+    
     useEffect(() => {
-        filterProperties(); // Filter properties when values change
-    }, [properties]); // Dependencies
+        filterProperties();
+    }, [rangeValues]);
+    
 
+    console.log(rangeValues);
 
     const formatToKoreanCurrency = (number) => {
         const billion = Math.floor(number / 100000000); // Extract the 억 (billion) part
@@ -126,15 +176,79 @@ const Search = () => {
         return result.trim(); // Return the formatted string, removing any unnecessary spaces
     };
     
-    const handleSearchTerm = (term) => {
-        setSearchTerm(term);
-        const filtered = properties.filter((property) => 
-            property.건물명.includes(term) ||  property.도로명.includes(term) // Assuming property names are in Korean
-        );
-    
-        setFilteredProperties(filtered);
-    };
+    useEffect(() => {
+        const fetchAddresses = async () => {
+            if (searchTerm) {
+                try {
+                    const response = await axios.get(`http://localhost:8000/search-address?q=${searchTerm}`);
+                    const { addressIds } = response.data;
+                    console.log(addressIds);
+                     // Initialize filtered properties
+                let filtered = [];
 
+                // Case 1: Filter by addressIds if they are returned (meaning it's a 주소)
+                if (addressIds.length > 0 && properties.length > 0) {
+                    filtered = properties.filter(property => 
+                        addressIds.includes(property.address_id) // Assuming `address_id` is the correct field
+                    );
+                } 
+
+                // Case 2: If no addressIds (meaning searchTerm might be 건물명), filter by 건물명
+                if (addressIds.length === 0) {
+                    filtered = properties.filter(property => 
+                        property.건물명 && property.건물명.includes(searchTerm) // Filter by 건물명
+                    );
+                }
+
+                // Set filtered properties if there are matches, otherwise show all properties
+                setFilteredProperties(filtered.length > 0 ? filtered : properties);
+            
+                } catch (error) {
+                    console.error('Error fetching addresses:', error);
+                }
+            }
+        };
+
+        fetchAddresses();
+    }, [searchTerm]); 
+
+    useEffect(() => {
+        const filtered = properties.filter((property) => {
+    
+            // Filter by 부동산구분 based on the value of typeFromHome
+            const matchesTypeFromHome = (() => {
+                if (typeFromHome === "원룸 / 투룸") {
+                    // Return true if 부동산구분 is either 원룸 or 투룸
+                    return property.부동산구분 === "원룸" || property.부동산구분 === "투룸";
+                } 
+                else if (typeFromHome === "아파트") {
+                    // Return true if 부동산구분 is 아파트
+                    return property.부동산구분 === "아파트";
+                } 
+                else if (typeFromHome === "주택, 빌라") {
+                    // Return true if 부동산구분 is 주택 or 빌라
+                    return property.부동산구분 === "주택" || property.부동산구분 === "빌라";
+                } 
+                else if (typeFromHome === "오피스텔") {
+                    // Return true if 부동산구분 is 오피스텔
+                    return property.부동산구분 === "오피스텔";
+                } 
+                else {
+                    // If typeFromHome does not match any condition, return false
+                    return false;
+                }
+            })();
+            
+            // Return true if the 부동산구분 matches the typeFromHome
+            return matchesTypeFromHome;
+        });
+    
+        setFilteredProperties(filtered); // Update the filtered properties state
+    }, [typeFromHome]);
+    
+    console.log(typeFromHome);
+    
+    
 
 
     const fetchFavoriteIds = async () => {
@@ -191,12 +305,10 @@ const Search = () => {
     return (
         <main className='w-full gap-y-16'>
 
-            <SearchHeader onSendSearchTerm={handleSearchTerm} />
-
             {/* 검색결과 */}
             <section className='w-11/12 flexCol gap-y-4'>
                 <h2 className='w-full'>{filteredProperties.length > 0 ? filteredProperties.length : properties.length}개의 검색결과</h2>
-                <article className='w-full grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8'>
+                <article className='w-full grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8 min-h-96'>
 
                 {(filteredProperties.length > 0 ? filteredProperties : properties).map((property) => {                        
                     const { 순번: propertyId } = property; // Assuming '순번' is the unique property ID

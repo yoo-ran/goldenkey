@@ -29,7 +29,7 @@ body {
 
 @media (min-width: 768px) {
   :root {
-    --font-size-base: 1.5rem;
+    --font-size-base: 1.25rem;
   }
 }
 
@@ -115,10 +115,10 @@ main{
         line-height: calc(6px / 10px);
     }
     .btn_clear {
-      @apply bg-secondary-light mobile_3_bold text-primary rounded-lg py-3
+      @apply bg-secondary-light mobile_4_bold text-primary rounded-lg py-2
     }
     .btn_save {
-      @apply bg-primary mobile_3_bold text-primary-yellow rounded-lg py-3
+      @apply bg-primary mobile_4_bold text-primary-yellow rounded-lg py-2
     }
   }
 
