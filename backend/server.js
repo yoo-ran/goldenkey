@@ -55,6 +55,7 @@ app.use(
         '/transaction-methods',
         '/transaction-status',
         '/properties/update',
+        '/address-excel'
     ] }) 
 );
 
@@ -94,11 +95,11 @@ app.get('/transaction-status', (req, res) => {
 // Import CSV / excel
 app.post('/import-csv', (req, res) => {
     const properties = req.body; // JSON data from the frontend
-    const uniqueFields = properties.map(item => item['순번']); // Using '순번' as the unique identifier
+    const uniqueFields = properties.map(item => item['매물ID']); // Using '순번' as the unique identifier
     console.log(uniqueFields);
 
     // Query to fetch existing records with the same 순번
-    const query = `SELECT 순번 FROM property WHERE 순번 IN (?)`;
+    const query = `SELECT 매물ID FROM property WHERE 매물ID IN (?)`;
 
     db.query(query, [uniqueFields], (err, results) => {
         if (err) {
@@ -106,47 +107,47 @@ app.post('/import-csv', (req, res) => {
             return res.status(500).send('Error checking existing data');
         }
 
-        const existingFields = results.map(row => row['순번']); // List of IDs that already exist in DB
-        const newRecords = properties.filter(item => !existingFields.includes(item['순번'])); // Records to insert
-        const updateRecords = properties.filter(item => existingFields.includes(item['순번'])); // Records to update
+        const existingFields = results.map(row => row['매물ID']); // List of IDs that already exist in DB
+        const newRecords = properties.filter(item => !existingFields.includes(item['매물ID'])); // Records to insert
+        const updateRecords = properties.filter(item => existingFields.includes(item['매물ID'])); // Records to update
 
         const promises = [];
 
         // Insert new records
         if (newRecords.length > 0) {
             const insertValues = newRecords.map(item => [
-                item['순번'], 
-                item['등록일자'], 
-                item['부동산구분'], 
-                item['거래방식'], 
-                item['거래완료여부'], 
-                item['거래완료일자'], 
-                item['담당자'], 
-                item['구'], 
-                item['읍면동'], 
-                item['구상세주소'], 
-                item['도로명'], 
-                item['신상세주소'], 
-                item['건물명'], 
-                item['동'], 
-                item['호수'], 
-                item['보증금'], 
-                item['월세'], 
-                item['관리비'], 
-                item['전체m2'], 
-                item['전용m2'], 
-                item['전체평'], 
-                item['전용평'], 
-                item['EV유무'], 
-                item['화장실개수'], 
-                item['층수'], 
-                item['주차가능대수'], 
-                item['비밀번호'], 
-                item['연락처'], 
-                item['메모'],
+                item['순번'] || 0,
+                item['매물ID'] || null,
+                item['등록일자'] || null,
+                item['사용승인일자'] || null,
+                item['부동산구분'] || '',
+                item['거래방식'] || '',
+                item['거래완료여부'] || '',
+                item['거래완료일자'] || null,
+                item['담당자'] || '',
+                item['상세주소'] || '',
+                item['건물명'] || '',
+                item['동'] || 0,
+                item['호수'] || 0,
+                item['보증금'] || 0,
+                item['월세'] || 0,
+                item['관리비'] || 0,
+                item['전체m2'] || 0,
+                item['전용m2'] || 0,
+                item['전체평'] || 0,
+                item['전용평'] || 0,
+                item['EV유무'] || 0,
+                item['화장실개수'] || 0,
+                item['층수'] || 0,
+                item['주차가능대수'] || 0,
+                item['비밀번호'] || '',
+                JSON.stringify(item['연락처']) || '{}', // Serialize 연락처 as a JSON string
+                item['메모'] || '',
+                item['address_id'] || '',
             ]);
 
-            const insertSql = `INSERT INTO property (순번, 등록일자, 부동산구분, 거래방식, 거래완료여부, 거래완료일자, 담당자, 구, 읍면동, 구상세주소, 도로명, 신상세주소, 건물명, 동, 호수, 보증금, 월세, 관리비, 전체m2, 전용m2, 전체평, 전용평, EV유무, 화장실개수, 층수, 방개수, 주차가능대수, 비밀번호, 연락처, 메모) VALUES ?`;
+
+            const insertSql = `INSERT INTO property (순번, 매물ID, 등록일자, 사용승인일자, 부동산구분, 거래방식, 거래완료여부, 거래완료일자, 담당자, 상세주소, 건물명, 동, 호수, 보증금, 월세, 관리비, 전체m2, 전용m2, 전체평, 전용평, EV유무, 화장실개수, 층수, 주차가능대수, 비밀번호, 연락처, 메모, address_id) VALUES ?`;
 
             promises.push(new Promise((resolve, reject) => {
                 db.query(insertSql, [insertValues], (err, result) => {
@@ -167,18 +168,16 @@ app.post('/import-csv', (req, res) => {
                 const updateFields = [];
 
                 // Loop through the fields you want to update
+                if (item['매물ID']) updateFields.push(`매물ID = ${db.escape(item['매물ID'])}`);
+                if (item['사용승인일자']) updateFields.push(`사용승인일자 = ${db.escape(item['사용승인일자'])}`);
                 if (item['등록일자']) updateFields.push(`등록일자 = ${db.escape(item['등록일자'])}`);
                 if (item['부동산구분']) updateFields.push(`부동산구분 = ${db.escape(item['부동산구분'])}`);
                 if (item['거래방식']) updateFields.push(`거래방식 = ${db.escape(item['거래방식'])}`);
                 if (item['거래완료여부']) updateFields.push(`거래완료여부 = ${db.escape(item['거래완료여부'])}`);
                 if (item['거래완료일자']) updateFields.push(`거래완료일자 = ${db.escape(item['거래완료일자'])}`);
                 if (item['담당자']) updateFields.push(`담당자 = ${db.escape(item['담당자'])}`);
-                if (item['구']) updateFields.push(`구 = ${db.escape(item['구'])}`);
-                if (item['읍면동']) updateFields.push(`읍면동 = ${db.escape(item['읍면동'])}`);
-                if (item['구상세주소']) updateFields.push(`구상세주소 = ${db.escape(item['구상세주소'])}`);
-                if (item['도로명']) updateFields.push(`도로명 = ${db.escape(item['도로명'])}`);
-                if (item['신상세주소']) updateFields.push(`신상세주소 = ${db.escape(item['신상세주소'])}`);
                 if (item['건물명']) updateFields.push(`건물명 = ${db.escape(item['건물명'])}`);
+                if (item['상세주소']) updateFields.push(`상세주소 = ${db.escape(item['상세주소'])}`);
                 if (item['동']) updateFields.push(`동 = ${db.escape(item['동'])}`);
                 if (item['호수']) updateFields.push(`호수 = ${db.escape(item['호수'])}`);
                 if (item['보증금']) updateFields.push(`보증금 = ${db.escape(item['보증금'])}`);
@@ -191,20 +190,20 @@ app.post('/import-csv', (req, res) => {
                 if (item['EV유무']) updateFields.push(`EV유무 = ${db.escape(item['EV유무'])}`);
                 if (item['화장실개수']) updateFields.push(`화장실개수 = ${db.escape(item['화장실개수'])}`);
                 if (item['층수']) updateFields.push(`층수 = ${db.escape(item['층수'])}`);
-                if (item['방개수']) updateFields.push(`방개수 = ${db.escape(item['방개수'])}`);
                 if (item['주차가능대수']) updateFields.push(`주차가능대수 = ${db.escape(item['주차가능대수'])}`);
                 if (item['비밀번호']) updateFields.push(`비밀번호 = ${db.escape(item['비밀번호'])}`);
                 if (item['연락처']) updateFields.push(`연락처 = ${db.escape(item['연락처'])}`);
                 if (item['메모']) updateFields.push(`메모 = ${db.escape(item['메모'])}`);
+                if (item['address_id']) updateFields.push(`address_id = ${db.escape(item['address_id'])}`);
 
                 if (updateFields.length > 0) {
-                    const updateSql = `UPDATE property SET ${updateFields.join(', ')} WHERE 순번 = ${db.escape(item['순번'])}`;
+                    const updateSql = `UPDATE property SET ${updateFields.join(', ')} WHERE 매물ID = ${db.escape(item['매물ID'])}`;
 
                     promises.push(new Promise((resolve, reject) => {
                         db.query(updateSql, (err, result) => {
                             if (err) {
-                                console.error(`Error updating record with 순번 ${item['순번']}:`, err);
-                                reject(`Error updating record with 순번 ${item['순번']}`);
+                                console.error(`Error updating record with 순번 ${item['매물ID']}:`, err);
+                                reject(`Error updating record with 순번 ${item['매물ID']}`);
                             } else {
                                 resolve();
                             }
@@ -648,6 +647,44 @@ app.post('/save-favorites', (req, res) => {
         }
     });
 });
+
+// Endpoint to search addresses based on Excel data
+app.get('/address-excel', (req, res) => {
+    // Destructure address components from the request query parameters
+    const { 시군구, 읍면동, 리명, 지번본번, 지번부번 } = req.query;
+    
+    // Construct the SQL query to search for matching addresses in the database
+    const query = `
+      SELECT 건물관리번호 
+      FROM old_address
+      WHERE 시군구 LIKE CONCAT('%', ?, '%')
+        AND 읍면동 LIKE CONCAT('%', ?, '%')
+        AND (리명 LIKE CONCAT('%', ?, '%') OR 리명 IS NULL)
+        AND 지번본번 LIKE CONCAT('%', ?, '%')
+        AND 지번부번 LIKE CONCAT('%', ?, '%')
+    `;
+  
+    // Use the received parameters as query values
+    const queryParams = [시군구, 읍면동, 리명, 지번본번, 지번부번];
+    console.log(queryParams);
+    
+    db.query(query, queryParams, (error, results) => {
+      if (error) {
+        console.error('Error executing query:', error);
+        return res.status(500).json({ error: 'Database error occurred' });
+      }
+  
+      // Return the address IDs in the response
+      const addressIds = results.map(row => row.건물관리번호); // Assuming 건물관리번호 is the correct field
+      console.log(addressIds);
+      res.json({ addressIds });
+    });
+  });
+  
+  
+  
+  
+  
 
 
 app.listen(8000, () => {
