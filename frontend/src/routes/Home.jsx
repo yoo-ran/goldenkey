@@ -25,6 +25,7 @@ const recommendTag = [
 ]
 
 const Home = () => {
+    const apiUrl = import.meta.env.VITE_API_URL;
     const [isLogin, setIsLogin] = useState(true);
     const [properties, setProperties] = useState([]);
     const [openFilter, setOpenFilter] = useState(false);
@@ -40,14 +41,14 @@ const Home = () => {
     useEffect(() => {
         const fetchProperties = async () => {
             try {
-                const response = await axios.get('http://localhost:8000/listing');
+                const response = await axios.get(`${apiUrl}/listing`);
                 setProperties(response.data);
 
                 for (const property of properties) {
                     const { 순번: propertyId } = property; // Assuming property ID is in '순번' field
                     try {
                     const imgRes = await axios.get(
-                        `http://localhost:8000/properties/${propertyId}/images`
+                        `${apiUrl}/properties/${propertyId}/images`
                     );
         
                     // Store images for each property using its ID
@@ -139,7 +140,7 @@ const Home = () => {
                         return (
                             <div
                                 key={id}
-                                style={{ backgroundImage: `url(http://localhost:8000${images[id]})` }}
+                                style={{ backgroundImage: `url(${apiUrl}${images[id]})` }}
                                 className="w-full aspect-square bg-cover bg-center rounded-2xl "
                             >
                                 <div className="w-full aspect-square flexRow items-start justify-end mobile_3_bold text-white ">

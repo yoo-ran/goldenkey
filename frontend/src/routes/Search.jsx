@@ -19,6 +19,7 @@ import SearchHeader from '../components/layout/SearchHeader';
 
 
 const Search = () => {
+    const apiUrl = import.meta.env.VITE_API_URL;
     const [favoriteIds, setFavoriteIds] = useState([])
     const [propertyId, setPropertyId] = useState()
     const [properties, setProperties] = useState([]);
@@ -39,7 +40,7 @@ const Search = () => {
     useEffect(() => {
         const fetchProperties = async () => {
             try {
-                const response = await axios.get('http://localhost:8000/listing');
+                const response = await axios.get(`${apiUrl}/listing`);
                 const propertyList = response.data;
                 setProperties(propertyList);
                 setFilteredProperties(propertyList); // Initially, show all properties
@@ -49,7 +50,7 @@ const Search = () => {
                         const { 순번: propertyId } = property; // Assuming property ID is in '순번' field
                         try {
                         const imgRes = await axios.get(
-                            `http://localhost:8000/properties/${propertyId}/images`
+                            `${apiUrl}/properties/${propertyId}/images`
                         );
             
                         // Store images for each property using its ID
@@ -139,7 +140,7 @@ const Search = () => {
 
     const fetchFavoriteIds = async () => {
         try {
-            const response = await axios.get('http://localhost:8000/get-favorites', { withCredentials: true });
+            const response = await axios.get(`${apiUrl}/get-favorites`, { withCredentials: true });
             if (response.status === 200) {
                 setFavoriteIds(response.data.favorites); // Ensure 'favorites' is an array
             }
@@ -173,7 +174,7 @@ const Search = () => {
 
     const saveFavoriteIds = async (updatedFavorites) => {
         try {
-            const response = await axios.post('http://localhost:8000/save-favorites', {
+            const response = await axios.post(`${apiUrl}/save-favorites`, {
                 favorites: updatedFavorites
             }, { withCredentials: true });
 
@@ -210,7 +211,7 @@ const Search = () => {
                                 <div className="w-4/12 lg:w-full flexCol relative bg-secondary-light h-full rounded">
                                     {images.length > 0 ? (
                                         <img
-                                            src={`http://localhost:8000${images[0]}`}
+                                            src={`${apiUrl}${images[0]}`}
                                             alt={`Property Image 1`}
                                             className=" object-cover lg:rounded-4xl"
                                         />
@@ -300,7 +301,7 @@ const Search = () => {
                                         {images.length > 0 ? (
                                             <div
                                                 style={{
-                                                    backgroundImage: `url(http://localhost:8000${images[0]})`,
+                                                    backgroundImage: `url(${apiUrl}${images[0]})`,
                                                 }}
                                                 className='w-full aspect-square bg-cover bg-center rounded-2xl flex justify-end p-2'
                                             >

@@ -6,6 +6,8 @@ import ImportExcel from '../components/excelImport/ImportExcel';
 import ListForOwner from '../components/excelImport/ListForOwner';
 
 const ImportExcelPage = () => {
+    const apiUrl = import.meta.env.VITE_API_URL;
+
     // Define the shared state
     const [updateData, setUpdateData] = useState(false);
     const [isAuthenticated, setIsAuthenticated] = useState(false); // State to track authentication status
@@ -20,7 +22,7 @@ const ImportExcelPage = () => {
         const checkAuthentication = async () => {
             try {
                 // Make a request to the server to verify the user's token (stored in HTTP-only cookie)
-                const response = await axios.get('http://localhost:8000/check-auth', { withCredentials: true });
+                const response = await axios.get(`${apiUrl}/check-auth`, { withCredentials: true });
                 if (response.status === 200) {
                     setIsAuthenticated(true);
                 } else {

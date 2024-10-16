@@ -10,6 +10,8 @@ import AlertComponent from './AlertComponent';
 
 
 const ImportExcel = ({onDataUpdate}) =>{
+  const apiUrl = process.env.REACT_APP_API_URL;
+
   const gridRef = useRef();
   const [rowData, setRowData] = useState([]);
   const [dbRowData, setDbRowData] = useState([])
@@ -249,7 +251,7 @@ const ImportExcel = ({onDataUpdate}) =>{
 // First, fetch the existing property data (like property IDs) from your backend
 const fetchDbProperties = async () => {
   try {
-      const response = await axios.get('http://localhost:8000/listing', { withCredentials: true });
+      const response = await axios.get(`${apiUrl}/listing`, { withCredentials: true });
       setDbProperties(response.data); 
 
   } catch (error) {
@@ -447,7 +449,7 @@ const handleCancel = () => {
         // Now finalData contains the '정산금액' key with the calculated values
         if (finalData.length > 0) {
             // Send all data (new and updated records) to the backend
-            const result = await axios.post('http://localhost:8000/import-csv', finalData, { withCredentials: true });
+            const result = await axios.post(`${apiUrl}/import-csv`, finalData, { withCredentials: true });
             console.log(result);
             onDataUpdate(true)
             alert('Data imported successfully!');

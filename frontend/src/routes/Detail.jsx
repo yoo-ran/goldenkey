@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 
-// import MapComponent from '../components/feature/MapComponent';
-// import ListingHeader from '../components/feature/ListingHeader';
 import Memo from '../components/feature/Memo';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowsLeftRightToLine, faElevator, faHouse, faParking, faToilet } from '@fortawesome/free-solid-svg-icons';
 
 const PropertyDetail = () => {
+    const apiUrl = import.meta.env.VITE_API_URL;
+
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [loading, setLoading] = useState(true); // Loading state for checking authentication
     const location = useLocation();
@@ -47,7 +47,7 @@ const PropertyDetail = () => {
     useEffect(() => {
         const checkAuthentication = async () => {
             try {
-                const response = await axios.get('http://localhost:8000/check-auth', { withCredentials: true });
+                const response = await axios.get(`${apiUrl}/check-auth`, { withCredentials: true });
                 if (response.status === 200) {
                     setIsAuthenticated(true);
                 }
@@ -63,7 +63,7 @@ const PropertyDetail = () => {
 
     const fetchPropertyData = async () => {
         try {
-            const response = await axios.get(`http://localhost:8000/detail/${propertyId}`);
+            const response = await axios.get(`${apiUrl}/detail/${propertyId}`);
             const fetchedData = response.data;
 
             // Parse 정산금액 if it's a JSON string
@@ -73,16 +73,16 @@ const PropertyDetail = () => {
 
             setPropertyData(fetchedData);
             
-            const propertyType = await axios.get(`http://localhost:8000/property-types`);
+            const propertyType = await axios.get(`${apiUrl}/property-types`);
             setPropertyTypes(propertyType.data);
 
-            const transactionMethod = await axios.get(`http://localhost:8000/transaction-methods`);
+            const transactionMethod = await axios.get(`${apiUrl}/transaction-methods`);
             setTransactionMethod(transactionMethod.data);
 
-            const transactionStatus = await axios.get(`http://localhost:8000/transaction-status`);
+            const transactionStatus = await axios.get(`${apiUrl}/transaction-status`);
             setTransactionMethod(transactionStatus.data);
 
-            const imgRes = await axios.get(`http://localhost:8000/properties/${propertyId}/images`);
+            const imgRes = await axios.get(`${apiUrl}/properties/${propertyId}/images`);
             if (response.data && Array.isArray(imgRes.data.images)) {
                 setImages(imgRes.data.images);
             } else {
@@ -120,7 +120,7 @@ const PropertyDetail = () => {
 
     const handleDelete = async () => {
         try {
-            await axios.delete(`http://localhost:8000/delete-property/${propertyId}`);
+            await axios.delete(`${apiUrl}/delete-property/${propertyId}`);
             console.log("Property deleted successfully.");
         } catch (error) {
             console.error('Error deleting property:', error.response ? error.response.data : error.message);
@@ -138,7 +138,7 @@ const PropertyDetail = () => {
                 정산금액 : JSON.stringify(정산금액)
             };
             console.log(formattedFieldsToUpdate);
-            await axios.put(`http://localhost:8000/update-property/${propertyId}`, formattedFieldsToUpdate);
+            await axios.put(`${apiUrl}/update-property/${propertyId}`, formattedFieldsToUpdate);
             alert("Data saved successfully!");
             fetchPropertyData();
             setIsEditing(false);
@@ -158,7 +158,7 @@ const PropertyDetail = () => {
             formData.append(`images`, file);
         });
         try {
-            const response = await axios.post(`http://localhost:8000/upload-images/${propertyId}`, formData, {
+            const response = await axios.post(`${apiUrl}/upload-images/${propertyId}`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             alert("Images uploaded successfully!");
@@ -208,7 +208,7 @@ const PropertyDetail = () => {
                                     images.map((imgPath, index) => (
                                     <img 
                                         key={index}
-                                        src={`http://localhost:8000${imgPath}`}
+                                        src={`${apiUrl}${imgPath}`}
                                         alt={`Property Image ${index + 1}`} 
                                         className={`w-full h-full object-cover ${index === 0 ? "col-span-2 row-span-2" : "col-span-1 row-span-1"}`}
                                         />

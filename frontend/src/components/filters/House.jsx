@@ -6,6 +6,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronDown } from '@fortawesome/free-solid-svg-icons';
 
 const House = () => {
+  const apiUrl = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
   const [selectedOption, setSelectedOption] = useState("거래유형을 선택하세요");
   const [open, setOpen] = useState(false);
@@ -55,7 +56,7 @@ const House = () => {
 
   const fetchConstantVariable = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/transaction-methods');
+      const response = await axios.get(`${apiUrl}/transaction-methods`);
       setTransactionMethods(response.data);
     } catch (error) {
       console.error('Error fetching property data:', error);
