@@ -5,6 +5,8 @@ import {
   faHouse,
   faBuilding,
   faSearch,
+  faFilter,
+  faSort,
 } from '@fortawesome/free-solid-svg-icons';
 
 // import Oneroom from '../filters/Oneroom.jsx';
@@ -133,7 +135,7 @@ const SearchHeader = ({ onSendSearchTerm }) => {
               setOpenFilter(!openFilter);
             }}
           >
-            <FontAwesomeIcon icon={faHouse} />
+            <FontAwesomeIcon icon={faFilter} />
           </button>
         </div>
 

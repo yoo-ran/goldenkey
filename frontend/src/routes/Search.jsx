@@ -336,7 +336,7 @@ const Search = ({ searchTerm }) => {
                       className=' object-cover'
                     />
                   ) : (
-                    <p className=' flexCol text-center mobile_5 min-h-48 '>
+                    <p className=' flexCol text-center mobile_5 lg:min-h-48 '>
                       No images available
                     </p>
                   )}
@@ -390,7 +390,7 @@ const Search = ({ searchTerm }) => {
       <section className='w-full relative bg-primary-yellow flexCol gap-y-4 py-10 px-2 overflow-hidden'>
         <h2 className='w-11/12 text-white'>추천물건</h2>
 
-        <div className='absolute top-36 lg:top-1/2 z-50 w-full lg:w-11/12 flexRow justify-between px-1 mobile_1_bold'>
+        <div className='absolute top-1/2 z-30 w-full lg:w-11/12 flexRow justify-between px-1 mobile_1_bold'>
           <div className='swiper-button-prev text-primary'>
             <FontAwesomeIcon icon={faChevronLeft} />
           </div>
