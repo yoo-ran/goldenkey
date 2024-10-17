@@ -6,7 +6,6 @@ import Memo from '../components/feature/Memo';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBuilding, faCalendar, faCar, faChevronDown, faCircleCheck, faElevator, faHourglass, faHouse, faKey, faMoneyBill, faMoneyBills, faRulerCombined, faRulerVertical, faTag } from '@fortawesome/free-solid-svg-icons';
 
-import SearchHeader from '../components/layout/SearchHeader';
 import { faCalendarCheck, faCalendarDays, faImage, faNoteSticky } from '@fortawesome/free-regular-svg-icons';
 
 const PropertyUpload = () => {
@@ -275,7 +274,6 @@ const PropertyUpload = () => {
     
     return (
         <main className='gap-y-10 w-full'>
-            <SearchHeader/>
 
             <section className='w-11/12 flexCol gap-y-12'>
                 <article className='flexCol items-start gap-y-8'>
