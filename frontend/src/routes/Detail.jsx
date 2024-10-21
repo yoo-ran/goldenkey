@@ -57,6 +57,8 @@ const PropertyDetail = () => {
     address_id: 0,
   });
   const [propertyData, setPropertyData] = useState(originalPropertyData);
+  const [newAddress, setNewAddress] = useState();
+  const [oldAddress, setOldAddress] = useState();
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true); // Loading state for checking authentication
@@ -101,18 +103,24 @@ const PropertyDetail = () => {
       const response = await axios.get(`http://localhost:8000/detail/101`);
       // const response = await axios.get(`http://localhost:8000/detail/${propertyId}`);
       const fetchedData = response.data;
-
       if (fetchedData.연락처) {
         try {
           fetchedData.연락처 = JSON.parse(fetchedData.연락처);
         } catch (error) {
           console.error('Error parsing 연락처:', error);
-          // Handle the error, for example, set it to an empty object or log it
-          fetchedData.연락처 = {}; // Default to empty object if parsing fails
+          fetchedData.연락처 = {};
         }
       }
 
       setPropertyData(fetchedData);
+
+      console.log(propertyData.address_id);
+      const res = await axios.get(
+        `http://localhost:8000/get-address/${fetchedData.address_id}`
+      );
+      setNewAddress(res.data.newAddress);
+      setOldAddress(res.data.oldAddress);
+      console.log('res.data.newAddress', res.data.newAddress);
 
       const propertyType = await axios.get(
         `http://localhost:8000/property-types`
@@ -130,7 +138,7 @@ const PropertyDetail = () => {
       setTransactionStatus(transactionStatus.data);
 
       const imgRes = await axios.get(
-        `http://localhost:8000/properties/4/images`
+        `http://localhost:8000/properties/101/images`
       );
       if (response.data && Array.isArray(imgRes.data.images)) {
         setImages(imgRes.data.images);
@@ -208,7 +216,7 @@ const PropertyDetail = () => {
 
   const handleDelete = async () => {
     try {
-      await axios.delete(`http://localhost:8000/delete-property/4`);
+      await axios.delete(`http://localhost:8000/delete-property/101`);
       // await axios.delete(`http://localhost:8000/delete-property/${propertyId}`);
       navigate('/search');
       console.log('Property deleted successfully.');
@@ -265,7 +273,7 @@ const PropertyDetail = () => {
     });
     try {
       const response = await axios.post(
-        `http://localhost:8000/upload-images/4`,
+        `http://localhost:8000/upload-images/101`,
         formData,
         {
           headers: { 'Content-Type': 'multipart/form-data' },
@@ -309,7 +317,7 @@ const PropertyDetail = () => {
                 images && images[index] ? (
                   <img
                     key={index}
-                    src={`http://localhost:8000${images[index]}`}
+                    src={`http://localhost:8000/${images[index]}`}
                     alt={`Property Image ${index + 1}`}
                     className={`w-full h-full object-cover before:content-[""] before:bg-primary ${
                       index === 0
@@ -821,13 +829,42 @@ const PropertyDetail = () => {
             <p className='mobile_3_bold flexRow gap-x-2'>
               <FontAwesomeIcon icon={faHouse} />신 주소
             </p>
-            <div className='w-full'></div>
+            <div className='w-full'>
+              {isEditing ? (
+                <input />
+              ) : (
+                newAddress && (
+                  <p className='pDisplay'>
+                    {newAddress.시군구} {newAddress.읍면 && newAddress.읍면}{' '}
+                    {newAddress.도로명} {newAddress.건물번호본번}
+                    {newAddress.건물번호부번 !== 0 &&
+                      `-${newAddress.건물번호부번}`}
+                  </p>
+                )
+              )}
+            </div>
           </div>
           <div className='grid grid-rows-2 w-full'>
             <p className='mobile_3_bold flexRow gap-x-2'>
               <FontAwesomeIcon icon={faHouse} />구 주소
             </p>
-            <div className='w-full'></div>
+            <div className='w-full'>
+              {isEditing ? (
+                <input></input>
+              ) : (
+                oldAddress && (
+                  <p className='pDisplay'>
+                    {oldAddress.시군구} {oldAddress.읍면동}{' '}
+                    {oldAddress.리명 && oldAddress.리명}
+                    {oldAddress.지번본번}
+                    {oldAddress.지번부번 && oldAddress.지번부번 !== '0'
+                      ? `-${oldAddress.지번부번}`
+                      : ''}{' '}
+                    {oldAddress.시군구용건물명 && oldAddress.시군구용건물명}
+                  </p>
+                )
+              )}
+            </div>
           </div>
           <div className='grid grid-rows-2 w-full'>
             <p className='mobile_3_bold flexRow gap-x-2'>

@@ -60,6 +60,7 @@ app.use(
       '/transaction-methods',
       '/transaction-status',
       '/properties/update',
+      /^\/get-address\/\d+$/,
     ],
   })
 );
@@ -730,6 +731,47 @@ app.post('/save-favorites', (req, res) => {
       }
     }
   );
+});
+
+// API to get rows from new-address and old-address tables using 매물ID
+app.get('/get-address/:id', async (req, res) => {
+  const { id } = req.params; // Get the 매물ID from the URL parameter
+  try {
+    // Query to fetch row from new-address
+    const newAddressQuery =
+      'SELECT * FROM `new_address` WHERE 건물관리번호 = ?';
+    const oldAddressQuery =
+      'SELECT * FROM `old_address` WHERE 건물관리번호 = ?';
+
+    // Execute both queries
+    db.query(newAddressQuery, [id], (err, newAddressResult) => {
+      if (err) {
+        console.error('Error fetching new address:', err);
+        return res
+          .status(500)
+          .json({ message: 'Database error fetching new address' });
+      }
+
+      // After getting the new address, fetch the old address
+      db.query(oldAddressQuery, [id], (err, oldAddressResult) => {
+        if (err) {
+          console.error('Error fetching old address:', err);
+          return res
+            .status(500)
+            .json({ message: 'Database error fetching old address' });
+        }
+
+        // Combine both results and send as response
+        res.json({
+          newAddress: newAddressResult.length > 0 ? newAddressResult[0] : null,
+          oldAddress: oldAddressResult.length > 0 ? oldAddressResult[0] : null,
+        });
+      });
+    });
+  } catch (error) {
+    console.error('Server error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 app.listen(8000, () => {
