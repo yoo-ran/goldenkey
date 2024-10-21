@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'; // For navigation to the login page
+import axios from 'axios';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faHouseChimneyWindow,
@@ -15,8 +17,32 @@ const approvalDate = ['15년 이상', '15년 이내', '10년 이내', '5년 이�
 
 const SearchHeader = ({ onSendSearchTerm }) => {
   const [openFilter, setOpenFilter] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false); // State to track authentication status
+  const navigate = useNavigate(); // Hook for navigation
+
   const [filterType, setFilterType] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    const checkAuthentication = async () => {
+      try {
+        // Make a request to the server to verify the user's token (stored in HTTP-only cookie)
+        const response = await axios.get('http://localhost:8000/check-auth', {
+          withCredentials: true,
+        });
+        if (response.status === 200) {
+          setIsAuthenticated(true);
+        } else {
+          navigate('/login'); // Redirect to login if authentication fails
+        }
+      } catch (error) {
+        console.error('User is not authenticated:', error);
+        navigate('/login'); // Redirect to login if authentication fails
+      }
+    };
+
+    checkAuthentication();
+  }, [navigate]);
 
   const searchHandle = (e) => {
     const searchTerm = e.target.value;
@@ -38,10 +64,14 @@ const SearchHeader = ({ onSendSearchTerm }) => {
   console.log(openFilter);
 
   return (
-    <section className='w-full md:w-full relative  z-40 flexCol my-6'>
+    <section
+      className={`w-full md:w-full x  z-40 flexCol my-6 ${
+        isAuthenticated ? 'relative' : 'hidden'
+      }`}
+    >
       <div className={`relative w-full  top-14  flexCol gap-y-4`}>
         <article
-          className={`absolute flexCol top-44 md:top-2 z-40 md:right-0 border w-full  py-8 bg-white transition-all overflow-hidden transform ${
+          className={`absolute flexCol top-4 md:top-2 z-40 md:right-0 border w-full  py-8 bg-white transition-all overflow-hidden transform ${
             openFilter === false ? 'scale-y-0' : ''
           }`}
         >

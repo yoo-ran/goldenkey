@@ -14,7 +14,7 @@ const defaultFilteringData = {
   isEV: '',
 };
 
-const House = ({ approvalDate }) => {
+const House = ({ approvalDate, onOpen }) => {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [isParking, setIsParking] = useState(false);

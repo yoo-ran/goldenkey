@@ -21,6 +21,10 @@ import 'swiper/css/scrollbar';
 const Search = ({ searchTerm }) => {
   const [favoriteIds, setFavoriteIds] = useState([]);
   const [propertyId, setPropertyId] = useState();
+
+  const [currentPage, setCurrentPage] = useState(1); // State to manage the current page
+  const propertiesPerPage = 6; // Number of properties to display per page (adjust as needed)
+
   const [properties, setProperties] = useState([]);
   const [propertyImages, setPropertyImages] = useState({}); // Store images by property ID
   const [filteredProperties, setFilteredProperties] = useState([]);
@@ -37,6 +41,7 @@ const Search = ({ searchTerm }) => {
           isParking: false,
           isEV: false,
         };
+
   const typeFromHome =
     location.state && typeof location.state === 'string' ? location.state : '';
 
@@ -54,7 +59,6 @@ const Search = ({ searchTerm }) => {
             const imgRes = await axios.get(
               `http://localhost:8000/properties/${propertyId}/images`
             );
-
             // Store images for each property using its ID
             if (Array.isArray(imgRes.data.images)) {
               setPropertyImages((prev) => ({
@@ -79,86 +83,112 @@ const Search = ({ searchTerm }) => {
     fetchProperties();
   }, []);
 
-  const filterProperties = () => {
-    const filtered = properties.filter((property) => {
-      const matchesSelectedMethod = rangeValues.transactionMethod.includes(
-        property.거래방식
-      );
+  useEffect(() => {
+    const filterProperties = () => {
+      const filtered = properties.filter((property) => {
+        const matchesSelectedMethod =
+          !rangeValues.transactionMethod.length ||
+          rangeValues.transactionMethod.includes(property.거래방식);
 
-      const withinDepositRange = rangeValues.depositRange.some((range) => {
-        const method = Object.keys(range)[0];
-        const { min, max } = range[method];
-        return (
-          rangeValues.transactionMethod.includes(method) &&
-          property.보증금 / 10000 >= min &&
-          property.보증금 / 10000 <= max
-        );
-      });
-
-      const withinRentRange = ['월세', '전세'].includes(property.거래방식)
-        ? rangeValues.rentRange.some((range) => {
+        const withinDepositRange =
+          !rangeValues.depositRange.length ||
+          rangeValues.depositRange.some((range) => {
             const method = Object.keys(range)[0];
             const { min, max } = range[method];
             return (
               rangeValues.transactionMethod.includes(method) &&
-              property.월세 / 10000 >= min &&
-              property.월세 / 10000 <= max
+              property.보증금 / 10000 >= min &&
+              property.보증금 / 10000 <= max
             );
-          })
-        : false;
+          });
 
-      const withinRoomSizeRange =
-        property.전용평 >= rangeValues.roomSizeRange.min &&
-        property.전용평 <= rangeValues.roomSizeRange.max;
+        const withinRentRange =
+          !rangeValues.rentRange.length ||
+          ['월세', '전세'].includes(property.거래방식)
+            ? rangeValues.rentRange.some((range) => {
+                const method = Object.keys(range)[0];
+                const { min, max } = range[method];
+                return (
+                  rangeValues.transactionMethod.includes(method) &&
+                  property.월세 / 10000 >= min &&
+                  property.월세 / 10000 <= max
+                );
+              })
+            : true;
 
-      const haveParking =
-        rangeValues.isParking === true ? property.주차가능대수 > 0 : true; // Changed to `true` to allow all if not selected
+        const withinRoomSizeRange =
+          (!rangeValues.roomSizeRange.min && !rangeValues.roomSizeRange.max) ||
+          (property.전용평 >= rangeValues.roomSizeRange.min &&
+            property.전용평 <= rangeValues.roomSizeRange.max);
 
-      const haveElevator =
-        rangeValues.isEV === true ? property.EV유무 === 1 : true; // Changed to `true` to allow all if not selected
+        const haveParking =
+          rangeValues.isParking === false || property.주차가능대수 > 0;
 
-      const isWithinApprovalDateRange = (() => {
-        if (!rangeValues.approvalDate) return true;
-        const currentYear = new Date().getFullYear();
-        const approvalYear = new Date(property.사용승인일자).getFullYear();
-        const yearDifference = currentYear - approvalYear;
-        switch (rangeValues.approvalDate) {
-          case '5년 이내':
-            return yearDifference <= 5;
-          case '10년 이내':
-            return yearDifference <= 10;
-          case '15년 이내':
-            return yearDifference <= 15;
-          case '15년 이상':
-            return yearDifference > 15;
-          default:
-            return true; // Allow if no valid selection
-        }
-      })();
+        const haveElevator =
+          rangeValues.isEV === false || property.EV유무 === 1;
 
-      return (
-        matchesSelectedMethod &&
-        withinDepositRange &&
-        withinRentRange &&
-        withinRoomSizeRange &&
-        haveParking &&
-        haveElevator &&
-        isWithinApprovalDateRange
-      );
-    });
+        const isWithinApprovalDateRange = (() => {
+          if (!rangeValues.approvalDate) return true;
+          const currentYear = new Date().getFullYear();
+          const approvalYear = new Date(property.사용승인일자).getFullYear();
+          const yearDifference = currentYear - approvalYear;
 
-    console.log('Filtered Properties: ', filtered); // Log filtered result before setting state
-    setFilteredProperties(filtered); // Update the filtered properties state
-  };
+          switch (rangeValues.approvalDate) {
+            case '5년 이내':
+              return yearDifference <= 5;
+            case '10년 이내':
+              return yearDifference <= 10;
+            case '15년 이내':
+              return yearDifference <= 15;
+            case '15년 이상':
+              return yearDifference > 15;
+            default:
+              return true;
+          }
+        })();
 
-  useEffect(() => {
-    filterProperties();
-  }, []);
+        return (
+          matchesSelectedMethod &&
+          withinDepositRange &&
+          withinRentRange &&
+          withinRoomSizeRange &&
+          haveParking &&
+          haveElevator &&
+          isWithinApprovalDateRange
+        );
+      });
+
+      setFilteredProperties(filtered);
+
+      filterProperties();
+    };
+  }, [properties, rangeValues]);
+
+  const indexOfLastProperty = currentPage * propertiesPerPage;
+  const indexOfFirstProperty = indexOfLastProperty - propertiesPerPage;
+
+  // Slice the properties array to get only the ones for the current page
+  const currentProperties = (
+    filteredProperties.length > 0 ? filteredProperties : properties
+  ).slice(indexOfFirstProperty, indexOfLastProperty);
+
+  // Determine the total number of pages
+  const totalPages = Math.ceil(
+    (filteredProperties.length > 0
+      ? filteredProperties.length
+      : properties.length) / propertiesPerPage
+  );
+
+  // Handler for changing the page
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   const formatToKoreanCurrency = (number) => {
-    const billion = Math.floor(number / 100000000); // Extract the 억 (billion) part
-    const remainder = number % 100000000; // The remainder after dividing by 억
-    const thousand = Math.floor(remainder / 10000000); // Extract the 천 (thousand) part
+    const adjustedNumber = Math.floor(number / 10000); // Adjust the number by trimming 4 zeros (dividing by 10,000)
+
+    const billion = Math.floor(adjustedNumber / 10000); // Extract the 억 (billion) part
+    const remainder = adjustedNumber % 10000; // The remainder after dividing by 억
+    const thousand = Math.floor(remainder / 1000); // Extract the 천 (thousand) part
+
     let result = '';
 
     if (billion > 0) {
@@ -170,7 +200,7 @@ const Search = ({ searchTerm }) => {
     }
 
     if (!result) {
-      result = number.toString(); // Return the number if it's less than 1억
+      result = adjustedNumber.toString(); // Return the adjusted number if it's less than 1억 and 1천
     }
 
     return result.trim(); // Return the formatted string, removing any unnecessary spaces
@@ -247,8 +277,6 @@ const Search = ({ searchTerm }) => {
     setFilteredProperties(filtered); // Update the filtered properties state
   }, [typeFromHome]);
 
-  console.log(typeFromHome);
-
   const fetchFavoriteIds = async () => {
     try {
       const response = await axios.get('http://localhost:8000/get-favorites', {
@@ -315,75 +343,105 @@ const Search = ({ searchTerm }) => {
             : properties.length}
           개의 검색결과
         </h2>
-        <article className='w-full grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8 min-h-96'>
-          {(filteredProperties.length > 0
-            ? filteredProperties
-            : properties
-          ).map((property) => {
-            const { 매물ID: propertyId } = property; // Assuming '매물ID' is the unique property ID
-            const images = propertyImages[propertyId] || []; // Get images for this property
+        <article className='w-full  grid grid-rows-6 lg:grid-rows-3 grid-cols-1 lg:grid-cols-3 gap-y-4 lg:gap-8 min-h-96'>
+          {(currentProperties.length > 0 ? currentProperties : properties).map(
+            (property) => {
+              const { 매물ID: propertyId } = property; // Assuming '매물ID' is the unique property ID
+              const images = propertyImages[propertyId] || []; // Get images for this property
 
-            return (
-              <div
-                key={propertyId}
-                className='flexRow gap-x-4 lg:flexCol gap-y-4'
-              >
-                <div className='w-4/12 lg:w-full flexCol relative bg-secondary-light h-full rounded-2xl overflow-hidden'>
-                  {images.length > 0 ? (
-                    <img
-                      src={`http://localhost:8000${images[0]}`}
-                      alt={`${property.건물명}`}
-                      className=' object-cover'
-                    />
-                  ) : (
-                    <p className=' flexCol text-center mobile_5 lg:min-h-48 '>
-                      No images available
-                    </p>
-                  )}
-                  <div
-                    onClick={() => heartClick(propertyId)}
-                    className='absolute top-1 right-1'
-                  >
-                    <FontAwesomeIcon
-                      icon={faRegularHeart}
-                      className='absolute top-0 right-0 text-primary border border-white p-1 rounded-full mobile_5'
-                    />
-                    {favoriteIds.includes(propertyId) ? (
-                      <FontAwesomeIcon
-                        icon={faSolidHeart}
-                        className='absolute top-0 right-0 border border-white p-1 rounded-full mobile_5 text-primary-yellow'
+              return (
+                <div
+                  key={propertyId}
+                  className='flexRow gap-x-4 lg:flexCol gap-y-4 '
+                >
+                  <div className='w-4/12 lg:w-full flexCol relative bg-secondary-light h-full rounded-2xl overflow-hidden'>
+                    {images.length > 0 ? (
+                      <img
+                        src={`http://localhost:8000/${images[0]}`}
+                        alt={`${property.건물명}`}
+                        className='object-cover h-full'
                       />
                     ) : (
-                      ''
+                      <p className=' flexCol text-center mobile_5 lg:min-h-48 '>
+                        No images available
+                      </p>
                     )}
+                    <div
+                      onClick={() => heartClick(propertyId)}
+                      className='absolute top-1 right-1'
+                    >
+                      <FontAwesomeIcon
+                        icon={faRegularHeart}
+                        className='absolute top-0 right-0 text-primary border border-white p-1 rounded-full mobile_5'
+                      />
+                      {favoriteIds.includes(propertyId) ? (
+                        <FontAwesomeIcon
+                          icon={faSolidHeart}
+                          className='absolute top-0 right-0 border border-white p-1 rounded-full mobile_5 text-primary-yellow'
+                        />
+                      ) : (
+                        ''
+                      )}
+                    </div>
+                  </div>
+                  <div className='flexCol items-start w-8/12 gap-y-4 lg:w-11/12'>
+                    {/* <p className='mobile_1_bold'>{property.거래방식}</p> */}
+                    <p className='mobile_1_bold'>
+                      {property.거래방식}{' '}
+                      {property.거래방식 === '매매'
+                        ? formatToKoreanCurrency(property.보증금)
+                        : `${Math.floor(
+                            property.보증금 / 10000
+                          )} / ${formatToKoreanCurrency(property.월세)}`}
+                    </p>
+                    <div>
+                      <ul className='flexRow mobile_5'>
+                        <li>{property.부동산구분}</li>
+                        <li>|</li>
+                        <li>{property.건물명}</li>
+                      </ul>
+                      <ul className='flexRow gap-x-1 mobile_5'>
+                        <li>
+                          {property.전체m2}m<sup>2</sup>,
+                        </li>
+                        <li>관리비 {property.관리비}원</li>
+                      </ul>
+                    </div>
                   </div>
                 </div>
-                <div className='flexCol items-start w-8/12 gap-y-4 lg:w-11/12'>
-                  {/* <p className='mobile_1_bold'>{property.거래방식}</p> */}
-                  <p className='mobile_1_bold'>
-                    {property.거래방식}{' '}
-                    {property.거래방식 === '매매'
-                      ? formatToKoreanCurrency(property.보증금)
-                      : property.보증금 / property.월세}
-                  </p>
-                  <div>
-                    <ul className='flexRow mobile_5'>
-                      <li>{property.부동산구분}</li>
-                      <li>|</li>
-                      <li>{property.건물명}</li>
-                    </ul>
-                    <ul className='flexRow gap-x-1 mobile_5'>
-                      <li>
-                        {property.전체m2}m<sup>2</sup>,
-                      </li>
-                      <li>관리비 {property.관리비}원</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+              );
+            }
+          )}
         </article>
+        <div className='flex justify-center mt-4'>
+          <button
+            onClick={() => paginate(currentPage - 1)}
+            disabled={currentPage === 1}
+            className='px-4 py-2 mx-1 border border-primary-yellow text-primary rounded'
+          >
+            <FontAwesomeIcon icon={faChevronLeft} />
+          </button>
+          {[...Array(totalPages)].map((_, index) => (
+            <button
+              key={index + 1}
+              onClick={() => paginate(index + 1)}
+              className={`px-4 py-2 mx-1 border rounded  ${
+                currentPage === index + 1
+                  ? 'bg-primary-yellow'
+                  : 'bg-secondary-light'
+              }`}
+            >
+              {index + 1}
+            </button>
+          ))}
+          <button
+            onClick={() => paginate(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className='px-4 py-2 mx-1 border border-primary-yellow text-primary rounded'
+          >
+            <FontAwesomeIcon icon={faChevronRight} />
+          </button>
+        </div>
       </section>
 
       {/* 추천물건 */}
@@ -428,17 +486,17 @@ const Search = ({ searchTerm }) => {
 
               return (
                 <SwiperSlide key={propertyId}>
-                  <article className='flexCol justify-between gap-y-4  bg-white rounded-3xl px-2 py-3 '>
+                  <article className='flexCol justify-between gap-y-4  bg-white rounded-3xl px-2 py-3 lg:px-3'>
                     {/* Property Images */}
                     {images.length > 0 ? (
                       <div
                         style={{
-                          backgroundImage: `url(http://localhost:8000${images[0]})`,
+                          backgroundImage: `url(http://localhost:8000/${images[0]})`,
                         }}
-                        className='w-full aspect-square bg-cover bg-center rounded-2xl flex justify-end p-2'
+                        className='w-full bg-cover bg-center rounded-2xl flex justify-end p-2 min-h-32 lg:min-h-44'
                       ></div>
                     ) : (
-                      <p className='bg-secondary-light text-center py-4 rounded-lg'>
+                      <p className='bg-secondary-light text-center py-4 rounded-lg min-h-32 lg:min-h-44 flexCol'>
                         No images available
                       </p>
                     )}
