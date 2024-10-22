@@ -346,7 +346,7 @@ const PropertyDetail = () => {
         <article className='flexCol items-start gap-y-8 w-full'>
           <div className='flexRow gap-x-2 w-full'>
             <p className='border border-primary-yellow px-1 mobile_5'>
-              매물번호 {propertyId}
+              매물번호 {propertyData.매물ID}
             </p>
             <p className='bg-primary-yellow px-5 py-0.5 rounded mobile_4_bold'>
               {propertyData.부동산구분
