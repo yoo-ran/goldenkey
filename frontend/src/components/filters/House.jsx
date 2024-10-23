@@ -11,14 +11,16 @@ const defaultFilteringData = {
   roomSizeRange: { min: 10, max: 60 },
   approvalDate: '',
   isParking: '',
-  isEV: '',
+  doesElevatorExist: '',
 };
 
 const House = ({ approvalDate, onOpen }) => {
+  const apiUrl = import.meta.env.VITE_API_URL;
+
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [isParking, setIsParking] = useState(false);
-  const [isEV, setIsEV] = useState(false);
+  const [doesElevatorExist, setdoesElevatorExist] = useState(false);
   const [transactionMethods, setTransactionMethods] = useState([]);
   const [filteringData, setFilteringData] = useState(defaultFilteringData);
 
@@ -126,9 +128,12 @@ const House = ({ approvalDate, onOpen }) => {
       if (name === 'isParking') {
         setIsParking((prev) => !prev);
         setFilteringData((prev) => ({ ...prev, isParking: !isParking }));
-      } else if (name === 'isEV') {
-        setIsEV((prev) => !prev);
-        setFilteringData((prev) => ({ ...prev, isEV: !isEV }));
+      } else if (name === 'doesElevatorExist') {
+        setdoesElevatorExist((prev) => !prev);
+        setFilteringData((prev) => ({
+          ...prev,
+          doesElevatorExist: !doesElevatorExist,
+        }));
       } else if (name === 'transactionMethod') {
         setFilteringData((prevState) => {
           if (!prevState.transactionMethod.includes(value)) {
@@ -153,14 +158,12 @@ const House = ({ approvalDate, onOpen }) => {
         setFilteringData((prev) => ({ ...prev, [name]: value }));
       }
     },
-    [isParking, isEV]
+    [isParking, doesElevatorExist]
   );
 
   const fetchConstantVariable = useCallback(async () => {
     try {
-      const response = await axios.get(
-        'http://localhost:8000/transaction-methods'
-      );
+      const response = await axios.get(`${apiUrl}/transaction-methods`);
       setTransactionMethods(response.data);
     } catch (error) {
       console.error('Error fetching transaction methods:', error);
@@ -207,7 +210,7 @@ const House = ({ approvalDate, onOpen }) => {
                   title='매매'
                   subTitle1='매매금'
                   min1={0}
-                  max1={3000}
+                  max1={5000}
                   onChange1={handleDepositRangeChange}
                   handleClear={handleClear}
                   handleSubmit={handleSubmit}
@@ -219,10 +222,10 @@ const House = ({ approvalDate, onOpen }) => {
                   title='월세'
                   subTitle1='보증금'
                   subTitle2='월세'
-                  min1={0}
-                  max1={3000}
+                  min1={100}
+                  max1={10000}
                   min2={0}
-                  max2={1000}
+                  max2={500}
                   onChange1={handleDepositRangeChange}
                   onChange2={handleRentRangeChange}
                   handleClear={handleClear}
@@ -238,7 +241,7 @@ const House = ({ approvalDate, onOpen }) => {
                   min1={0}
                   max1={3000}
                   min2={0}
-                  max2={1000}
+                  max2={1000000}
                   onChange1={handleDepositRangeChange}
                   onChange2={handleRentRangeChange}
                   handleClear={handleClear}
@@ -305,10 +308,10 @@ const House = ({ approvalDate, onOpen }) => {
                   주차가능
                 </button>
                 <button
-                  name='isEV'
+                  name='doesElevatorExist'
                   onClick={handleSelect}
                   className={`px-3 py-2 text-center rounded mobile_5 ${
-                    filteringData.isEV
+                    filteringData.doesElevatorExist
                       ? 'bg-secondary-yellow'
                       : 'bg-secondary-blue'
                   }`}

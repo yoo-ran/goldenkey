@@ -16,6 +16,8 @@ import House from '../filters/House.jsx';
 const approvalDate = ['15년 이상', '15년 이내', '10년 이내', '5년 이내'];
 
 const SearchHeader = ({ onSendSearchTerm }) => {
+  const apiUrl = import.meta.env.VITE_API_URL;
+
   const [openFilter, setOpenFilter] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false); // State to track authentication status
   const navigate = useNavigate(); // Hook for navigation
@@ -27,7 +29,7 @@ const SearchHeader = ({ onSendSearchTerm }) => {
     const checkAuthentication = async () => {
       try {
         // Make a request to the server to verify the user's token (stored in HTTP-only cookie)
-        const response = await axios.get('http://localhost:8000/check-auth', {
+        const response = await axios.get(`${apiUrl}/check-auth`, {
           withCredentials: true,
         });
         if (response.status === 200) {
