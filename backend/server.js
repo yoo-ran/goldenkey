@@ -16,7 +16,6 @@ const {
   PROPERTY_TYPES,
   TRANSACTION_METHOD,
   TRANSACTION_STATUS,
-  TOILETS_NUM,
 } = require('./constants'); // Import the constants
 
 const JWT_SECRET = 'your_super_secret_key';
@@ -55,13 +54,13 @@ app.use(
       /^\/properties\/\d+\/images$/,
       /^\/delete-property\/\d+$/,
       /^\/update-property\/\d+$/,
-      /^\/upload-images\/\d+$/,
+      /^\/upload-images\/.*$/,
+      '/upload-images',
       '/property-types',
       '/transaction-methods',
       '/transaction-status',
-      '/toilets-num',
       '/properties/update',
-      '/search-address',
+      /^\/get-address\/\d+$/,
     ],
   })
 );
@@ -97,18 +96,14 @@ app.get('/transaction-status', (req, res) => {
   res.json(TRANSACTION_STATUS); // Send the enum values to the frontend
 });
 
-app.get('/toilets-num', (req, res) => {
-  res.json(TOILETS_NUM); // Send the enum values to the frontend
-});
-
 // Import CSV / excel
 app.post('/import-csv', (req, res) => {
   const properties = req.body; // JSON data from the frontend
-  const uniqueFields = properties.map((item) => item['순번']); // Using '순번' as the unique identifier
+  const uniqueFields = properties.map((item) => item['매물ID']); // Using '매물ID' as the unique identifier
   console.log(uniqueFields);
 
-  // Query to fetch existing records with the same 순번
-  const query = `SELECT 순번 FROM property WHERE 순번 IN (?)`;
+  // Query to fetch existing records with the same 매물ID
+  const query = `SELECT 매물ID FROM property WHERE 매물ID IN (?)`;
 
   db.query(query, [uniqueFields], (err, results) => {
     if (err) {
@@ -116,12 +111,12 @@ app.post('/import-csv', (req, res) => {
       return res.status(500).send('Error checking existing data');
     }
 
-    const existingFields = results.map((row) => row['순번']); // List of IDs that already exist in DB
+    const existingFields = results.map((row) => row['매물ID']); // List of IDs that already exist in DB
     const newRecords = properties.filter(
-      (item) => !existingFields.includes(item['순번'])
+      (item) => !existingFields.includes(item['매물ID'])
     ); // Records to insert
     const updateRecords = properties.filter((item) =>
-      existingFields.includes(item['순번'])
+      existingFields.includes(item['매물ID'])
     ); // Records to update
 
     const promises = [];
@@ -129,7 +124,7 @@ app.post('/import-csv', (req, res) => {
     // Insert new records
     if (newRecords.length > 0) {
       const insertValues = newRecords.map((item) => [
-        item['순번'],
+        item['매물ID'],
         item['등록일자'],
         item['부동산구분'],
         item['거래방식'],
@@ -153,16 +148,14 @@ app.post('/import-csv', (req, res) => {
         item['전용평'],
         item['EV유무'],
         item['화장실개수'],
+        item['층수'],
         item['주차가능대수'],
         item['비밀번호'],
-        item['이름'],
-        item['휴대폰번호'],
-        item['기타특이사항'],
-        item['정산금액'],
+        item['연락처'],
         item['메모'],
       ]);
 
-      const insertSql = `INSERT INTO property (순번, 등록일자, 부동산구분, 거래방식, 거래완료여부, 거래완료일자, 담당자, 구, 읍면동, 구상세주소, 도로명, 신상세주소, 건물명, 동, 호수, 보증금, 월세, 관리비, 전체m2, 전용m2, 전체평, 전용평, EV유무, 화장실개수, 주차가능대수, 비밀번호, 이름, 휴대폰번호, 기타특이사항, 정산금액, 메모) VALUES ?`;
+      const insertSql = `INSERT INTO property (매물ID, 등록일자, 부동산구분, 거래방식, 거래완료여부, 거래완료일자, 담당자, 구, 읍면동, 구상세주소, 도로명, 신상세주소, 건물명, 동, 호수, 보증금, 월세, 관리비, 전체m2, 전용m2, 전체평, 전용평, EV유무, 화장실개수, 층수, 방개수, 주차가능대수, 비밀번호, 연락처, 메모) VALUES ?`;
 
       promises.push(
         new Promise((resolve, reject) => {
@@ -235,39 +228,35 @@ app.post('/import-csv', (req, res) => {
           updateFields.push(`EV유무 = ${db.escape(item['EV유무'])}`);
         if (item['화장실개수'])
           updateFields.push(`화장실개수 = ${db.escape(item['화장실개수'])}`);
+        if (item['층수'])
+          updateFields.push(`층수 = ${db.escape(item['층수'])}`);
+        if (item['방개수'])
+          updateFields.push(`방개수 = ${db.escape(item['방개수'])}`);
         if (item['주차가능대수'])
           updateFields.push(
             `주차가능대수 = ${db.escape(item['주차가능대수'])}`
           );
         if (item['비밀번호'])
           updateFields.push(`비밀번호 = ${db.escape(item['비밀번호'])}`);
-        if (item['이름'])
-          updateFields.push(`이름 = ${db.escape(item['이름'])}`);
-        if (item['휴대폰번호'])
-          updateFields.push(`휴대폰번호 = ${db.escape(item['휴대폰번호'])}`);
-        if (item['기타특이사항'])
-          updateFields.push(
-            `기타특이사항 = ${db.escape(item['기타특이사항'])}`
-          );
-        if (item['정산금액'])
-          updateFields.push(`정산금액 = ${db.escape(item['정산금액'])}`);
+        if (item['연락처'])
+          updateFields.push(`연락처 = ${db.escape(item['연락처'])}`);
         if (item['메모'])
           updateFields.push(`메모 = ${db.escape(item['메모'])}`);
 
         if (updateFields.length > 0) {
           const updateSql = `UPDATE property SET ${updateFields.join(
             ', '
-          )} WHERE 순번 = ${db.escape(item['순번'])}`;
+          )} WHERE 매물ID = ${db.escape(item['매물ID'])}`;
 
           promises.push(
             new Promise((resolve, reject) => {
               db.query(updateSql, (err, result) => {
                 if (err) {
                   console.error(
-                    `Error updating record with 순번 ${item['순번']}:`,
+                    `Error updating record with 매물ID ${item['매물ID']}:`,
                     err
                   );
-                  reject(`Error updating record with 순번 ${item['순번']}`);
+                  reject(`Error updating record with 매물ID ${item['매물ID']}`);
                 } else {
                   resolve();
                 }
@@ -449,7 +438,7 @@ app.put('/update-property/:propertyId', async (req, res) => {
     .map((key) => `${key} = ?`)
     .join(', ');
 
-  const sql = `UPDATE property SET ${setClause} WHERE 순번 = ?`;
+  const sql = `UPDATE property SET ${setClause} WHERE 매물ID = ?`;
 
   const values = [...Object.values(updatedFields), propertyId];
 
@@ -468,7 +457,7 @@ app.put('/update-property/:propertyId', async (req, res) => {
 app.get('/detail/:propertyId', (req, res) => {
   const { propertyId } = req.params;
 
-  const sql = 'SELECT * FROM property WHERE 순번 = ?';
+  const sql = 'SELECT * FROM property WHERE 매물ID = ?';
 
   db.query(sql, [propertyId], (err, results) => {
     if (err) {
@@ -490,7 +479,7 @@ app.delete('/delete-property/:propertyId', (req, res) => {
   const propertyId = req.params.propertyId;
 
   // SQL query to delete a property by its ID
-  const query = 'DELETE FROM property WHERE 순번 = ?';
+  const query = 'DELETE FROM property WHERE 매물ID = ?';
 
   db.query(query, [propertyId], (err, result) => {
     if (err) {
@@ -555,7 +544,7 @@ app.post(
 
       // Retrieve the current image paths for the given propertyId
       const currentResult = await query(
-        'SELECT img_path FROM property WHERE 순번 = ?',
+        'SELECT img_path FROM property WHERE 매물ID = ?',
         [propertyId]
       );
 
@@ -572,7 +561,7 @@ app.post(
       const updatedImagePathsString = updatedImagePaths.join(',');
 
       // Update the property with the new image paths
-      await query('UPDATE property SET img_path = ? WHERE 순번 = ?', [
+      await query('UPDATE property SET img_path = ? WHERE 매물ID = ?', [
         updatedImagePathsString,
         propertyId,
       ]);
@@ -586,13 +575,32 @@ app.post(
 );
 
 app.post('/upload-images', upload.array('images'), (req, res) => {
-  const imagePaths = req.files.map((file) => file.path); // Get the paths of uploaded images
-  res.json({ images: imagePaths });
+  try {
+    const imagePaths = req.files.map((file) => {
+      const uploadsIndex = file.path.indexOf('/uploads/');
+
+      // Ensure '/uploads/' exists in the file path
+      if (uploadsIndex === -1) {
+        throw new Error(
+          `Invalid path: ${file.path} does not contain '/uploads/'`
+        );
+      }
+
+      // Extract the relative path using the index and ensure cross-platform compatibility
+      const relativePath = file.path.substring(uploadsIndex);
+      return path.posix.join(relativePath); // Ensures '/' separator is used on all platforms
+    });
+
+    res.json({ images: imagePaths });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
 });
 
 app.get('/properties/:propertyId/images', async (req, res) => {
   try {
     const propertyId = req.params.propertyId;
+
     // Execute the query and get the results
     const query = 'SELECT img_path FROM property WHERE 매물ID = ?';
     db.query(query, [propertyId], (error, results) => {
@@ -625,7 +633,7 @@ app.get('/memos/:propertyId', async (req, res) => {
   const { propertyId } = req.params;
 
   try {
-    const query = 'SELECT 메모 FROM property WHERE 순번 = ?';
+    const query = 'SELECT 메모 FROM property WHERE 매물ID = ?';
     db.query(query, [propertyId], (err, result) => {
       if (err) {
         console.error('Error fetching memo:', err);
@@ -650,7 +658,7 @@ app.post('/memos/add', async (req, res) => {
   try {
     // Execute the query using db.query (for mysql package)
     db.query(
-      'UPDATE property SET 메모 = ? WHERE 순번 = ?',
+      'UPDATE property SET 메모 = ? WHERE 매물ID = ?',
       [content, propertyId],
       (error, result) => {
         if (error) {
@@ -675,15 +683,8 @@ app.post('/memos/add', async (req, res) => {
 app.post('/properties/update', (req, res) => {
   const propertyData = req.body;
 
-  // Convert the 정산금액 object to a JSON string if it's an object
-  if (typeof propertyData.정산금액 === 'object') {
-    propertyData.정산금액 = JSON.stringify(propertyData.정산금액);
-  }
-
-  console.log(propertyData.총수수료);
-
   db.query(
-    'INSERT INTO property SET ? ON DUPLICATE KEY UPDATE 정산금액 = VALUES(정산금액)',
+    'INSERT INTO property SET ? ',
     [propertyData, propertyData],
     (err, result) => {
       if (err) {
@@ -745,43 +746,45 @@ app.post('/save-favorites', (req, res) => {
   );
 });
 
-app.get('/search-address', (req, res) => {
-  const searchText = req.query.q; // Get the search term from query parameters
+// API to get rows from new-address and old-address tables using 매물ID
+app.get('/get-address/:id', async (req, res) => {
+  const { id } = req.params; // Get the 매물ID from the URL parameter
+  try {
+    // Query to fetch row from new-address
+    const newAddressQuery =
+      'SELECT * FROM `new_address` WHERE 건물관리번호 = ?';
+    const oldAddressQuery =
+      'SELECT * FROM `old_address` WHERE 건물관리번호 = ?';
 
-  const query = `
-        SELECT 건물관리번호 
-        
-        FROM old_address
-        WHERE 시군구 LIKE ? OR 읍면 LIKE ? OR 리명 LIKE ?
-        UNION
-        SELECT 건물관리번호
-        FROM new_address
-        WHERE 시군구 LIKE ? OR 읍면 LIKE ? OR 도로명 LIKE ?;
-    `;
-
-  const searchPattern = `%${searchText}%`;
-
-  // Use the connection pool to execute the query
-  db.query(
-    query,
-    [
-      searchPattern,
-      searchPattern,
-      searchPattern, // For old_address
-      searchPattern,
-      searchPattern,
-      searchPattern, // For new_address
-    ],
-    (error, results) => {
-      if (error) {
-        console.error('Error retrieving addresses:', error);
-        return res.status(500).json({ error: 'Failed to retrieve addresses' });
+    // Execute both queries
+    db.query(newAddressQuery, [id], (err, newAddressResult) => {
+      if (err) {
+        console.error('Error fetching new address:', err);
+        return res
+          .status(500)
+          .json({ message: 'Database error fetching new address' });
       }
 
-      const addressIds = results.map((row) => row.건물관리번호); // Extract 건물관리번호
-      res.json({ addressIds }); // Send the address IDs back to the frontend
-    }
-  );
+      // After getting the new address, fetch the old address
+      db.query(oldAddressQuery, [id], (err, oldAddressResult) => {
+        if (err) {
+          console.error('Error fetching old address:', err);
+          return res
+            .status(500)
+            .json({ message: 'Database error fetching old address' });
+        }
+
+        // Combine both results and send as response
+        res.json({
+          newAddress: newAddressResult.length > 0 ? newAddressResult[0] : null,
+          oldAddress: oldAddressResult.length > 0 ? oldAddressResult[0] : null,
+        });
+      });
+    });
+  } catch (error) {
+    console.error('Server error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 app.listen(8000, () => {
