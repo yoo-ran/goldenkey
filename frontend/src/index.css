@@ -33,7 +33,7 @@ body {
 
 @media (min-width: 768px) {
   :root {
-    --font-size-base: 1.5rem;
+    --font-size-base: 1.25rem;
   }
 }
 
