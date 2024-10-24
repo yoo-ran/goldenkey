@@ -575,13 +575,26 @@ app.post(
 );
 
 app.post('/upload-images', upload.array('images'), (req, res) => {
-  const imagePaths = req.files.map((file) => {
-    // Extract the part of the path that starts with '/uploads/'
-    const relativePath = file.path.split('/uploads/')[1];
-    return `/uploads/${relativePath}`;
-  });
+  try {
+    const imagePaths = req.files.map((file) => {
+      const uploadsIndex = file.path.indexOf('/uploads/');
 
-  res.json({ images: imagePaths });
+      // Ensure '/uploads/' exists in the file path
+      if (uploadsIndex === -1) {
+        throw new Error(
+          `Invalid path: ${file.path} does not contain '/uploads/'`
+        );
+      }
+
+      // Extract the relative path using the index and ensure cross-platform compatibility
+      const relativePath = file.path.substring(uploadsIndex);
+      return path.posix.join(relativePath); // Ensures '/' separator is used on all platforms
+    });
+
+    res.json({ images: imagePaths });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
 });
 
 app.get('/properties/:propertyId/images', async (req, res) => {

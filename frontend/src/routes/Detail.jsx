@@ -80,6 +80,12 @@ const PropertyDetail = () => {
   const [transactionStatus, setTransactionStatus] = useState([]);
 
   useEffect(() => {
+    console.log('propertyData:', propertyData);
+    console.log("propertyData.address_id", propertyData.address_id);
+
+  }, [propertyData]); // Only runs when propertyData changes
+
+  useEffect(() => {
     const checkAuthentication = async () => {
       try {
         const response = await axios.get('http://localhost:8000/check-auth', {
@@ -114,13 +120,12 @@ const PropertyDetail = () => {
 
       setPropertyData(fetchedData);
 
-      console.log(propertyData.address_id);
-      const res = await axios.get(
+      const addressFromServer = await axios.get(
         `http://localhost:8000/get-address/${fetchedData.address_id}`
       );
-      setNewAddress(res.data.newAddress);
-      setOldAddress(res.data.oldAddress);
-      console.log('res.data.newAddress', res.data.newAddress);
+      setNewAddress(addressFromServer.data.newAddress);
+      setOldAddress(addressFromServer.data.oldAddress);
+
 
       const propertyType = await axios.get(
         `http://localhost:8000/property-types`
