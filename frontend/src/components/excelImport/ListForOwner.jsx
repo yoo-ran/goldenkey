@@ -325,7 +325,10 @@ const ListForOwner = ({ updateData }) => {
   };
 
   return (
-    <div className='ag-theme-quartz' style={{ width: '100%', height: '60vh' }}>
+    <div
+      className='ag-theme-quartz w-full'
+      style={{ width: '100%', height: '60vh' }}
+    >
       <AgGridReact
         rowData={propertyData}
         columnDefs={colDefs}

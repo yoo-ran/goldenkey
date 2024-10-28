@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom'; // For navigation to the login page
 import axios from 'axios';
 
@@ -41,14 +41,20 @@ const ImportExcelPage = () => {
         return <div>Loading...</div>; // Optionally show a loading indicator while checking authentication
     }
 
-    return (
-        <main className='flexCol gap-y-20'>
-            Room Rental
+  
+  return (
+    <main className='flexCol gap-y-20'>
+      <section>
+        <p className='mobile_1_bold mb-4'>엑셀 데이터</p>
+        <ImportExcel onDataUpdate={handleDataUpdate} />
+      </section>
 
-            <ImportExcel onDataUpdate={handleDataUpdate} />
-            <ListForOwner updateData={!updateData} />
-        </main>
-    );
+      <section className='w-full'>
+        <p className='mobile_1_bold mb-4'>데이터베이스 데이터</p>
+        <ListForOwner updateData={!updateData} />
+      </section>
+    </main>
+  );
 };
 
 export default ImportExcelPage;
