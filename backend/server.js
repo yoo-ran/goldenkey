@@ -42,6 +42,26 @@ app.use(
 
 // JWT Middleware to extract token from the cookie
 app.use(
+<<<<<<< HEAD
+    jwtMiddleware({
+        secret: JWT_SECRET, // The same secret you used to sign the token
+        algorithms: ['HS256'], // The algorithm used for signing the token
+        getToken: (req) => req.cookies.authToken, // Extract token from cookies
+    }).unless({ path: [
+        '/login', 
+        '/listing',
+        /^\/detail\/.*/, 
+        /^\/properties\/\d+\/images$/,
+        /^\/delete-property\/\d+$/, 
+        /^\/update-property\/\d+$/, 
+        /^\/upload-images(\/\d+)?$/,
+        '/property-types',
+        '/transaction-methods',
+        '/transaction-status',
+        '/toilets-num',
+        '/properties/update',
+    ] }) 
+=======
   jwtMiddleware({
     secret: JWT_SECRET, // The same secret you used to sign the token
     algorithms: ['HS256'], // The algorithm used for signing the token
@@ -67,6 +87,7 @@ app.use(
       /^\/get-address\/\d+$/,
     ],
   })
+>>>>>>> 9acbfa1dc9eb29eb6f924d70e0c0bad3fed42f2b
 );
 
 const db = mysql.createPool({
@@ -598,10 +619,17 @@ app.post(
   upload.array('images', 10),
   async (req, res) => {
     try {
+<<<<<<< HEAD
+        const propertyId = req.params.propertyId;
+
+        // Get relative paths by stripping the full local path
+        const newImagePaths = req.files.map(file => `/uploads/${path.basename(file.path)}`); 
+=======
       const propertyId = req.params.propertyId;
       const newImagePaths = req.files.map(
         (file) => `/uploads/${path.basename(file.path)}`
       ); // Get relative paths
+>>>>>>> 9acbfa1dc9eb29eb6f924d70e0c0bad3fed42f2b
 
       // Retrieve the current image paths for the given propertyId
       const currentResult = await query(
@@ -609,9 +637,16 @@ app.post(
         [propertyId]
       );
 
+<<<<<<< HEAD
+        const currentImagePaths = currentResult[0].img_path ? currentResult[0].img_path.split(',').map(imgPath => {
+            // Clean current image paths in case they contain full paths
+            return imgPath.includes('/uploads/') ? imgPath.trim() : `/uploads/${path.basename(imgPath.trim())}`;
+        }) : [];
+=======
       if (currentResult.length === 0) {
         return res.status(404).json({ error: 'Property not found' });
       }
+>>>>>>> 9acbfa1dc9eb29eb6f924d70e0c0bad3fed42f2b
 
       const currentImagePaths = currentResult[0].img_path
         ? currentResult[0].img_path.split(',')
@@ -621,6 +656,10 @@ app.post(
       const updatedImagePaths = [...currentImagePaths, ...newImagePaths];
       const updatedImagePathsString = updatedImagePaths.join(',');
 
+<<<<<<< HEAD
+        // Return the updated image URLs (all relative paths)
+        res.status(200).json({ imageUrls: updatedImagePaths });
+=======
       // Update the property with the new image paths
       await query('UPDATE property SET img_path = ? WHERE 매물ID = ?', [
         updatedImagePathsString,
@@ -628,12 +667,15 @@ app.post(
       ]);
 
       res.status(200).json({ imageUrls: newImagePaths });
+>>>>>>> 9acbfa1dc9eb29eb6f924d70e0c0bad3fed42f2b
     } catch (error) {
       console.error('Error uploading images:', error);
       res.status(500).json({ error: 'Failed to upload images' });
     }
   }
 );
+
+
 
 app.post('/upload-images', upload.array('images'), (req, res) => {
 <<<<<<< HEAD

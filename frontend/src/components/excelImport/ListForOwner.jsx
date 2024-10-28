@@ -43,11 +43,24 @@ const ListForOwner = ({ updateData }) => {
     };
 
     return (
+<<<<<<< HEAD
+        <div className="ag-theme-quartz w-full h-96" >
+            <AgGridReact
+                rowData={propertyData}
+                columnDefs={colDefs}
+                defaultColDef={defaultColDef}
+                context={{ componentParent: { handleDelete, fetchProperties } }}
+                onCellValueChanged={onCellValueChanged}
+                frameworkComponents={{ checkboxRenderer: CheckboxRenderer }}
+            />
+        </div>
+=======
       <input
         type='checkbox'
         checked={Boolean(props.value)}
         onChange={handleChange}
       />
+>>>>>>> 9acbfa1dc9eb29eb6f924d70e0c0bad3fed42f2b
     );
   };
 

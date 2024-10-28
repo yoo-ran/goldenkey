@@ -38,32 +38,59 @@ const Header = () => {
     return (
         <header className='font-head w-full z-50'>
             <nav className='flexCol lg:py-5 relative'>
+<<<<<<< HEAD
+                <ul className={`w-full absolute md:static md:pt-4 md:flex-row  divide-y-[0.1rem] md:divide-y-0 divide-secondary flexCol text-center mobile_3_bold bg-primary transition-[all] ${open? " top-16": "-top-64"}`}>
+=======
                 <ul className={`w-full absolute divide-y-[0.1rem] divide-secondary flexCol text-center mobile_3_bold justify-around gap-x-4 bg-primary transition-[all] ${open? " top-16": "-top-52"}`}>
+>>>>>>> 9acbfa1dc9eb29eb6f924d70e0c0bad3fed42f2b
                     <li 
-                        className={`w-full py-5  transition-all ${location.pathname === "/favorite" ? "text-primary-yellow lg:text-primary bg-secondary lg:bg-primary-yellow" : "text-primary-yellow"}`}
+                        className={`w-full`}
                     >
-                        <Link to="/">홈</Link>
+                        <Link to="/" 
+                            className={`block w-full py-4 md:rounded-t-xl  transition-all ${location.pathname === "/" ? "text-primary-yellow md:text-primary bg-secondary md:bg-primary-yellow" : "text-primary-yellow"}`}
+                            onClick={()=>setOpen(false)}
+                        >
+                                홈
+                        </Link>
                     </li>
+                    <li className='hidden md:block border-r border-primary-yellow h-9'></li>
                     <li 
-                        className={`w-full py-5 transition-all ${location.pathname === "/search" ? "text-primary-yellow lg:text-primary bg-secondary lg:bg-primary-yellow" : "text-primary-yellow"}`}
-                    >
-                        <Link to="/search">매물 검색</Link>
+                        className={`w-full`}
+                        >
+                        <Link to="/search"            
+                            className={`block w-full py-4 flexCol md:rounded-t-xl transition-all ${location.pathname === "/search" ? "text-primary-yellow md:text-primary bg-secondary md:bg-primary-yellow" : "text-primary-yellow"}`}
+                            onClick={()=>setOpen(false)}
+                        >
+                                매물 검색
+                        </Link>
                     </li>
+                    <li className='hidden md:block border-r border-primary-yellow h-9'></li>
                     <li 
-                        className={`w-full py-5 transition-all ${location.pathname === "/upload" ? "text-primary-yellow lg:text-primary bg-secondary lg:bg-primary-yellow" : "text-primary-yellow"}`}
+                        className={`w-full`}
                     >
-                        <Link to="/upload">매물 업로드</Link>
+                        <Link to="/upload" 
+                            className={`block w-full py-4 flexCol md:rounded-t-xl transition-all ${location.pathname === "/upload" ? "text-primary-yellow md:text-primary bg-secondary md:bg-primary-yellow" : "text-primary-yellow"}`}
+                            onClick={()=>setOpen(false)}
+                        >
+                            매물 업로드
+                        </Link>
                     </li>
+                    <li className='hidden md:block border-r border-primary-yellow h-9'></li>
                     <li 
-                        className={`w-full py-5 transition-all ${location.pathname === "/importExcel" ? "text-primary-yellow lg:text-primary bg-secondaryylg:bg-primary-yellow" : "text-primary-yellow"}`}
+                        className={`w-full`}
                     >
-                        <Link to="/importExcel">엑셀 업로드</Link>
+                        <Link to="/importExcel" 
+                            className={`block w-full py-4 flexCol md:rounded-t-xl transition-all ${location.pathname === "/importExcel" ? "text-primary-yellow md:text-primary bg-secondary md:bg-primary-yellow" : "text-primary-yellow"}`}
+                            onClick={()=>setOpen(false)}
+                        >
+                            엑셀 업로드
+                        </Link>
                     </li>
                 </ul>
 
-                <div className='py-5 px-5 flexRow justify-between w-full z-50 bg-white'>
+                <div className='py-5 px-5 flexRow justify-between w-full z-50 bg-white md:flex-row-reverse'>
                     <div 
-                        className='w-8/12 h-5 relative'
+                        className='w-8/12 h-5 relative md:hidden'
                         onClick={()=> setOpen(!open)}
                     >
                         <p className={`bg-primary w-7 h-0.5 absolute top-0 transition-all ${open ? "rotate-45 top-1/2":""}`}></p>
@@ -71,9 +98,9 @@ const Header = () => {
                         <p className={`bg-primary w-7 h-0.5 absolute bottom-0 transition-all ${open ? "-rotate-45 top-1/2":""}`}></p>
                     </div>
                     <button 
-                        className='hover:bg-navy transition-all bg-primary-yellow text-primary px-4 lg:py-2 rounded-lg'
+                        className='hover:bg-navy transition-all bg-primary-yellow text-primary px-4 lg:py-2 rounded-lg block'
                     >
-                        <Link to="/login">로그인</Link>
+                        {isAuthenticated? <Link to="/login">로그아웃</Link>: <Link to="/login">로그인</Link>}
                     </button>
                 </div>
             </nav>
