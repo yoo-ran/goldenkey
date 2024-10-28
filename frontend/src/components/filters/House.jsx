@@ -16,7 +16,6 @@ const defaultFilteringData = {
 
 const House = ({ approvalDate, onOpen }) => {
   const apiUrl = import.meta.env.VITE_API_URL;
-
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [isParking, setIsParking] = useState(false);
@@ -172,7 +171,7 @@ const House = ({ approvalDate, onOpen }) => {
 
   useEffect(() => {
     fetchConstantVariable();
-  }, [fetchConstantVariable]);
+  }, []);
 
   return (
     <main className='w-full flexCol gap-y-8'>

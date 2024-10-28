@@ -6,6 +6,7 @@ import 'ag-grid-community/styles/ag-theme-quartz.css';
 
 // Main component
 const ListForOwner = ({ updateData }) => {
+  const apiUrl = import.meta.env.VITE_API_URL;
   const [propertyData, setPropertyData] = useState([]);
 
   const DeleteButtonRenderer = (params) => {
@@ -25,10 +26,10 @@ const ListForOwner = ({ updateData }) => {
   const CheckboxRenderer = (props) => {
     const handleChange = async () => {
       const newValue = !Boolean(props.value);
-      const propertyId = props.data.매물ID;
+      const propertyId = props.data.순번;
 
       try {
-        await axios.put(`http://localhost:8000/update-property/${propertyId}`, {
+        await axios.put(`${apiUrl}/update-property/${propertyId}`, {
           EV유무: newValue,
         });
 
@@ -53,7 +54,7 @@ const ListForOwner = ({ updateData }) => {
 
   const fetchProperties = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/listing');
+      const response = await axios.get(`${apiUrl}/listing`);
 
       // Use Promise.all to fetch new and old addresses for all properties in parallel
       const data = await Promise.all(
@@ -66,7 +67,7 @@ const ListForOwner = ({ updateData }) => {
             // Check if address_id exists before making the request
             if (property.address_id) {
               const addressResponse = await axios.get(
-                `http://localhost:8000/get-address/${property.address_id}`
+                `${apiUrl}/get-address/${property.address_id}`
               );
 
               // If the request succeeds, assign newAddress and oldAddress
@@ -141,7 +142,7 @@ const ListForOwner = ({ updateData }) => {
 
   const handleDelete = async (propertyId) => {
     try {
-      await axios.delete(`http://localhost:8000/delete-property/${propertyId}`);
+      await axios.delete(`${apiUrl}/delete-property/${propertyId}`);
       alert('Property deleted successfully!');
 
       // Fetch updated data after deletion

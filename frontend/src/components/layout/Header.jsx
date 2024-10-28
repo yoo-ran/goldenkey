@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const Header = () => {
+  const apiUrl = import.meta.env.VITE_API_URL;
   const location = useLocation(); // Get the current location
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate(); // Hook for navigation
@@ -12,7 +13,7 @@ const Header = () => {
     const checkAuthentication = async () => {
       try {
         // Make a request to the server to verify the user's token (stored in HTTP-only cookie)
-        const response = await axios.get('http://localhost:8000/check-auth', {
+        const response = await axios.get(`${apiUrl}/check-auth`, {
           withCredentials: true,
         });
         if (response.status === 200) {

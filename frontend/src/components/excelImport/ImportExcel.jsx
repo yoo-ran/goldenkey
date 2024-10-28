@@ -8,6 +8,8 @@ import axios from 'axios';
 import AlertComponent from './AlertComponent';
 
 const ImportExcel = ({ onDataUpdate }) => {
+  const apiUrl = import.meta.env.VITE_API_URL;
+
   const gridRef = useRef();
   const [rowData, setRowData] = useState([]);
   const [dbRowData, setDbRowData] = useState([]);
@@ -28,6 +30,23 @@ const ImportExcel = ({ onDataUpdate }) => {
     지번본번: '',
     지번부번: '',
   });
+
+  // First, fetch the existing property data (like property IDs) from your backend
+  const fetchDbProperties = async () => {
+    try {
+      const response = await axios.get(`${apiUrl}/listing`, {
+        withCredentials: true,
+      });
+      setDbProperties(response.data);
+    } catch (error) {
+      console.error('Error fetching existing properties:', error);
+      return [];
+    }
+  };
+
+  useEffect(() => {
+    fetchDbProperties();
+  }, []);
 
   const [columnDefs, setColumnDefs] = useState([
     { field: '순번', headerName: '순번', minWidth: 60 },
@@ -370,27 +389,7 @@ const ImportExcel = ({ onDataUpdate }) => {
 
     console.log('rowData', rowData);
     console.log('dbRowData', dbRowData);
-
-    // Return the row data explicitly
-    return dbRowData;
   };
-
-  // First, fetch the existing property data (like property IDs) from your backend
-  const fetchDbProperties = async () => {
-    try {
-      const response = await axios.get('http://localhost:8000/listing', {
-        withCredentials: true,
-      });
-      setDbProperties(response.data);
-    } catch (error) {
-      console.error('Error fetching existing properties:', error);
-      return [];
-    }
-  };
-
-  useEffect(() => {
-    fetchDbProperties();
-  }, []);
 
   const convertToDateOnly = (isoString) => {
     const date = new Date(isoString);
@@ -533,11 +532,18 @@ const ImportExcel = ({ onDataUpdate }) => {
       );
       console.log(updatedRows);
 
-      // Find new records that don't exist in the database
-      const newRecords = excelRowData.filter(
-        (excelRow) =>
-          !dbProperties.find((dbRow) => dbRow.매물ID === excelRow.매물ID)
-      );
+      // Now finalData contains the '정산금액' key with the calculated values
+      if (finalData.length > 0) {
+        // Send all data (new and updated records) to the backend
+        const result = await axios.post(`${apiUrl}/import-csv`, finalData, {
+          withCredentials: true,
+        });
+        console.log(result);
+        onDataUpdate(true);
+        alert('Data imported successfully!');
+      } else {
+        alert('No changes made to the database.');
+      }
 
       // Combine both new and updated records into one dataset
       const finalData = [...newRecords, ...updatedRows];
@@ -561,11 +567,9 @@ const ImportExcel = ({ onDataUpdate }) => {
       console.log('finalData', finalData);
 
       if (finalData.length > 0) {
-        const result = await axios.post(
-          'http://localhost:8000/import-csv',
-          finalData,
-          { withCredentials: true }
-        );
+        const result = await axios.post(`${apiUrl}/import-csv`, finalData, {
+          withCredentials: true,
+        });
         console.log(result);
         onDataUpdate(true);
         alert('Data imported successfully!');
@@ -599,10 +603,12 @@ const ImportExcel = ({ onDataUpdate }) => {
           defaultColDef={defaultColDef}
         />
       </div>
-      <button onClick={importExcel}
+      <button
+        onClick={importExcel}
         className='bg-primary-yellow text-white rounded-lg px-4 py-2'
-      
-      >엑셀 불러오기</button>
+      >
+        엑셀 불러오기
+      </button>
     </div>
   );
 };

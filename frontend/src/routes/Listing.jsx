@@ -8,6 +8,7 @@ import { faHeart } from '@fortawesome/free-regular-svg-icons';
 // import ListingHeader from '../components/feature/ListingHeader';
 
 const Listing = () => {
+    const apiUrl = import.meta.env.VITE_API_URL;
     const [properties, setProperties] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(12); 
@@ -18,7 +19,7 @@ const Listing = () => {
     useEffect(() => {
         const fetchProperties = async () => {
             try {
-                const response = await axios.get('http://localhost:8000/listing');
+                const response = await axios.get(`${apiUrl}/listing`);
                 setProperties(response.data);
             } catch (error) {
                 console.error('Error fetching properties:', error);

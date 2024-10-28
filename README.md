@@ -1,3 +1,5 @@
+<<<<<<< HEAD
+=======
 # Golden Key Website(CRUD PROJECT)
 
 
@@ -138,3 +140,4 @@ Make sure you have the following installed on your system:
 
 
 
+>>>>>>> ae7106980f0b542754a1ed52bc17bf2102513e4b

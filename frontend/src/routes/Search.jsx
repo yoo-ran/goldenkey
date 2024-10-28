@@ -211,7 +211,7 @@ const Search = ({ searchTerm }) => {
       if (searchTerm) {
         try {
           const response = await axios.get(
-            `http://localhost:8000/search-address?q=${searchTerm}`
+            `${apiUrl}/search-address?q=${searchTerm}`
           );
           const { addressIds } = response.data;
           console.log(addressIds);
@@ -316,7 +316,7 @@ const Search = ({ searchTerm }) => {
   const saveFavoriteIds = async (updatedFavorites) => {
     try {
       const response = await axios.post(
-        'http://localhost:8000/save-favorites',
+        `${apiUrl}/save-favorites`,
         {
           favorites: updatedFavorites,
         },

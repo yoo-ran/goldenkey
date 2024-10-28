@@ -26,44 +26,8 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 
 const PropertyDetail = () => {
-  const [originalPropertyData, setOriginalPropertyData] = useState({
-    매물ID: '',
-    사용승인일자: '',
-    등록일자: '',
-    부동산구분: '',
-    거래방식: '',
-    거래완료여부: '',
-    거래완료일자: '',
-    담당자: '',
-    건물명: '',
-    상세주소: '',
-    동: '',
-    호수: '',
-    보증금: 0,
-    월세: 0,
-    관리비: 0,
-    전체m2: 0,
-    전용m2: 0,
-    전체평: 0,
-    전용평: 0,
-    EV유무: false,
-    화장실개수: 0,
-    층수: 0,
-    주차가능대수: 0,
-    비밀번호: '',
-    연락처: [],
-    메모: '',
-    img_path: '',
-    address_id: 0,
-  });
-  const [propertyData, setPropertyData] = useState(originalPropertyData);
-  const [newAddress, setNewAddress] = useState();
-  const [oldAddress, setOldAddress] = useState();
-
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true); // Loading state for checking authentication
+  const apiUrl = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
-
   const location = useLocation();
   // const { propertyId } = location.state || {};
   const { propertyId } = 4;
@@ -81,14 +45,13 @@ const PropertyDetail = () => {
 
   useEffect(() => {
     console.log('propertyData:', propertyData);
-    console.log("propertyData.address_id", propertyData.address_id);
-
+    console.log('propertyData.address_id', propertyData.address_id);
   }, [propertyData]); // Only runs when propertyData changes
 
   useEffect(() => {
     const checkAuthentication = async () => {
       try {
-        const response = await axios.get('http://localhost:8000/check-auth', {
+        const response = await axios.get(`${apiUrl}/check-auth`, {
           withCredentials: true,
         });
         if (response.status === 200) {
@@ -106,8 +69,7 @@ const PropertyDetail = () => {
 
   const fetchPropertyData = async () => {
     try {
-      const response = await axios.get(`http://localhost:8000/detail/101`);
-      // const response = await axios.get(`http://localhost:8000/detail/${propertyId}`);
+      const response = await axios.get(`${apiUrl}/detail/${propertyId}`);
       const fetchedData = response.data;
       if (fetchedData.연락처) {
         try {
@@ -121,29 +83,24 @@ const PropertyDetail = () => {
       setPropertyData(fetchedData);
 
       const addressFromServer = await axios.get(
-        `http://localhost:8000/get-address/${fetchedData.address_id}`
+        `${apiUrl}/get-address/${fetchedData.address_id}`
       );
       setNewAddress(addressFromServer.data.newAddress);
       setOldAddress(addressFromServer.data.oldAddress);
 
-
-      const propertyType = await axios.get(
-        `http://localhost:8000/property-types`
-      );
+      const propertyType = await axios.get(`${apiUrl}/property-types`);
       setPropertyTypes(propertyType.data);
 
       const transactionMethod = await axios.get(
-        `http://localhost:8000/transaction-methods`
+        `${apiUrl}/transaction-methods`
       );
       setTransactionMethod(transactionMethod.data);
 
-      const transactionStatus = await axios.get(
-        `http://localhost:8000/transaction-status`
-      );
+      const transactionStatus = await axios.get(`${apiUrl}/transaction-status`);
       setTransactionStatus(transactionStatus.data);
 
       const imgRes = await axios.get(
-        `http://localhost:8000/properties/101/images`
+        `${apiUrl}/properties/${propertyId}/images`
       );
       if (response.data && Array.isArray(imgRes.data.images)) {
         setImages(imgRes.data.images);
@@ -221,8 +178,7 @@ const PropertyDetail = () => {
 
   const handleDelete = async () => {
     try {
-      await axios.delete(`http://localhost:8000/delete-property/101`);
-      // await axios.delete(`http://localhost:8000/delete-property/${propertyId}`);
+      await axios.delete(`${apiUrl}/delete-property/${propertyId}`);
       navigate('/search');
       console.log('Property deleted successfully.');
       alert('매물이 성공적으로 삭제되었습니다.');
@@ -255,7 +211,7 @@ const PropertyDetail = () => {
       };
       console.log(formattedFieldsToUpdate);
       await axios.put(
-        `http://localhost:8000/update-property/4`,
+        `${apiUrl}/update-property/${propertyId}`,
         formattedFieldsToUpdate
       );
       alert('Data saved successfully!');
@@ -278,7 +234,7 @@ const PropertyDetail = () => {
     });
     try {
       const response = await axios.post(
-        `http://localhost:8000/upload-images/101`,
+        `${apiUrl}/upload-images/${propertyId}`,
         formData,
         {
           headers: { 'Content-Type': 'multipart/form-data' },
@@ -322,7 +278,7 @@ const PropertyDetail = () => {
                 images && images[index] ? (
                   <img
                     key={index}
-                    src={`http://localhost:8000/${images[index]}`}
+                    src={`${apiUrl}/${images[index]}`}
                     alt={`Property Image ${index + 1}`}
                     className={`w-full h-full object-cover before:content-[""] before:bg-primary ${
                       index === 0

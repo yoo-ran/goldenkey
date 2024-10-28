@@ -32,22 +32,52 @@ import {
 } from '@fortawesome/free-regular-svg-icons';
 
 const PropertyUpload = () => {
+  const apiUrl = import.meta.env.VITE_API_URL;
+
   const [isAuthenticated, setIsAuthenticated] = useState(false); // State to track authentication status
   const navigate = useNavigate(); // Hook for navigation
 
   const [open, setOpen] = useState('false');
 
-  const [originalPropertyData, setOriginalPropertyData] = useState({
-    순번: 4,
-    사용승인일자: '',
+  const [images, setImages] = useState([]); // State for storing uploaded images
+  const [selectedFiles, setSelectedFiles] = useState([]); // Store selected files for upload
+  const [memo, setMemo] = useState(''); // State for memo content
+
+  // 부동산구분
+  const [propertyTypes, setPropertyTypes] = useState([]);
+  const [selectedType, setSelectedType] = useState('');
+
+  // 거래방식
+  const [transactionMethod, setTransactionMethod] = useState([]);
+  const [selectedMethod, setSelectedMethod] = useState('');
+
+  // 거래완료여부
+  const [transactionStatus, setTransactionStatus] = useState([]);
+  const [selectedStatus, setSelectedStatus] = useState('');
+
+  // 거래완료여부
+  const [toiletsNum, setToiletsNum] = useState([]);
+  const [selectedToilet, setSelectedToilet] = useState('');
+
+  // Address
+  const [newAddress, setNewAddress] = useState(''); // Local state for new address input
+  const [oldAddress, setOldAddress] = useState(''); // Local state for old address input
+  const [newAddressSuggestions, setNewAddressSuggestions] = useState([]); // New address suggestions
+  const [oldAddressSuggestions, setOldAddressSuggestions] = useState([]); // Old address suggestions
+
+  const [propertyData, setPropertyData] = useState({
     등록일자: '',
     부동산구분: '',
     거래방식: '',
     거래완료여부: '',
     거래완료일자: '',
     담당자: '',
+    구: '',
+    읍면동: '',
+    구상세주소: '',
+    도로명: '',
+    신상세주소: '',
     건물명: '',
-    상세주소: '',
     동: '',
     호수: '',
     보증금: 0,
@@ -60,34 +90,22 @@ const PropertyUpload = () => {
     EV유무: false,
     화장실개수: 0,
     층수: 0,
+    방개수: 0,
     주차가능대수: 0,
     비밀번호: '',
-    연락처: [],
+    이름: '',
+    휴대폰번호: '',
     메모: '',
     img_path: '',
-    address_id: 0,
+    정산금액: {
+      총수수료: 0,
+      소장: 0,
+      직원: [
+        { name: '직원1', money: 0 },
+        { name: '직원2', money: 0 },
+      ],
+    },
   });
-  const [propertyData, setPropertyData] = useState(originalPropertyData);
-
-  const [images, setImages] = useState([]); // State for storing uploaded images
-  const [selectedFiles, setSelectedFiles] = useState([]); // Store selected files for upload
-
-  // 부동산구분
-  const [propertyTypes, setPropertyTypes] = useState([]);
-
-  // 거래방식
-  const [transactionMethod, setTransactionMethod] = useState([]);
-
-  // 거래완료여부
-  const [transactionStatus, setTransactionStatus] = useState([]);
-
-  const contactFieldsMap = {
-    매매: ['매도인', '매수인', '부동산'],
-    월세: ['임대인', '임차인', '부동산'],
-    전세: ['전대인', '전차인', '부동산'],
-  };
-  const contactFields = contactFieldsMap[propertyData.거래방식] || []; // Get the contact fields based on the transaction method
-  const [isConverted, setIsConverted] = useState(false); // Toggle state to track conversion
 
   useEffect(() => {
     console.log('Updated propertyData:', propertyData);
@@ -97,7 +115,7 @@ const PropertyUpload = () => {
     const checkAuthentication = async () => {
       try {
         // Make a request to the server to verify the user's token (stored in HTTP-only cookie)
-        const response = await axios.get('http://localhost:8000/check-auth', {
+        const response = await axios.get(`${apiUrl}/check-auth`, {
           withCredentials: true,
         });
         if (response.status === 200) {
@@ -117,18 +135,16 @@ const PropertyUpload = () => {
   useEffect(() => {
     const fetchDropdownConst = async () => {
       try {
-        const propertyType = await axios.get(
-          `http://localhost:8000/property-types`
-        );
+        const propertyType = await axios.get(`${apiUrl}/property-types`);
         setPropertyTypes(propertyType.data);
 
         const transactionMethod = await axios.get(
-          `http://localhost:8000/transaction-methods`
+          `${apiUrl}/transaction-methods`
         );
         setTransactionMethod(transactionMethod.data);
 
         const transactionStatus = await axios.get(
-          `http://localhost:8000/transaction-status`
+          `${apiUrl}/transaction-status`
         );
         setTransactionStatus(transactionStatus.data);
       } catch (error) {
@@ -150,21 +166,13 @@ const PropertyUpload = () => {
     return Number((pyeong * 3.3058).toFixed(2));
   }; // Converts 평 to m²
 
-  const calculateTotalAmount = (보증금, 월세, isConverted) => {
-    return isConverted
-      ? ((parseInt(보증금, 10) + parseInt(월세, 10)) / 10000).toLocaleString()
-      : parseInt(보증금, 10) + parseInt(월세, 10);
-  };
-
   // Handle input changes
-  const handleInputChange = (e, contactType = null) => {
-    let { name, type, value } = e.target;
-    console.log(name, value);
+  const handleInputChange = (e) => {
+    let { name, type, value, checked } = e.target;
     let formattedValue;
-
     // Converting input if necessary
     if (name === 'EV유무') {
-      formattedValue = Boolean(value);
+      formattedValue = value;
     } else if (name === '전체m2') {
       formattedValue = Number(value);
       propertyData['전체평'] = convertM2ToPyeong(value); // Convert m² to 평
@@ -177,8 +185,12 @@ const PropertyUpload = () => {
     } else if (name === '전용평') {
       formattedValue = Number(value);
       propertyData['전용m2'] = convertPyeongToM2(value); // Convert 평 to m²
-    } else if (type === 'number') {
-      formattedValue = value === '' ? 0 : Number(value);
+    } else if (name === '도로명' && value === '') {
+      setNewAddressSuggestions([]); // Clear new address suggestions
+      setSelectedNewAddress(''); // Clear the selected new address
+    } else if (name === '구' && value === '') {
+      setOldAddressSuggestions([]); // Clear old address suggestions
+      setSelectedOldAddress(''); // Clear the selected old address
     } else {
       formattedValue = value;
     }
@@ -230,7 +242,7 @@ const PropertyUpload = () => {
 
     try {
       const savePropertyPromise = axios.post(
-        'http://localhost:8000/properties/update',
+        `${apiUrl}/properties/update`,
         formattedFieldsToUpdate
       );
 
@@ -270,13 +282,9 @@ const PropertyUpload = () => {
     });
 
     try {
-      const response = await axios.post(
-        'http://localhost:8000/upload-images',
-        formData,
-        {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        }
-      );
+      const response = await axios.post(`${apiUrl}/upload-images`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
 
       // Get image paths from the response
       const uploadedImages = response.data.images || [];
@@ -304,51 +312,171 @@ const PropertyUpload = () => {
     }
   };
 
-  const handleClear = (e) => {
-    console.log(e.target.name);
-    if (e.target.name === 'priceClear') {
-      setPropertyData((prevState) => ({
-        ...prevState,
-        보증금: 0,
-        월세: 0,
-      }));
+  const convertToManwon = () => {
+    if (!isConverted) {
+      // Store original prices
+      setOriginalPrices({
+        보증금: propertyData.보증금,
+        월세: propertyData.월세,
+        '전체 금액': propertyData.보증금 + propertyData.월세,
+      });
+
+      // Convert to 만원 (divide by 10,000)
+      const convertedData = {
+        보증금: Math.floor(propertyData.보증금 / 10000).toString(),
+        월세: Math.floor(propertyData.월세 / 10000).toString(),
+        '전체 금액': Math.floor(
+          (propertyData.보증금 + propertyData.월세) / 10000
+        ).toString(),
+      };
+
+      setPriceManwon(convertedData);
+      setIsConverted(true); // Mark as converted
     } else {
-      setPropertyData(originalPropertyData);
+      // Restore original prices
+      setPriceManwon(originalPrices);
+      setIsConverted(false); // Mark as not converted
     }
   };
 
-  console.log(propertyData);
+  const handleNewAddressSearch = async (e) => {
+    const searchText = e.target.value;
+    setNewAddress(searchText); // Update local state for new address input
+
+    if (searchText.length > 0) {
+      try {
+        const response = await axios.get(
+          `${apiUrl}/addresses?searchText=${searchText}`
+        );
+        setNewAddressSuggestions(response.data); // Set suggestions for new address
+        console.log(response.data);
+      } catch (error) {
+        console.error('Error fetching new address suggestions:', error);
+      }
+    } else {
+      setNewAddressSuggestions([]); // Clear suggestions when input is less than 3 characters
+    }
+  };
+
+  // Handle the selection of a new address
+  const handleNewAddressSelect = (selectedAddress) => {
+    // Format the new address by combining different parts
+    const formattedNewAddress = `${selectedAddress.new_district} ${
+      selectedAddress.new_town
+    } ${selectedAddress.new_road_name} ${
+      selectedAddress.new_building_main_number
+    }${
+      selectedAddress.new_building_sub_number != 0
+        ? '-' + selectedAddress.new_building_sub_number
+        : ''
+    }`;
+    setNewAddress(formattedNewAddress); // Auto-fill the corresponding new address
+
+    // Set the old address in the local state
+    const formattedOldAddress = `${selectedAddress.old_district} ${
+      selectedAddress.old_town
+    } ${selectedAddress.old_village} ${selectedAddress.old_lot_main_number}${
+      selectedAddress.old_lot_sub_number != 0
+        ? '-' + selectedAddress.old_lot_sub_number
+        : ''
+    }`;
+    setOldAddress(formattedOldAddress); //
+
+    let addressId = selectedAddress.new_address_id;
+
+    // Convert to string representation of the full number
+    let addressIdString = addressId.toLocaleString('fullwide', {
+      useGrouping: false,
+    });
+    // Update propertyData with the selected new address_id
+    setPropertyData({
+      ...propertyData,
+      address_id: addressIdString, // Convert address_id to string
+    });
+
+    setNewAddressSuggestions([]); // Clear suggestions
+  };
+
+  const handleOldAddressSearch = async (e) => {
+    const searchText = e.target.value;
+    setOldAddress(searchText); // Update local state for old address input
+
+    if (searchText.length > 0) {
+      try {
+        const response = await axios.get(
+          `${apiUrl}/addresses?searchText=${searchText}`
+        );
+        setOldAddressSuggestions(response.data); // Set suggestions for old address
+      } catch (error) {
+        console.error('Error fetching old address suggestions:', error);
+      }
+    } else {
+      setOldAddressSuggestions([]); // Clear suggestions when input is less than 3 characters
+    }
+  };
+
+  // Handle the selection of an old address
+  const handleOldAddressSelect = (selectedAddress) => {
+    // Format the new address by combining different parts
+    const formattedNewAddress = `${selectedAddress.new_district} ${
+      selectedAddress.new_town
+    } ${selectedAddress.new_road_name} ${
+      selectedAddress.new_building_main_number
+    }${
+      selectedAddress.new_building_sub_number != 0
+        ? '-' + selectedAddress.new_building_sub_number
+        : ''
+    }`;
+    setNewAddress(formattedNewAddress); // Auto-fill the corresponding new address
+
+    const formattedOldAddress = `${selectedAddress.old_district} ${
+      selectedAddress.old_town
+    } ${selectedAddress.old_village} ${selectedAddress.old_lot_main_number}${
+      selectedAddress.old_lot_sub_number != 0
+        ? '-' + selectedAddress.old_lot_sub_number
+        : ''
+    }`;
+    setOldAddress(formattedOldAddress); // Auto-fill the corresponding old address
+
+    // Update propertyData with the selected old address_id
+    setPropertyData({
+      ...propertyData,
+      address_id: selectedAddress.new_address_id, // Save address_id only
+    });
+
+    setOldAddressSuggestions([]); // Clear suggestions
+  };
+
+  console.log(newAddressSuggestions);
 
   return (
     <main className='gap-y-10 w-full'>
+      <SearchHeader />
+
       <section className='w-11/12 flexCol gap-y-12'>
-        <article className='flexCol items-start gap-y-8 w-full'>
+        <article className='flexCol items-start gap-y-8'>
           <div className='w-full'>
-            <div className='grid grid-cols-3 grid-rows-2 gap-2 h-52 lg:min-h-80 overflow-hidden rounded-xl w-full'>
-              {Array.from({ length: 3 }).map((_, index) =>
-                images && images[index] ? (
+            <div className='grid grid-cols-3 grid-rows-2 h-52 overflow-hidden rounded-xl'>
+              {images && images.length > 0 ? (
+                images.map((imgPath, index) => (
                   <img
                     key={index}
-                    src={`http://localhost:8000${images[index]}`}
+                    src={`${apiUrl}${imgPath}`}
                     alt={`Property Image ${index + 1}`}
-                    className={`w-full h-full object-cover before:content-[""] before:bg-primary ${
+                    className={`w-full h-full object-cover ${
                       index === 0
                         ? 'col-span-2 row-span-2'
                         : 'col-span-1 row-span-1'
                     }`}
                   />
-                ) : (
-                  <p
-                    key={index}
-                    className={`bg-secondary-light flexCol mobile_1 ${
-                      index === 0
-                        ? 'col-span-2 row-span-2'
-                        : 'col-span-1 row-span-1'
-                    }`}
-                  >
-                    <FontAwesomeIcon icon={faImage} />
-                  </p>
-                )
+                ))
+              ) : (
+                <p
+                  key='no-image'
+                  className={`bg-secondary-light flexCol mobile_1 col-span-2 row-span-2`}
+                >
+                  <FontAwesomeIcon icon={faImage} />
+                </p>
               )}
             </div>
           </div>
@@ -379,14 +507,14 @@ const PropertyUpload = () => {
       <p className='w-11/12 border'></p>
 
       {/* 거래상태, 매물기본정보, 주소 */}
-      <section className='w-full flexCol py-6 gap-y-20 '>
-        <article className='w-11/12 flexCol gap-y-8 lg:gap-y-24'>
-          <div className='w-full flexCol gap-y-4 lg:gap-y-8'>
+      <section className='w-full flexCol py-6 gap-y-20'>
+        <article className='w-11/12 flexCol gap-y-8'>
+          <div className='w-full flexCol gap-y-4'>
             <p className='mobile_3_bold w-full flexRow gap-x-4'>
-              <FontAwesomeIcon icon={faHourglass} />
+              <FontAwesomeIcon icon={faTag} />
               매물상태
             </p>
-            <ul className='grid grid-cols-2 w-full lg:w-8/12 gap-x-4'>
+            <ul className='grid grid-cols-2 w-full gap-x-4'>
               {transactionStatus.map((option, index) => (
                 <button
                   key={index}

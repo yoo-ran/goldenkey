@@ -3,6 +3,8 @@ import axios from "axios";
 import { useNavigate } from 'react-router-dom';
 
 function Login(){
+    const apiUrl = import.meta.env.VITE_API_URL;
+
     const [formData, setFormData] = useState({ email: '', pw: '' });
     const navigate = useNavigate();
     const [isLogin, setIsLogin] = useState(true);
@@ -17,7 +19,7 @@ function Login(){
         e.preventDefault();
         try {
             const { email, pw } = formData;
-            const response = await axios.post('http://localhost:8000/login', { email, pw },{ withCredentials: true } );
+            const response = await axios.post(`${apiUrl}/login`, { email, pw },{ withCredentials: true } );
 
             if (response.status === 200) {
                 alert('Login successful!');

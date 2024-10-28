@@ -44,7 +44,7 @@ const recommendTag = [
 ];
 
 const Home = () => {
-  const navigate = useNavigate();
+  const apiUrl = import.meta.env.VITE_API_URL;
   const [isLogin, setIsLogin] = useState(true);
   const [properties, setProperties] = useState([]);
   const [openFilter, setOpenFilter] = useState(false);
@@ -59,14 +59,14 @@ const Home = () => {
   useEffect(() => {
     const fetchProperties = async () => {
       try {
-        const response = await axios.get('http://localhost:8000/listing');
+        const response = await axios.get(`${apiUrl}/listing`);
         setProperties(response.data);
 
         for (const property of properties) {
           const { 순번: propertyId } = property; // Assuming property ID is in '순번' field
           try {
             const imgRes = await axios.get(
-              `http://localhost:8000/properties/${propertyId}/images`
+              `${apiUrl}/properties/${propertyId}/images`
             );
 
             // Store images for each property using its ID
@@ -138,6 +138,40 @@ const Home = () => {
         </article>
       </section>
 
+      {/* 추천태그 */}
+      <section className='w-11/12 lg:w-10/12 flexCol gap-y-4'>
+        <h2 className='w-full'>추천태그</h2>
+        <article className='w-full flexRow flex-wrap gap-3 mobile_5_bold text-primary'>
+          {recommendTag.map((tag, index) => (
+            <button
+              key={index}
+              className='bg-secondary-blue rounded px-3 py-2 hover:bg-secondary-yellow hover:text-primary-orange'
+            >
+              {tag}
+            </button>
+          ))}
+        </article>
+      </section>
+
+      {/* Property Type */}
+      <section className='w-11/12 lg:w-10/12'>
+        <article className='grid grid-cols-1 lg:grid-cols-2 gap-x-4 gap-y-6'>
+          {propertyType.map((item, id) => (
+            <div
+              key={id}
+              style={{ backgroundImage: `url(${item.img})` }}
+              className='relative overflow-hidden flexCol w-full lg: bg-cover bg-center rounded-4xl px-2 py-14'
+            >
+              <div className='absolute bg-black w-full h-full bg-opacity-50'></div>
+              <div className='border-l-8 pl-2 border-primary-yellow w-10/12 z-40 flexCol items-start gap-y-2 mobile_3_bold pl-8'>
+                <p className='text-primary-yellow '>{item.type}</p>
+                <span className='text-white'>{item.typeDescrp}</span>
+              </div>
+            </div>
+          ))}
+        </article>
+      </section>
+
       {/* 최근 검색한 매물 */}
       <section className='w-11/12 flexCol gap-y-4'>
         <h2 className='flexRow gap-x-4 w-full'>
@@ -146,14 +180,12 @@ const Home = () => {
         </h2>
         <article className='w-full grid grid-cols-3 lg:grid-cols-4 gap-x-3 lg:gap-x-5'>
           {properties.slice(0, 3).map((item, id) => {
-            const { 순번: propertyId } = item; // Assuming '순번' is the unique property ID
+            const { 매물ID: propertyId } = item; // Assuming '순번' is the unique property ID
             const images = propertyImages[propertyId] || []; // Get images for this property
             return (
               <div
                 key={id}
-                style={{
-                  backgroundImage: `url(http://localhost:8000${images[id]})`,
-                }}
+                style={{ backgroundImage: `url(${apiUrl}${images[id]})` }}
                 className='w-full aspect-square bg-cover bg-center rounded-2xl '
               >
                 <div className='w-full aspect-square flexRow items-start justify-end mobile_3_bold text-white '>
