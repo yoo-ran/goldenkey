@@ -599,19 +599,10 @@ const ImportExcel = ({ onDataUpdate }) => {
           defaultColDef={defaultColDef}
         />
       </div>
-<<<<<<< HEAD
       <button onClick={importExcel}
         className='bg-primary-yellow text-white rounded-lg px-4 py-2'
       
       >엑셀 불러오기</button>
-=======
-      <button
-        onClick={importExcel}
-        className='bg-primary-yellow text-white rounded-full px-4'
-      >
-        Import Excel Data
-      </button>
->>>>>>> 9acbfa1dc9eb29eb6f924d70e0c0bad3fed42f2b
     </div>
   );
 };
