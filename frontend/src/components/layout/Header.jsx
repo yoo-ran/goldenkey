@@ -38,7 +38,11 @@ const Header = () => {
     return (
         <header className='font-head w-full z-50'>
             <nav className='flexCol lg:py-5 relative'>
+<<<<<<< HEAD
                 <ul className={`w-full absolute md:static md:pt-4 md:flex-row  divide-y-[0.1rem] md:divide-y-0 divide-secondary flexCol text-center mobile_3_bold bg-primary transition-[all] ${open? " top-16": "-top-64"}`}>
+=======
+                <ul className={`w-full absolute divide-y-[0.1rem] divide-secondary flexCol text-center mobile_3_bold justify-around gap-x-4 bg-primary transition-[all] ${open? " top-16": "-top-52"}`}>
+>>>>>>> 9acbfa1dc9eb29eb6f924d70e0c0bad3fed42f2b
                     <li 
                         className={`w-full`}
                     >
