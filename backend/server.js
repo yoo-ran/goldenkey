@@ -60,6 +60,10 @@ app.use(
       '/transaction-methods',
       '/transaction-status',
       '/properties/update',
+<<<<<<< HEAD
+      '/address-excel',
+=======
+>>>>>>> 52b01f20755d8f3a7789f8f30531be807c9ba969
       /^\/get-address\/\d+$/,
     ],
   })
@@ -124,6 +128,38 @@ app.post('/import-csv', (req, res) => {
     // Insert new records
     if (newRecords.length > 0) {
       const insertValues = newRecords.map((item) => [
+<<<<<<< HEAD
+        item['매물ID'] || null,
+        item['등록일자'] || null,
+        item['사용승인일자'] || null,
+        item['부동산구분'] || '',
+        item['거래방식'] || '',
+        item['거래완료여부'] || '',
+        item['거래완료일자'] || null,
+        item['담당자'] || '',
+        item['상세주소'] || '',
+        item['건물명'] || '',
+        item['동'] || 0,
+        item['호수'] || 0,
+        item['보증금'] || 0,
+        item['월세'] || 0,
+        item['관리비'] || 0,
+        item['전체m2'] || 0,
+        item['전용m2'] || 0,
+        item['전체평'] || 0,
+        item['전용평'] || 0,
+        item['EV유무'] || 0,
+        item['화장실개수'] || 0,
+        item['층수'] || 0,
+        item['주차가능대수'] || 0,
+        item['비밀번호'] || '',
+        JSON.stringify(item['연락처']) || '{}', // Serialize 연락처 as a JSON string
+        item['메모'] || '',
+        item['address_id'] || '',
+      ]);
+
+      const insertSql = `INSERT INTO property (매물ID, 등록일자, 사용승인일자, 부동산구분, 거래방식, 거래완료여부, 거래완료일자, 담당자, 상세주소, 건물명, 동, 호수, 보증금, 월세, 관리비, 전체m2, 전용m2, 전체평, 전용평, EV유무, 화장실개수, 층수, 주차가능대수, 비밀번호, 연락처, 메모, address_id) VALUES ?`;
+=======
         item['매물ID'],
         item['등록일자'],
         item['부동산구분'],
@@ -156,6 +192,7 @@ app.post('/import-csv', (req, res) => {
       ]);
 
       const insertSql = `INSERT INTO property (매물ID, 등록일자, 부동산구분, 거래방식, 거래완료여부, 거래완료일자, 담당자, 구, 읍면동, 구상세주소, 도로명, 신상세주소, 건물명, 동, 호수, 보증금, 월세, 관리비, 전체m2, 전용m2, 전체평, 전용평, EV유무, 화장실개수, 층수, 방개수, 주차가능대수, 비밀번호, 연락처, 메모) VALUES ?`;
+>>>>>>> 52b01f20755d8f3a7789f8f30531be807c9ba969
 
       promises.push(
         new Promise((resolve, reject) => {
@@ -180,6 +217,15 @@ app.post('/import-csv', (req, res) => {
         const updateFields = [];
 
         // Loop through the fields you want to update
+<<<<<<< HEAD
+        if (item['매물ID'])
+          updateFields.push(`매물ID = ${db.escape(item['매물ID'])}`);
+        if (item['사용승인일자'])
+          updateFields.push(
+            `사용승인일자 = ${db.escape(item['사용승인일자'])}`
+          );
+=======
+>>>>>>> 52b01f20755d8f3a7789f8f30531be807c9ba969
         if (item['등록일자'])
           updateFields.push(`등록일자 = ${db.escape(item['등록일자'])}`);
         if (item['부동산구분'])
@@ -196,6 +242,12 @@ app.post('/import-csv', (req, res) => {
           );
         if (item['담당자'])
           updateFields.push(`담당자 = ${db.escape(item['담당자'])}`);
+<<<<<<< HEAD
+        if (item['건물명'])
+          updateFields.push(`건물명 = ${db.escape(item['건물명'])}`);
+        if (item['상세주소'])
+          updateFields.push(`상세주소 = ${db.escape(item['상세주소'])}`);
+=======
         if (item['구']) updateFields.push(`구 = ${db.escape(item['구'])}`);
         if (item['읍면동'])
           updateFields.push(`읍면동 = ${db.escape(item['읍면동'])}`);
@@ -207,6 +259,7 @@ app.post('/import-csv', (req, res) => {
           updateFields.push(`신상세주소 = ${db.escape(item['신상세주소'])}`);
         if (item['건물명'])
           updateFields.push(`건물명 = ${db.escape(item['건물명'])}`);
+>>>>>>> 52b01f20755d8f3a7789f8f30531be807c9ba969
         if (item['동']) updateFields.push(`동 = ${db.escape(item['동'])}`);
         if (item['호수'])
           updateFields.push(`호수 = ${db.escape(item['호수'])}`);
@@ -230,8 +283,11 @@ app.post('/import-csv', (req, res) => {
           updateFields.push(`화장실개수 = ${db.escape(item['화장실개수'])}`);
         if (item['층수'])
           updateFields.push(`층수 = ${db.escape(item['층수'])}`);
+<<<<<<< HEAD
+=======
         if (item['방개수'])
           updateFields.push(`방개수 = ${db.escape(item['방개수'])}`);
+>>>>>>> 52b01f20755d8f3a7789f8f30531be807c9ba969
         if (item['주차가능대수'])
           updateFields.push(
             `주차가능대수 = ${db.escape(item['주차가능대수'])}`
@@ -242,6 +298,11 @@ app.post('/import-csv', (req, res) => {
           updateFields.push(`연락처 = ${db.escape(item['연락처'])}`);
         if (item['메모'])
           updateFields.push(`메모 = ${db.escape(item['메모'])}`);
+<<<<<<< HEAD
+        if (item['address_id'])
+          updateFields.push(`address_id = ${db.escape(item['address_id'])}`);
+=======
+>>>>>>> 52b01f20755d8f3a7789f8f30531be807c9ba969
 
         if (updateFields.length > 0) {
           const updateSql = `UPDATE property SET ${updateFields.join(
@@ -575,6 +636,15 @@ app.post(
 );
 
 app.post('/upload-images', upload.array('images'), (req, res) => {
+<<<<<<< HEAD
+  const imagePaths = req.files.map((file) => {
+    // Extract the part of the path that starts with '/uploads/'
+    const relativePath = file.path.split('/uploads/')[1];
+    return `/uploads/${relativePath}`;
+  });
+
+  res.json({ images: imagePaths });
+=======
   try {
     const imagePaths = req.files.map((file) => {
       const uploadsIndex = file.path.indexOf('/uploads/');
@@ -595,6 +665,7 @@ app.post('/upload-images', upload.array('images'), (req, res) => {
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
+>>>>>>> 52b01f20755d8f3a7789f8f30531be807c9ba969
 });
 
 app.get('/properties/:propertyId/images', async (req, res) => {
@@ -746,7 +817,43 @@ app.post('/save-favorites', (req, res) => {
   );
 });
 
+<<<<<<< HEAD
+// Endpoint to search addresses based on Excel data
+app.get('/address-excel', (req, res) => {
+  // Destructure address components from the request query parameters
+  const { 시군구, 읍면동, 리명, 지번본번, 지번부번 } = req.query;
+
+  // Construct the SQL query to search for matching addresses in the database
+  const query = `
+      SELECT 건물관리번호 
+      FROM old_address
+      WHERE 시군구 LIKE CONCAT('%', ?, '%')
+        AND 읍면동 LIKE CONCAT('%', ?, '%')
+        AND (리명 LIKE CONCAT('%', ?, '%') OR 리명 IS NULL)
+        AND 지번본번 LIKE CONCAT('%', ?, '%')
+        AND 지번부번 LIKE CONCAT('%', ?, '%')
+    `;
+
+  // Use the received parameters as query values
+  const queryParams = [시군구, 읍면동, 리명, 지번본번, 지번부번];
+  console.log(queryParams);
+
+  db.query(query, queryParams, (error, results) => {
+    if (error) {
+      console.error('Error executing query:', error);
+      return res.status(500).json({ error: 'Database error occurred' });
+    }
+
+    // Return the address IDs in the response
+    const addressIds = results.map((row) => row.건물관리번호); // Assuming 건물관리번호 is the correct field
+    console.log(addressIds);
+    res.json({ addressIds });
+  });
+});
+
+=======
 // API to get rows from new-address and old-address tables using 매물ID
+>>>>>>> 52b01f20755d8f3a7789f8f30531be807c9ba969
 app.get('/get-address/:id', async (req, res) => {
   const { id } = req.params; // Get the 매물ID from the URL parameter
   try {
