@@ -38,7 +38,7 @@ const Header = () => {
     return (
         <header className='font-head w-full z-50'>
             <nav className='flexCol lg:py-5 relative'>
-                <ul className={`w-full absolute divide-y-[0.1rem] divide-secondary flexCol text-center mobile_3_bold justify-around gap-x-4 bg-primary transition-[all] ${open? " top-14": "-top-52"}`}>
+                <ul className={`w-full absolute divide-y-[0.1rem] divide-secondary flexCol text-center mobile_3_bold justify-around gap-x-4 bg-primary transition-[all] ${open? " top-16": "-top-52"}`}>
                     <li 
                         className={`w-full py-5  transition-all ${location.pathname === "/favorite" ? "text-primary-yellow lg:text-primary bg-secondary lg:bg-primary-yellow" : "text-primary-yellow"}`}
                     >
