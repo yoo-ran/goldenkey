@@ -1,12 +1,18 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');
 
-*{margin:0; padding:0}
-li{list-style:none}
-a{text-decoration:none}
+* {
+  margin: 0;
+  padding: 0;
+}
+li {
+  list-style: none;
+}
+a {
+  text-decoration: none;
+}
 
 body {
-    font-family:  "Open Sans", sans-serif;
+  font-family: 'Open Sans', sans-serif;
 }
 
 :root {
@@ -19,8 +25,6 @@ body {
   --font-size-mobile-7: calc(var(--font-size-base) * 0.375);
 }
 
-
-
 @media (max-width: 640px) {
   :root {
     --font-size-base: 1rem;
@@ -29,98 +33,103 @@ body {
 
 @media (min-width: 768px) {
   :root {
-    --font-size-base: 1.5rem;
+    --font-size-base: 1.25rem;
   }
 }
 
 #root {
   @apply flexCol;
-
 }
 
-main{
-    @apply flexCol;
+main {
+  @apply flexCol;
 }
-
-
 
 @layer base {
-    h1 {
-      @apply mobile_1_bold;
-      
-    }
-    h2 {
-      @apply  mobile_4_bold;
-    }
-    input, textarea {
-      @apply bg-secondary-yellow text-secondary rounded-lg mobile_5 p-2;
-    }
+  h1 {
+    @apply mobile_1_bold;
+  }
+  h2 {
+    @apply mobile_4_bold;
+  }
+  input,
+  textarea {
+    @apply bg-white text-secondary rounded-lg mobile_5 p-2;
+  }
+}
 
+@layer components {
+  .flexCol {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .flexRow {
+    display: flex;
+    align-items: center;
   }
 
-  @layer components {
-    .flexCol {
-        display:flex;
-        flex-direction:column;
-        justify-content:center;
-        align-items:center;
-    }
-    .flexRow {
-        display:flex;
-        align-items:center;
-    }
-
-    .mobile_1 {
-      font-size: var(--font-size-mobile-1);
-      line-height: 1;
-    }
-    .mobile_1_bold {
-      font-size: var(--font-size-mobile-1);
-      font-weight: bold;
-      line-height: 1;
-    }
-    .mobile_3 {
-        font-size: var(--font-size-mobile-3);
-        line-height: 0.8;
-    }
-    .mobile_3_bold {
-        font-size: var(--font-size-mobile-3);
-        font-weight: bold;
-        line-height: 0.8;
-    }
-    .mobile_4 {
-        font-size: var(--font-size-mobile-4);
-        line-height: calc(14px / 16px);
-    }
-    .mobile_4_bold {
-        font-size: var(--font-size-mobile-4);
-        font-weight: bold;
-        line-height: calc(14px / 16px);
-    }
-    .mobile_5 {
-        font-size: var(--font-size-mobile-5);
-        line-height: calc(12px / 16px);
-    }
-    .mobile_5_bold {
-        font-size: var(--font-size-mobile-5);
-        font-weight: bold;
-        line-height: calc(12px / 16px);
-    }
-    .mobile_6 {
-        font-size: var(--font-size-mobile-6);
-        line-height: calc(10px / 16px);
-    }
-    .mobile_7 {
-        font-size: var(--font-size-mobile-7);
-        line-height: calc(6px / 10px);
-    }
-    .btn_clear {
-      @apply bg-secondary-light mobile_3_bold text-primary rounded-lg py-3
-    }
-    .btn_save {
-      @apply bg-primary mobile_3_bold text-primary-yellow rounded-lg py-3
-    }
+  .mobile_1 {
+    font-size: var(--font-size-mobile-1);
+    line-height: 1;
   }
+  .mobile_1_bold {
+    font-size: var(--font-size-mobile-1);
+    font-weight: bold;
+    line-height: 1;
+  }
+  .mobile_3 {
+    font-size: var(--font-size-mobile-3);
+    line-height: 0.8;
+  }
+  .mobile_3_bold {
+    font-size: var(--font-size-mobile-3);
+    font-weight: bold;
+    line-height: 0.8;
+  }
+  .mobile_4 {
+    font-size: var(--font-size-mobile-4);
+    line-height: calc(14px / 16px);
+  }
+  .mobile_4_bold {
+    font-size: var(--font-size-mobile-4);
+    font-weight: bold;
+    line-height: calc(14px / 16px);
+  }
+  .mobile_5 {
+    font-size: var(--font-size-mobile-5);
+    line-height: calc(12px / 16px);
+  }
+  .mobile_5_bold {
+    font-size: var(--font-size-mobile-5);
+    font-weight: bold;
+    line-height: calc(12px / 16px);
+  }
+  .mobile_6 {
+    font-size: var(--font-size-mobile-6);
+    line-height: calc(10px / 16px);
+  }
+  .mobile_7 {
+    font-size: var(--font-size-mobile-7);
+    line-height: calc(6px / 10px);
+  }
+  .btn_clear {
+    @apply bg-secondary-light mobile_3_bold text-primary rounded-xl py-3 lg:py-6;
+  }
+  .btn_save {
+    @apply bg-primary mobile_3_bold text-primary-yellow rounded-xl py-3 lg:py-6;
+  }
+  .boxEdit {
+    @apply bg-secondary-yellow rounded-xl py-8 px-3 lg:px-6;
+  }
+  .boxDisplay {
+    @apply bg-white rounded-xl;
+  }
+  .pDisplay {
+    @apply bg-secondary-yellow text-primary rounded-lg p-2 w-9/12;
+  }
+}
 
 @tailwind base;
 @tailwind components;

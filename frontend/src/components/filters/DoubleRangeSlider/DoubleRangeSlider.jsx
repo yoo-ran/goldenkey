@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 
 import "./DoubleRangeSlider.css";
 
-const DoubleRangeSlider = ({ min, max, onChange }) => {
+const DoubleRangeSlider = ({ name, min, max, onChange }) => {
   const [minVal, setMinVal] = useState(min);
   const [maxVal, setMaxVal] = useState(max);
   const minValRef = useRef(min);
@@ -39,7 +39,7 @@ const DoubleRangeSlider = ({ min, max, onChange }) => {
 
   // Get min and max values when their state changes
   useEffect(() => {
-    onChange({ min: minVal, max: maxVal });
+    onChange({name:name,min: minVal, max: maxVal });
   }, [minVal, maxVal, onChange]);
 
   return (

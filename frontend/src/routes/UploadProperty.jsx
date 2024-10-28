@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom'; // For navigation to the login page
 
-import Memo from '../components/feature/Memo';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faBuilding,
@@ -14,11 +13,14 @@ import {
   faHourglass,
   faHouse,
   faKey,
+  faDroplet,
   faMoneyBill,
   faMoneyBills,
   faRulerCombined,
   faRulerVertical,
   faTag,
+  faUserPlus,
+  faMoneyBillTransfer,
 } from '@fortawesome/free-solid-svg-icons';
 
 import SearchHeader from '../components/layout/SearchHeader';
@@ -30,7 +32,7 @@ import {
 } from '@fortawesome/free-regular-svg-icons';
 
 const PropertyUpload = () => {
-    const apiUrl = import.meta.env.VITE_API_URL;
+  const apiUrl = import.meta.env.VITE_API_URL;
 
   const [isAuthenticated, setIsAuthenticated] = useState(false); // State to track authentication status
   const navigate = useNavigate(); // Hook for navigation
@@ -133,9 +135,7 @@ const PropertyUpload = () => {
   useEffect(() => {
     const fetchDropdownConst = async () => {
       try {
-        const propertyType = await axios.get(
-          `${apiUrl}/property-types`
-        );
+        const propertyType = await axios.get(`${apiUrl}/property-types`);
         setPropertyTypes(propertyType.data);
 
         const transactionMethod = await axios.get(
@@ -147,11 +147,6 @@ const PropertyUpload = () => {
           `${apiUrl}/transaction-status`
         );
         setTransactionStatus(transactionStatus.data);
-
-        const toiletsNum = await axios.get(`${apiUrl}/toilets-num`);
-        setToiletsNum(toiletsNum.data);
-
-
       } catch (error) {
         console.error('Error fetching dropdown data', error); // Add error handling
       }
@@ -200,37 +195,20 @@ const PropertyUpload = () => {
       formattedValue = value;
     }
 
-    // Handling 정산금액
-    if (name.startsWith('정산금액.')) {
-      const fieldPath = name.split('.'); // ['정산금액', '소장'] or ['정산금액', '직원', '0', 'money']
-
-      setPropertyData((prevState) => {
-        let updated정산금액 = { ...prevState.정산금액 };
-
-        if (fieldPath[1] === '소장') {
-          // Update 소장 value
-          updated정산금액.소장 = formattedValue;
-        } else if (fieldPath[1] === '직원') {
-          // Update 직원 value
-          const index = fieldPath[2]; // 직원 index
-          updated정산금액.직원[index].money = formattedValue;
-        }
-
-        // Calculate 총수수료 (sum of 소장 and all 직원 money)
-        const totalEmployeeMoney = updated정산금액.직원.reduce(
-          (acc, curr) => acc + parseFloat(curr.money),
-          0
-        );
-        updated정산금액.총수수료 =
-          parseFloat(updated정산금액.소장) + totalEmployeeMoney;
-
-        return {
-          ...prevState,
-          정산금액: updated정산금액,
-        };
-      });
+    if (contactType) {
+      // Handle contact-specific updates
+      setPropertyData((prevState) => ({
+        ...prevState,
+        연락처: {
+          ...prevState.연락처,
+          [contactType]: {
+            ...prevState.연락처[contactType],
+            [name]: formattedValue,
+          },
+        },
+      }));
     } else {
-      // For other fields
+      // Handle general property data updates
       setPropertyData({
         ...propertyData,
         [name]: formattedValue,
@@ -245,30 +223,10 @@ const PropertyUpload = () => {
     return `${year}-${month}-${day}`;
   };
 
-  const handleMemoUpdate = (newMemo) => {
-    setMemo(newMemo);
-    setPropertyData((prevData) => ({
-      ...prevData,
-      메모: newMemo, // Update propertyData with the memo content
-    }));
-  };
-
-  // Format number with commas
-  const formatNumber = (number) => {
-    return Number(number).toLocaleString();
-  };
-
   // Save data to the database
   const handleSave = async () => {
-    const {
-      등록일자,
-      거래완료일자,
-      비밀번호,
-      부동산구분,
-      거래방식,
-      거래완료여부,
-      ...fieldsToUpdate
-    } = propertyData;
+    const { 등록일자, 거래완료일자, 비밀번호, 연락처, ...fieldsToUpdate } =
+      propertyData;
 
     // Set default dates to current date if not provided
     const currentDate = formatDateForMySQL(new Date());
@@ -279,10 +237,9 @@ const PropertyUpload = () => {
         ? formatDateForMySQL(new Date(거래완료일자))
         : currentDate,
       비밀번호: 비밀번호 || '미정', // Default to "미정" if 비밀번호 is not provided
-      부동산구분: selectedType,
-      거래방식: selectedMethod,
-      거래완료여부: selectedStatus,
+      연락처: typeof 연락처 === 'object' ? JSON.stringify(연락처) : 연락처, // Ensure 연락처 is a string
     };
+
     try {
       const savePropertyPromise = axios.post(
         `${apiUrl}/properties/update`,
@@ -325,13 +282,9 @@ const PropertyUpload = () => {
     });
 
     try {
-      const response = await axios.post(
-        `${apiUrl}/upload-images`,
-        formData,
-        {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        }
-      );
+      const response = await axios.post(`${apiUrl}/upload-images`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
 
       // Get image paths from the response
       const uploadedImages = response.data.images || [];
@@ -339,14 +292,15 @@ const PropertyUpload = () => {
       console.log('uploadedImages: ', uploadedImages);
 
       // Update propertyData with image paths
-      setPropertyData((prevData) => ({
-        ...prevData,
-        img_path: [
-          ...(prevData.img_path.split(',') || []),
-          ...uploadedImages,
-        ].join(','), // Append new image paths
-      }));
-      console.log('propertyData: ', propertyData);
+      setPropertyData((prevData) => {
+        const existingPaths = prevData.img_path
+          ? prevData.img_path.split(',')
+          : []; // Handle empty img_path
+        return {
+          ...prevData,
+          img_path: [...existingPaths, ...uploadedImages].join(','), // Append new image paths
+        };
+      });
 
       // Clear selected files
       setSelectedFiles([]);
@@ -371,7 +325,9 @@ const PropertyUpload = () => {
       const convertedData = {
         보증금: Math.floor(propertyData.보증금 / 10000).toString(),
         월세: Math.floor(propertyData.월세 / 10000).toString(),
-        '전체 금액': Math.floor((propertyData.보증금 + propertyData.월세) / 10000).toString(),
+        '전체 금액': Math.floor(
+          (propertyData.보증금 + propertyData.월세) / 10000
+        ).toString(),
       };
 
       setPriceManwon(convertedData);
@@ -426,7 +382,7 @@ const PropertyUpload = () => {
     }`;
     setOldAddress(formattedOldAddress); //
 
-    let addressId = selectedAddress.new_address_id; 
+    let addressId = selectedAddress.new_address_id;
 
     // Convert to string representation of the full number
     let addressIdString = addressId.toLocaleString('fullwide', {
@@ -500,51 +456,50 @@ const PropertyUpload = () => {
       <section className='w-11/12 flexCol gap-y-12'>
         <article className='flexCol items-start gap-y-8'>
           <div className='w-full'>
-            <div className='grid grid-cols-3 grid-rows-2 ga h-52 overflow-hidden rounded-xl'>
-              {images &&
-                images.length > 0 &&
+            <div className='grid grid-cols-3 grid-rows-2 h-52 overflow-hidden rounded-xl'>
+              {images && images.length > 0 ? (
                 images.map((imgPath, index) => (
                   <img
                     key={index}
                     src={`${apiUrl}${imgPath}`}
                     alt={`Property Image ${index + 1}`}
-                    className={`w-full h-full object-cover before:content-["] before:bg-primary ${
+                    className={`w-full h-full object-cover ${
                       index === 0
                         ? 'col-span-2 row-span-2'
                         : 'col-span-1 row-span-1'
                     }`}
                   />
-                ))}
+                ))
+              ) : (
+                <p
+                  key='no-image'
+                  className={`bg-secondary-light flexCol mobile_1 col-span-2 row-span-2`}
+                >
+                  <FontAwesomeIcon icon={faImage} />
+                </p>
+              )}
             </div>
           </div>
         </article>
 
         {/* 매물상태, 거래유형 */}
-        <article className='w-full grid grid-cols-2 h-24'>
-          <div className='flexCol justify-end items-start'>
-            <h1 className=''>
-              <label>건물명</label>
-              <input
-                type='text'
-                name='건물명'
-                value={propertyData.건물명}
-                onChange={handleInputChange}
-                className=''
-              />
-            </h1>
-            <div className='flexRow mobile_3'>
-              <p>월세</p>
-              <p>1000/</p>
-              <p>80</p>
-            </div>
-          </div>
-          <div className='flexCol items-end justify-between'>
-            <p className='border border-primary-yellow px-1 mobile_5'>
-              매물번호 001
-            </p>
+        <article className='flexCol items-start gap-y-8 w-full'>
+          <div className='flexRow gap-x-2 w-full'>
             <p className='bg-primary-yellow px-5 py-0.5 rounded mobile_4_bold'>
-              아파트
+              {propertyData.부동산구분
+                ? propertyData.부동산구분
+                : '부동산 구분'}
             </p>
+          </div>
+          <div className='flexCol w-full lg:w-1/2 '>
+            <input
+              type='text'
+              name='건물명'
+              value={propertyData.건물명}
+              onChange={handleInputChange}
+              placeholder='건물명을 입력하세요'
+              className='bg-secondary-yellow w-full lg:py-6 lg:pl-4'
+            />
           </div>
         </article>
       </section>
@@ -566,36 +521,13 @@ const PropertyUpload = () => {
                   name='거래완료여부'
                   value={option}
                   onClick={handleInputChange}
-                  className={`w-full cursor-pointer text-primary text-center py-6 mobile_3 rounded-lg  ${
-                    option === selectedStatus
+                  className={`w-full lg:min-h-32 cursor-pointer flexCol gap-y-2 text-primary text-center py-6 mobile_3 rounded-lg  ${
+                    option === propertyData.거래완료여부
                       ? ' bg-primary-yellow'
                       : ' bg-secondary-light'
                   }`}
                 >
-                  {option}
-                </button>
-              ))}
-            </ul>
-          </div>
-          <div className='flexCol w-full gap-y-4'>
-            <p className='mobile_3_bold w-full flexRow gap-x-4'>
-              <FontAwesomeIcon icon={faTag} />
-              매물유형
-            </p>
-            <ul className='grid grid-cols-3 w-full gap-x-4'>
-              {propertyTypes.map((option, index) => (
-                <button
-                  key={index}
-                  name='부동산구분'
-                  value={option}
-                  onClick={handleInputChange}
-                  className={`w-full flexCol gap-y-2 cursor-pointer text-primary text-center py-6 mobile_3 rounded-lg ${
-                    option === selectedType
-                      ? ' bg-primary-yellow'
-                      : ' bg-secondary-light'
-                  }`}
-                >
-                  {option === selectedType && (
+                  {option === propertyData.거래완료여부 && (
                     <FontAwesomeIcon icon={faCircleCheck} />
                   )}
                   {option}
@@ -603,25 +535,51 @@ const PropertyUpload = () => {
               ))}
             </ul>
           </div>
-          <div className='w-full flexCol gap-y-4'>
+          <div className='flexCol w-full gap-y-4 lg:gap-y-8'>
             <p className='mobile_3_bold w-full flexRow gap-x-4'>
-              <FontAwesomeIcon icon={faHourglass} />
+              <FontAwesomeIcon icon={faTag} />
+              매물유형
+            </p>
+            <ul className='grid grid-cols-3 w-full lg:w-8/12 gap-x-4'>
+              {propertyTypes.map((option, index) => (
+                <button
+                  key={index}
+                  name='부동산구분'
+                  value={option}
+                  onClick={handleInputChange}
+                  className={`w-full lg:min-h-32 flexCol gap-y-2 cursor-pointer text-primary text-center py-6 mobile_3 rounded-lg ${
+                    option === propertyData.부동산구분
+                      ? ' bg-primary-yellow'
+                      : ' bg-secondary-light'
+                  }`}
+                >
+                  {option === propertyData.부동산구분 && (
+                    <FontAwesomeIcon icon={faCircleCheck} />
+                  )}
+                  {option}
+                </button>
+              ))}
+            </ul>
+          </div>
+          <div id='거래방식' className='w-full flexCol gap-y-4 lg:gap-y-8'>
+            <p className='mobile_3_bold w-full flexRow gap-x-4'>
+              <FontAwesomeIcon icon={faTag} />
               거래유형
             </p>
-            <ul className='grid grid-cols-3 w-full gap-x-4'>
+            <ul className='grid grid-cols-3 w-full lg:w-8/12 gap-x-4'>
               {transactionMethod.map((option, index) => (
                 <button
                   key={index}
                   name='거래방식'
                   value={option}
                   onClick={handleInputChange}
-                  className={`w-full flexCol gap-y-2 cursor-pointer text-primary text-center py-6 mobile_3 rounded-lg ${
-                    option === selectedMethod
+                  className={`w-full lg:min-h-32 flexCol gap-y-2 cursor-pointer text-primary text-center py-6 mobile_3 rounded-lg ${
+                    option === propertyData.거래방식
                       ? ' bg-primary-yellow'
                       : ' bg-secondary-light'
                   }`}
                 >
-                  {option === selectedMethod && (
+                  {option === propertyData.거래방식 && (
                     <FontAwesomeIcon icon={faCircleCheck} />
                   )}
                   {option}
@@ -643,22 +601,48 @@ const PropertyUpload = () => {
             const renderFields = (fields) => {
               return (
                 <div className='w-full flexCol items-start gap-y-4'>
-                  <p className='mobile_3_bold'>{fields[1].name} 금액</p>
+                  <p className='mobile_3_bold'>{fields[1]} 금액</p>
                   {fields.map((field, index) => (
                     <div key={index} className='w-full grid grid-rows-2'>
-                      <p className=''>{field.label}</p>
+                      <p className='mobile_4'>{field}</p>
                       <div className='flexRow w-full justify-between'>
                         <input
                           type='number'
-                          name={field.name}
+                          min={0}
+                          name={field}
+                          value={
+                            isConverted
+                              ? (propertyData[field] / 10000).toLocaleString()
+                              : propertyData[field]
+                          } // Bind value from state
                           onChange={handleInputChange}
                           className='bg-white text-primary rounded-full w-10/12'
                         />
-                        <p>원</p>
+                        <p className='mobile_4'>
+                          {isConverted ? '만원' : '원'}
+                        </p>
                       </div>
+                      {index === 1 && (
+                        <p className='w-full border-b border-primary mt-8'></p>
+                      )}
                     </div>
                   ))}
-                  <p className='w-full border border-primary'></p>
+                  <div className='flexCol items-start w-full gap-y-4'>
+                    <p className='mobile_4'>전체금액</p>
+                    <div className='flexRow w-full justify-between'>
+                      <input
+                        type='number'
+                        min={0}
+                        value={calculateTotalAmount(
+                          propertyData.보증금,
+                          propertyData.월세,
+                          isConverted
+                        )} // Bind value from state
+                        className='bg-white text-primary rounded-full w-10/12'
+                      />
+                      <p className='mobile_4'>{isConverted ? '만원' : '원'}</p>
+                    </div>
+                  </div>
                 </div>
               );
             };
@@ -671,35 +655,43 @@ const PropertyUpload = () => {
                   <div className='flexRow w-full justify-between'>
                     <input
                       type='number'
+                      min={0}
                       name='보증금'
+                      value={
+                        isConverted
+                          ? (propertyData.보증금 / 10000).toLocaleString()
+                          : propertyData.보증금
+                      }
                       onChange={handleInputChange}
                       className='bg-white text-primary rounded-full w-10/12'
                     />
-                    <p>원</p>
+                    <p>{isConverted ? '만원' : '원'}</p>
                   </div>
                 </div>
               );
             } else if (propertyData.거래방식 === '월세') {
               // For 월세
-              const fields = [
-                { label: '보증금', name: '보증금' },
-                { label: '월세', name: '월세' },
-                { label: '전체금액', name: '전체금액' },
-              ];
+              const fields = ['보증금', '월세'];
+
               return renderFields(fields);
             } else if (propertyData.거래방식 === '전세') {
               // For 전세
-              const fields = [
-                { label: '보증금', name: '보증금' },
-                { label: '전세', name: '전세' },
-                { label: '전체금액', name: '전체금액' },
-              ];
+              const fields = ['보증금', '전세'];
               return renderFields(fields);
             }
           })()}
         </article>
+        <article className='w-10/12'>
+          <button
+            className='btn_clear w-full bg-secondary-yellow rounded-full'
+            onClick={() => setIsConverted(!isConverted)}
+          >
+            <FontAwesomeIcon icon={faMoneyBillTransfer} className='mr-2' />
+            {isConverted ? '원' : '만원'}
+          </button>
+        </article>
         <article className='grid grid-rows-2 w-6/12 gap-y-4'>
-          <button type='submit' className='btn_clear'>
+          <button className='btn_clear' name='priceClear' onClick={handleClear}>
             초기화
           </button>
           <button type='submit' className='btn_save' onClick={handleSave}>
@@ -708,241 +700,208 @@ const PropertyUpload = () => {
         </article>
       </section>
 
-      <section className='w-full flexCol'>
-        <article className='w-11/12 flexCol gap-y-8 items-start'>
-          <p className='mobile_3_bold w-full'>매물 기본 정보</p>
-          <div className='w-full grid grid-rows-3 gap-y-2'>
+      <section className='w-11/12 flexCol gap-y-4'>
+        <p className='mobile_3_bold w-full'>매물 기본 정보</p>
+        <article className='boxEdit w-full flexCol gap-y-6 lg:gap-y-12'>
+          <div className='w-full grid grid-rows-2 gap-y-2'>
             <p className='mobile_3_bold flexRow gap-x-2'>
               <FontAwesomeIcon icon={faRulerCombined} /> 공급면적
             </p>
-            <div className='flexRow justify-between'>
-              <input
-                type='number'
-                name='전체m2'
-                value={propertyData.전체m2}
-                onChange={handleInputChange}
-                className='w-10/12'
-              />
-              <p className='w-1/12'>
-                m<sup>2</sup>
-              </p>
-            </div>
-            <div className='flexRow justify-between'>
-              <input
-                type='number'
-                name='전체평'
-                value={propertyData.전체평}
-                onChange={handleInputChange}
-                className='w-10/12'
-              />
-              <p className='w-1/12'>평</p>
+            <div className='flexCol lg:flex-row justify-between gap-y-2'>
+              <div className='flexRow justify-between w-full lg:w-1/2'>
+                <input
+                  type='number'
+                  name='전체m2'
+                  min={0}
+                  value={propertyData.전체m2}
+                  onChange={handleInputChange}
+                  className='w-10/12'
+                />
+                <p className='w-1/12 mobile_5'>
+                  m<sup>2</sup>
+                </p>
+              </div>
+              <div className='flexRow justify-between w-full lg:w-1/2'>
+                <input
+                  type='number'
+                  name='전체평'
+                  min={0}
+                  value={propertyData.전체평}
+                  onChange={handleInputChange}
+                  className='w-10/12'
+                  placeholder='숫자를 입력하세요'
+                />
+                <p className='w-1/12 mobile_5'>평</p>
+              </div>
             </div>
           </div>
-          <div className='w-full grid grid-rows-3 gap-y-2'>
+          <div className='w-full grid grid-rows-2 gap-y-2'>
             <p className='mobile_3_bold flexRow gap-x-2'>
               <FontAwesomeIcon icon={faRulerCombined} />
               전용면적{' '}
             </p>
-            <div className='flexRow justify-between'>
-              <input
-                type='number'
-                name='전용m2'
-                value={propertyData.전용m2}
-                onChange={handleInputChange}
-                className='w-10/12'
-              />
-              <p className='w-1/12'>
-                m<sup>2</sup>
+            <div className='flexCol lg:flex-row justify-between gap-y-2'>
+              <div className='flexRow justify-between w-full lg:w-1/2'>
+                <input
+                  type='number'
+                  name='전용m2'
+                  min={0}
+                  value={propertyData.전용m2}
+                  onChange={handleInputChange}
+                  className='w-10/12'
+                />
+                <p className='w-1/12 mobile_5'>
+                  m<sup>2</sup>
+                </p>
+              </div>
+              <div className='flexRow justify-between w-full lg:w-1/2'>
+                <input
+                  type='number'
+                  name='전용평'
+                  min={0}
+                  value={propertyData.전용평}
+                  onChange={handleInputChange}
+                  className='w-10/12'
+                />
+                <p className='w-1/12 mobile_5'>평</p>
+              </div>
+            </div>
+          </div>
+
+          <div className='flexCol gap-y-6 lg:flex-row lg:justify-between lg:gap-x-14 w-full'>
+            <div className='w-full flexCol items-start gap-y-4 lg:flex-row lg:items-center justify-between'>
+              <p className='mobile_3_bold flexRow gap-x-2'>
+                <FontAwesomeIcon icon={faElevator} />
+                엘레베이터
               </p>
+              <div className='w-full lg:w-1/2 grid grid-cols-2 gap-x-8'>
+                {[true, false].map((bool, index) => {
+                  return (
+                    <button
+                      key={index}
+                      name='EV유무'
+                      className={`flexCol gap-y-2 px-2 rounded py-4 ${
+                        bool === propertyData.EV유무
+                          ? 'bg-primary-yellow'
+                          : 'bg-secondary-light'
+                      }`}
+                      value={bool}
+                      onClick={() =>
+                        handleInputChange({
+                          target: { name: 'EV유무', value: bool },
+                        })
+                      } // Pass value explicitly
+                    >
+                      {bool === propertyData.EV유무 && (
+                        <FontAwesomeIcon icon={faCircleCheck} />
+                      )}
+                      <p>{bool ? '있음' : '없음'}</p>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            <div className='flexRow justify-between'>
+
+            <div className='w-full flexRow justify-between'>
+              <p className='mobile_3_bold flexRow gap-x-2 w-3/12'>
+                <FontAwesomeIcon icon={faBuilding} />
+                건물층
+              </p>
               <input
                 type='number'
-                name='전용평'
-                value={propertyData.전용평}
+                name='층수'
+                min='0'
+                value={propertyData.층수}
                 onChange={handleInputChange}
-                className='w-10/12'
+                className='w-7/12'
               />
-              <p className='w-1/12'>평</p>
-            </div>
-          </div>
-          <div className='w-full grid grid-rows-2'>
-            <p className='mobile_3_bold flexRow gap-x-2'>
-              <FontAwesomeIcon icon={faElevator} />
-              엘레베이터
-            </p>
-            <div className='w-full grid grid-cols-2 gap-x-8'>
-              <button
-                name='EV유무'
-                className={`flexRow justify-center gap-x-2 p-2 rounded py-4 ${
-                  propertyData.EV유무 === 'true'
-                    ? ' bg-primary-yellow'
-                    : ' bg-secondary-light'
-                }`}
-                value={true}
-                onClick={(e) => handleInputChange(e)}
-              >
-                {propertyData.EV유무 === 'true' && (
-                  <FontAwesomeIcon icon={faCircleCheck} />
-                )}
-                <p>있음</p>
-              </button>
-              <button
-                name='EV유무'
-                className={`flexRow justify-center gap-x-2 p-2 rounded py-4 ${
-                  propertyData.EV유무 === 'false'
-                    ? ' bg-primary-yellow'
-                    : ' bg-secondary-light'
-                }`}
-                value={false}
-                onClick={(e) => handleInputChange(e)}
-              >
-                {propertyData.EV유무 === 'false' && (
-                  <FontAwesomeIcon icon={faCircleCheck} />
-                )}
-                <p>없음</p>
-              </button>
+              <p className='mobile_5'>층</p>
             </div>
           </div>
 
-          <div className='w-full flexRow justify-between'>
-            <p className='mobile_3_bold flexRow gap-x-2 w-3/12'>
-              <FontAwesomeIcon icon={faBuilding} />
-              건물층
-            </p>
-            <input
-              type='number'
-              name='건물층'
-              value={propertyData.건물층}
-              onChange={handleInputChange}
-              className='w-7/12'
-            />
-            <p>층</p>
+          <div className='flexCol gap-y-6 lg:flex-row lg:justify-between lg:gap-x-14 w-full'>
+            <div className='w-full flexRow justify-between'>
+              <p className='mobile_3_bold flexRow gap-x-2 w-3/12'>
+                <FontAwesomeIcon icon={faCar} />
+                주차
+              </p>
+              <input
+                type='number'
+                name='주차가능대수'
+                min='0'
+                value={propertyData.주차가능대수}
+                onChange={handleInputChange}
+                className='w-7/12'
+              />
+              <p className='mobile_5'>대</p>
+            </div>
+
+            <div className='w-full flexRow justify-between'>
+              <p className='mobile_3_bold flexRow gap-x-2 w-3/12'>
+                <FontAwesomeIcon icon={faDroplet} />
+                화장실
+              </p>
+              <input
+                type='number'
+                name='화장실개수'
+                min='0'
+                value={propertyData.화장실개수}
+                onChange={handleInputChange}
+                className='w-7/12'
+              />
+              <p className='mobile_5'>개</p>
+            </div>
           </div>
 
-          <div className='w-full flexRow justify-between'>
-            <p className='mobile_3_bold flexRow gap-x-2 w-3/12'>
-              <FontAwesomeIcon icon={faCar} />
-              주차
-            </p>
-            <input
-              type='number'
-              name='주차가능대수'
-              value={propertyData.주차가능대수}
-              onChange={handleInputChange}
-              className='w-7/12'
-            />
-            <p>대</p>
-          </div>
-          <div className='w-full flexRow justify-between'>
-            <p className='mobile_3_bold flexRow gap-x-2 w-3/12'>
-              <FontAwesomeIcon icon={faKey} />
-              비밀번호
-            </p>
-            <input
-              type='text'
-              name='비밀번호'
-              value={propertyData.비밀번호}
-              onChange={handleInputChange}
-              className='w-7/12'
-            />
-            <p>번</p>
-          </div>
-          <div className='w-full flexRow justify-between'>
-            <p className='mobile_3_bold flexRow gap-x-2 w-3/12'>
-              <FontAwesomeIcon icon={faMoneyBill} />
-              관리비
-            </p>
-            <input
-              type='text'
-              name='관리비'
-              value={propertyData.관리비}
-              onChange={handleInputChange}
-              className='w-7/12'
-            />
-            <p>원</p>
+          <div className='flexCol gap-y-6 lg:flex-row lg:justify-between lg:gap-x-14 w-full'>
+            <div className='w-full flexRow justify-between'>
+              <p className='mobile_3_bold flexRow gap-x-2 w-3/12'>
+                <FontAwesomeIcon icon={faKey} />
+                비밀번호
+              </p>
+              <input
+                type='text'
+                name='비밀번호'
+                value={propertyData.비밀번호}
+                onChange={handleInputChange}
+                className='w-7/12'
+              />
+              <p className='mobile_5'>번</p>
+            </div>
+            <div className='w-full flexRow justify-between'>
+              <p className='mobile_3_bold flexRow gap-x-2 w-3/12'>
+                <FontAwesomeIcon icon={faMoneyBill} />
+                관리비
+              </p>
+              <input
+                type='text'
+                name='관리비'
+                value={propertyData.관리비}
+                onChange={handleInputChange}
+                className='w-7/12'
+              />
+              <p className='mobile_5'>원</p>
+            </div>
           </div>
         </article>
       </section>
 
       <p className='w-11/12 border'></p>
 
-      <section className='w-full flexCol py-6 gap-y-8'>
-        <p className='mobile_1 w-11/12'>주소</p>
-        <article className='w-11/12 flexCol gap-y-4'>
+      <section className='w-11/12 flexCol py-6 gap-y-8'>
+        <p className='mobile_3_bold w-full'>주소</p>
+        <article className='boxEdit'>
           <div className='grid grid-rows-2 w-full'>
             <p className='mobile_3_bold flexRow gap-x-2'>
               <FontAwesomeIcon icon={faHouse} />신 주소
             </p>
-            <div className='w-full relative'>
-              <input
-                type='text'
-                name='newAddress'
-                value={newAddress || ''} // Ensure value is never undefined
-                onChange={handleNewAddressSearch}
-                className='w-full'
-                placeholder='Search for a new address'
-              />
-              {newAddressSuggestions.length > 0 && (
-                <ul className='absolute w-full  bg-white divide-y-2 border max-h-48 overflow-y-auto'>
-                  {newAddressSuggestions.map((address, index) => (
-                    <li
-                      key={index}
-                      onClick={() => handleNewAddressSelect(address)} // Select and store address_id
-                      className='py-1 pl-1 hover:bg-secondary-light'
-                    >
-                      {address.new_district} {address.new_town}{' '}
-                      {address.new_road_name} {address.new_building_main_number}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+            <div className='w-full'></div>
           </div>
           <div className='grid grid-rows-2 w-full'>
             <p className='mobile_3_bold flexRow gap-x-2'>
               <FontAwesomeIcon icon={faHouse} />구 주소
             </p>
-            <div className='w-full relative'>
-              <input
-                type='text'
-                name='oldAddress'
-                value={oldAddress || ''} // Ensure value is never undefined
-                onChange={handleOldAddressSearch}
-                className='w-full'
-                placeholder='Search for an old address'
-              />
-              {oldAddressSuggestions.length > 0 && (
-                <ul className='absolute w-full  bg-white divide-y-2 border max-h-48 overflow-y-auto'>
-                  {oldAddressSuggestions.map((address, index) => (
-                    <li
-                      key={index}
-                      onClick={() => handleOldAddressSelect(address)} // Select and store address_id
-                      className='py-1 pl-1 hover:bg-secondary-light'
-                    >
-                      {address.old_district} {address.old_town}{' '}
-                      {address.old_village} {address.old_lot_main_number}{' '}
-                      {address.old_building_name}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </div>
-          <div className='grid grid-rows-2 w-full'>
-            <p className='mobile_3_bold flexRow gap-x-2'>
-              <FontAwesomeIcon icon={faHouse} />
-              상세주소
-            </p>
-            <div className='w-full'>
-              <input
-                type='text'
-                name='신상세주소'
-                value={propertyData.신상세주소}
-                onChange={handleInputChange}
-                className=' w-1/2'
-              />
-            </div>
+            <div className='w-full'></div>
           </div>
           <div className='grid grid-rows-2 w-full'>
             <p className='mobile_3_bold flexRow gap-x-2'>
@@ -974,30 +933,56 @@ const PropertyUpload = () => {
         </article>
       </section>
 
+      <section className='w-11/12 flexCol py-6 gap-y-8'>
+        <p className='mobile_3_bold w-full'>연락처 정보</p>
+        <article className='boxEdit w-full flexCol gap-y-6'>
+          {contactFields.length > 0 ? (
+            contactFields.map((contactType, index) => (
+              <div key={index} className='flexCol gap-y-4 w-full items-start'>
+                <p className='mobile_3_bold flexRow gap-x-2'>
+                  <FontAwesomeIcon icon={faUserPlus} />
+                  {contactType}
+                </p>
+                <div className='flexCol gap-y-3 w-full'>
+                  <input
+                    type='text'
+                    name='이름'
+                    value={propertyData.연락처[contactType]?.이름 || ''}
+                    onChange={(e) => handleInputChange(e, contactType)}
+                    placeholder={`${contactType} 이름을 입력하세요`}
+                    className='w-full'
+                  />
+                  <input
+                    type='text'
+                    name='전화번호'
+                    value={propertyData.연락처[contactType]?.전화번호 || ''}
+                    onChange={(e) => handleInputChange(e, contactType)}
+                    placeholder={`${contactType} 전화번호를 입력하세요`}
+                    className='w-full'
+                  />
+                </div>
+              </div>
+            ))
+          ) : (
+            <a
+              href='#거래방식'
+              className='bg-primary-yellow p-4 rounded-xl hover:bg-secondary-light'
+            >
+              거래방식을 선택하세요
+            </a>
+          )}
+        </article>
+      </section>
+
       <p className='w-11/12 border'></p>
 
       <section className='w-11/12 flexCol py-6 gap-y-8'>
-        <p className='mobile_1 w-full'>등록 / 기타 정보</p>
-        <article className='flexCol w-full  gap-y-6'>
+        <p className='mobile_3_bold w-full'>등록 / 기타 정보</p>
+        <article className='boxEdit w-full flexCol gap-y-4 lg:gap-y-8'>
           <div className='flexRow w-full justify-between'>
             <p className='mobile_3_bold flexRow gap-x-2'>
               <FontAwesomeIcon icon={faCalendarCheck} />
-              등록일자
-            </p>
-            <input
-              type='date'
-              name='등록일자'
-              value={
-                propertyData.등록일자 ? propertyData.등록일자.split('T')[0] : ''
-              }
-              onChange={handleInputChange}
-              className='w-9/12'
-            />
-          </div>
-          <div className='flexRow w-full justify-between'>
-            <p className='mobile_3_bold flexRow gap-x-2'>
-              <FontAwesomeIcon icon={faCalendarDays} />
-              사용승인
+              거래완료
             </p>
             <input
               type='date'
@@ -1008,9 +993,42 @@ const PropertyUpload = () => {
                   : ''
               }
               onChange={handleInputChange}
-              className='w-9/12'
+              className='w-8/12'
             />
           </div>
+          <div className='flexRow w-full justify-between'>
+            <p className='mobile_3_bold flexRow gap-x-2'>
+              <FontAwesomeIcon icon={faCalendarDays} />
+              사용승인
+            </p>
+            <input
+              type='date'
+              name='사용승인일자'
+              value={
+                propertyData.사용승인일자
+                  ? propertyData.사용승인일자.split('T')[0]
+                  : ''
+              }
+              onChange={handleInputChange}
+              className='w-8/12'
+            />
+          </div>
+          <div className='flexRow w-full justify-between'>
+            <p className='mobile_3_bold flexRow gap-x-2'>
+              <FontAwesomeIcon icon={faCalendarDays} />
+              등록일자
+            </p>
+            <input
+              type='date'
+              name='등록일자'
+              value={
+                propertyData.등록일자 ? propertyData.등록일자.split('T')[0] : ''
+              }
+              onChange={handleInputChange}
+              className='w-8/12'
+            />
+          </div>
+
           <div className='w-full grid grid-rows-2'>
             <p className='mobile_3_bold flexRow gap-x-2'>
               <FontAwesomeIcon icon={faImage} />
@@ -1039,112 +1057,24 @@ const PropertyUpload = () => {
             <textarea
               type='textarea'
               rows='5'
+              name='메모'
+              value={propertyData.메모}
+              onChange={handleInputChange}
               placeholder='메모를 입력하세요'
-              onChange={handleImageChange}
               className='w-full'
             ></textarea>
           </div>
         </article>
       </section>
 
-      <section className='w-8/12'>
-        <article className='grid grid-rows-2 w-full gap-y-4'>
-          <button type='submit' className='btn_clear'>
+      <section className='w-8/12 mb-16'>
+        <article className='grid grid-rows-2 lg:grid-cols-2 gap-x-4 w-full gap-y-4'>
+          <button className='btn_clear' onClick={handleClear}>
             초기화
           </button>
-          <button type='submit' className='btn_save'>
+          <button type='submit' className='btn_save' onClick={handleSave}>
             적용하기
           </button>
-        </article>
-      </section>
-
-      <section className='w-11/12'>
-        <article>
-          <div className='flexRow'>
-            <div className='flexRow'>
-              <p>화장실개수: </p>
-              <button
-                onClick={(e) => {
-                  e.preventDefault(); // Prevent default on button click
-                  setOpen('status');
-                }}
-                className='block w-full bg-white border border-gray-300 rounded-full px-4 py-2 text-left drop-shadow-sm focus:outline-none focus:ring-1 focus:ring-primary-yellow focus:border-primary-yellow'
-              >
-                <p className='flexRow justify-between w-full'>
-                  {selectedToilet !== ''
-                    ? selectedToilet
-                    : '욕실개수를 선택하세요'}
-                  <FontAwesomeIcon icon={faChevronDown} />
-                </p>
-              </button>
-
-              {open === 'status' && (
-                <ul className='flexCol rounded-3xl overflow-hidden w-full bg-white z-50'>
-                  {toiletsNum.map((option, index) => (
-                    <li
-                      key={index}
-                      onClick={(e) => handleDropdown(e, option, 'toiletsNum')}
-                      className={`w-full cursor-pointer text-primary text-center py-1.5 ${
-                        option === selectedToilet
-                          ? ' bg-primary-yellow'
-                          : ' bg-secondary-light'
-                      }`}
-                    >
-                      {option}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </div>
-
-          <div className='flexRow'>
-            <p>임차인정보: </p>
-            <>
-              이름
-              <input
-                type='text'
-                name='이름'
-                value={propertyData.이름}
-                onChange={handleInputChange}
-                className=''
-              />
-              휴대폰번호
-              <input
-                type='phone'
-                name='휴대폰번호'
-                value={propertyData.휴대폰번호}
-                onChange={handleInputChange}
-                className=''
-              />
-            </>
-          </div>
-          <div className='w-full'>
-            <h2>정산금액</h2>
-            <div className='flexRow justify-between text-yellow'>
-              <p>총수수료: {propertyData.정산금액.총수수료}</p>
-            </div>
-            <div className='flexRow justify-between text-yellow'>
-              <p>소장</p>
-              <input
-                type='number'
-                name='정산금액.소장'
-                value={propertyData.정산금액.소장}
-                onChange={handleInputChange}
-              />
-            </div>
-            {propertyData.정산금액.직원.map((employee, index) => (
-              <div key={index}>
-                <label>{employee.name}</label>
-                <input
-                  type='number'
-                  name={`정산금액.직원.${index}.money`}
-                  value={employee.money}
-                  onChange={handleInputChange}
-                />
-              </div>
-            ))}
-          </div>
         </article>
       </section>
     </main>
