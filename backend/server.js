@@ -12,18 +12,13 @@ const path = require('path');
 const fs = require('fs'); // For file system operations
 const jwt = require('jsonwebtoken');
 const { expressjwt: jwtMiddleware } = require('express-jwt'); // Import the express-jwt middleware
+const jwtSecret = process.env.JWT_SECRET || 'default_secret_key';
 
 const {
   PROPERTY_TYPES,
   TRANSACTION_METHOD,
   TRANSACTION_STATUS,
-<<<<<<< HEAD
-  TOILETS_NUM,
-=======
->>>>>>> ae7106980f0b542754a1ed52bc17bf2102513e4b
 } = require('./constants'); // Import the constants
-
-const JWT_SECRET = 'your_super_secret_key';
 
 const corsOptions = {
   origin: 'http://localhost:5173', // Update to match your frontend's URL
@@ -51,60 +46,27 @@ app.use(
   session({
     secret: process.env.SESSION_SECRET, // Use environment variable for session secret
     resave: false,
-<<<<<<< HEAD
-    saveUninitialized: false,
-    store: sessionStore,
-    cookie: { secure: process.env.NODE_ENV === 'production' }, // Set to true if using HTTPS
-  })
-);
-
-const port = process.env.PORT || 8000;
-
-// JWT Middleware to extract token from the cookie
-app.use(
-=======
     saveUninitialized: true,
-    cookie: { secure: false }, // Set secure: true if using HTTPS
+    cookie: { secure: process.env.NODE_ENV === 'production' }, // Secure cookies in production
   })
 );
 
-// JWT Middleware to extract token from the cookie
+// JWT Middleware to protect routes
 app.use(
-<<<<<<< HEAD
-    jwtMiddleware({
-        secret: JWT_SECRET, // The same secret you used to sign the token
-        algorithms: ['HS256'], // The algorithm used for signing the token
-        getToken: (req) => req.cookies.authToken, // Extract token from cookies
-    }).unless({ path: [
-        '/login', 
-        '/listing',
-        /^\/detail\/.*/, 
-        /^\/properties\/\d+\/images$/,
-        /^\/delete-property\/\d+$/, 
-        /^\/update-property\/\d+$/, 
-        /^\/upload-images(\/\d+)?$/,
-        '/property-types',
-        '/transaction-methods',
-        '/transaction-status',
-        '/toilets-num',
-        '/properties/update',
-    ] }) 
-=======
->>>>>>> ae7106980f0b542754a1ed52bc17bf2102513e4b
   jwtMiddleware({
-    secret: JWT_SECRET, // The same secret you used to sign the token
+    secret: process.env.JWT_SECRET, // Use environment variable for JWT secret
     algorithms: ['HS256'], // The algorithm used for signing the token
     getToken: (req) => req.cookies.authToken, // Extract token from cookies
   }).unless({
     path: [
       '/login',
       '/listing',
-      /^\/detail\/.*/,
-      /^\/properties\/\d+\/images$/,
-      /^\/delete-property\/\d+$/,
-      /^\/update-property\/\d+$/,
-<<<<<<< HEAD
-      /^\/upload-images\/\d+$/,
+      /^\/detail\/.*/, // Matches /detail/{any path}
+      /^\/properties\/\d+\/images$/, // Matches /properties/{id}/images
+      /^\/delete-property\/\d+$/, // Matches /delete-property/{id}
+      /^\/update-property\/\d+$/, // Matches /update-property/{id}
+      /^\/upload-images\/\d*$/, // Matches /upload-images/{id}
+      '/upload-images',
       '/property-types',
       '/transaction-methods',
       '/transaction-status',
@@ -112,37 +74,11 @@ app.use(
       '/properties/update',
       '/addresses',
       '/generate-sql',
-    ],
-  })
-);
-
-=======
-      /^\/upload-images\/.*$/,
-      '/upload-images',
-      '/property-types',
-      '/transaction-methods',
-      '/transaction-status',
-      '/properties/update',
-<<<<<<< HEAD
       '/address-excel',
-=======
->>>>>>> 52b01f20755d8f3a7789f8f30531be807c9ba969
-      /^\/get-address\/\d+$/,
     ],
   })
->>>>>>> 9acbfa1dc9eb29eb6f924d70e0c0bad3fed42f2b
 );
 
-const db = mysql.createPool({
-  connectionLimit: 10,
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  port: process.env.DB_PORT,
-});
-
->>>>>>> ae7106980f0b542754a1ed52bc17bf2102513e4b
 // Function to fetch existing properties from the database
 const fetchExistingProperties = (callback) => {
   const query = 'SELECT propertyId FROM properties'; // Adjust with relevant columns
@@ -163,31 +99,16 @@ app.get('/transaction-methods', (req, res) => {
 
 app.get('/transaction-status', (req, res) => {
   res.json(TRANSACTION_STATUS); // Send the enum values to the frontend
-<<<<<<< HEAD
-});
-
-app.get('/toilets-num', (req, res) => {
-  res.json(TOILETS_NUM); // Send the enum values to the frontend
-=======
->>>>>>> ae7106980f0b542754a1ed52bc17bf2102513e4b
 });
 
 // Import CSV / excel
 app.post('/import-csv', (req, res) => {
   const properties = req.body; // JSON data from the frontend
-<<<<<<< HEAD
-  const uniqueFields = properties.map((item) => item['순번']); // Using '순번' as the unique identifier
-  console.log(uniqueFields);
-
-  // Query to fetch existing records with the same 순번
-  const query = `SELECT 순번 FROM property WHERE 순번 IN (?)`;
-=======
   const uniqueFields = properties.map((item) => item['매물ID']); // Using '매물ID' as the unique identifier
   console.log(uniqueFields);
 
   // Query to fetch existing records with the same 매물ID
   const query = `SELECT 매물ID FROM property WHERE 매물ID IN (?)`;
->>>>>>> ae7106980f0b542754a1ed52bc17bf2102513e4b
 
   db.query(query, [uniqueFields], (err, results) => {
     if (err) {
@@ -195,21 +116,12 @@ app.post('/import-csv', (req, res) => {
       return res.status(500).send('Error checking existing data');
     }
 
-<<<<<<< HEAD
-    const existingFields = results.map((row) => row['순번']); // List of IDs that already exist in DB
-    const newRecords = properties.filter(
-      (item) => !existingFields.includes(item['순번'])
-    ); // Records to insert
-    const updateRecords = properties.filter((item) =>
-      existingFields.includes(item['순번'])
-=======
     const existingFields = results.map((row) => row['매물ID']); // List of IDs that already exist in DB
     const newRecords = properties.filter(
       (item) => !existingFields.includes(item['매물ID'])
     ); // Records to insert
     const updateRecords = properties.filter((item) =>
       existingFields.includes(item['매물ID'])
->>>>>>> ae7106980f0b542754a1ed52bc17bf2102513e4b
     ); // Records to update
 
     const promises = [];
@@ -217,139 +129,6 @@ app.post('/import-csv', (req, res) => {
     // Insert new records
     if (newRecords.length > 0) {
       const insertValues = newRecords.map((item) => [
-<<<<<<< HEAD
-        item['순번'],
-        item['등록일자'],
-        item['부동산구분'],
-        item['거래방식'],
-        item['거래완료여부'],
-        item['거래완료일자'],
-        item['담당자'],
-        item['구'],
-        item['읍면동'],
-        item['구상세주소'],
-        item['도로명'],
-        item['신상세주소'],
-        item['건물명'],
-        item['동'],
-        item['호수'],
-        item['보증금'],
-        item['월세'],
-        item['관리비'],
-        item['전체m2'],
-        item['전용m2'],
-        item['전체평'],
-        item['전용평'],
-        item['EV유무'],
-        item['화장실개수'],
-        item['주차가능대수'],
-        item['비밀번호'],
-        item['이름'],
-        item['휴대폰번호'],
-        item['기타특이사항'],
-        item['정산금액'],
-        item['메모'],
-      ]);
-
-      const insertSql = `INSERT INTO property (순번, 등록일자, 부동산구분, 거래방식, 거래완료여부, 거래완료일자, 담당자, 구, 읍면동, 구상세주소, 도로명, 신상세주소, 건물명, 동, 호수, 보증금, 월세, 관리비, 전체m2, 전용m2, 전체평, 전용평, EV유무, 화장실개수, 주차가능대수, 비밀번호, 이름, 휴대폰번호, 기타특이사항, 정산금액, 메모) VALUES ?`;
-
-      promises.push(
-        new Promise((resolve, reject) => {
-          db.query(insertSql, [insertValues], (err, result) => {
-            if (err) {
-              console.error('Error inserting data:', err);
-              reject('Error inserting data');
-            } else {
-              console.log(
-                `${newRecords.length} new records inserted successfully.`
-              );
-              resolve();
-            }
-          });
-        })
-      );
-    }
-
-    // Update existing records
-    if (updateRecords.length > 0) {
-      updateRecords.forEach((item) => {
-        const updateFields = [];
-
-        // Loop through the fields you want to update
-        if (item['등록일자'])
-          updateFields.push(`등록일자 = ${db.escape(item['등록일자'])}`);
-        if (item['부동산구분'])
-          updateFields.push(`부동산구분 = ${db.escape(item['부동산구분'])}`);
-        if (item['거래방식'])
-          updateFields.push(`거래방식 = ${db.escape(item['거래방식'])}`);
-        if (item['거래완료여부'])
-          updateFields.push(
-            `거래완료여부 = ${db.escape(item['거래완료여부'])}`
-          );
-        if (item['거래완료일자'])
-          updateFields.push(
-            `거래완료일자 = ${db.escape(item['거래완료일자'])}`
-          );
-        if (item['담당자'])
-          updateFields.push(`담당자 = ${db.escape(item['담당자'])}`);
-        if (item['구']) updateFields.push(`구 = ${db.escape(item['구'])}`);
-        if (item['읍면동'])
-          updateFields.push(`읍면동 = ${db.escape(item['읍면동'])}`);
-        if (item['구상세주소'])
-          updateFields.push(`구상세주소 = ${db.escape(item['구상세주소'])}`);
-        if (item['도로명'])
-          updateFields.push(`도로명 = ${db.escape(item['도로명'])}`);
-        if (item['신상세주소'])
-          updateFields.push(`신상세주소 = ${db.escape(item['신상세주소'])}`);
-        if (item['건물명'])
-          updateFields.push(`건물명 = ${db.escape(item['건물명'])}`);
-        if (item['동']) updateFields.push(`동 = ${db.escape(item['동'])}`);
-        if (item['호수'])
-          updateFields.push(`호수 = ${db.escape(item['호수'])}`);
-        if (item['보증금'])
-          updateFields.push(`보증금 = ${db.escape(item['보증금'])}`);
-        if (item['월세'])
-          updateFields.push(`월세 = ${db.escape(item['월세'])}`);
-        if (item['관리비'])
-          updateFields.push(`관리비 = ${db.escape(item['관리비'])}`);
-        if (item['전체m2'])
-          updateFields.push(`전체m2 = ${db.escape(item['전체m2'])}`);
-        if (item['전용m2'])
-          updateFields.push(`전용m2 = ${db.escape(item['전용m2'])}`);
-        if (item['전체평'])
-          updateFields.push(`전체평 = ${db.escape(item['전체평'])}`);
-        if (item['전용평'])
-          updateFields.push(`전용평 = ${db.escape(item['전용평'])}`);
-        if (item['EV유무'])
-          updateFields.push(`EV유무 = ${db.escape(item['EV유무'])}`);
-        if (item['화장실개수'])
-          updateFields.push(`화장실개수 = ${db.escape(item['화장실개수'])}`);
-        if (item['주차가능대수'])
-          updateFields.push(
-            `주차가능대수 = ${db.escape(item['주차가능대수'])}`
-          );
-        if (item['비밀번호'])
-          updateFields.push(`비밀번호 = ${db.escape(item['비밀번호'])}`);
-        if (item['이름'])
-          updateFields.push(`이름 = ${db.escape(item['이름'])}`);
-        if (item['휴대폰번호'])
-          updateFields.push(`휴대폰번호 = ${db.escape(item['휴대폰번호'])}`);
-        if (item['기타특이사항'])
-          updateFields.push(
-            `기타특이사항 = ${db.escape(item['기타특이사항'])}`
-          );
-        if (item['정산금액'])
-          updateFields.push(`정산금액 = ${db.escape(item['정산금액'])}`);
-        if (item['메모'])
-          updateFields.push(`메모 = ${db.escape(item['메모'])}`);
-
-        if (updateFields.length > 0) {
-          const updateSql = `UPDATE property SET ${updateFields.join(
-            ', '
-          )} WHERE 순번 = ${db.escape(item['순번'])}`;
-
-=======
-<<<<<<< HEAD
         item['매물ID'] || null,
         item['등록일자'] || null,
         item['사용승인일자'] || null,
@@ -380,40 +159,6 @@ app.post('/import-csv', (req, res) => {
       ]);
 
       const insertSql = `INSERT INTO property (매물ID, 등록일자, 사용승인일자, 부동산구분, 거래방식, 거래완료여부, 거래완료일자, 담당자, 상세주소, 건물명, 동, 호수, 보증금, 월세, 관리비, 전체m2, 전용m2, 전체평, 전용평, EV유무, 화장실개수, 층수, 주차가능대수, 비밀번호, 연락처, 메모, address_id) VALUES ?`;
-=======
-        item['매물ID'],
-        item['등록일자'],
-        item['부동산구분'],
-        item['거래방식'],
-        item['거래완료여부'],
-        item['거래완료일자'],
-        item['담당자'],
-        item['구'],
-        item['읍면동'],
-        item['구상세주소'],
-        item['도로명'],
-        item['신상세주소'],
-        item['건물명'],
-        item['동'],
-        item['호수'],
-        item['보증금'],
-        item['월세'],
-        item['관리비'],
-        item['전체m2'],
-        item['전용m2'],
-        item['전체평'],
-        item['전용평'],
-        item['EV유무'],
-        item['화장실개수'],
-        item['층수'],
-        item['주차가능대수'],
-        item['비밀번호'],
-        item['연락처'],
-        item['메모'],
-      ]);
-
-      const insertSql = `INSERT INTO property (매물ID, 등록일자, 부동산구분, 거래방식, 거래완료여부, 거래완료일자, 담당자, 구, 읍면동, 구상세주소, 도로명, 신상세주소, 건물명, 동, 호수, 보증금, 월세, 관리비, 전체m2, 전용m2, 전체평, 전용평, EV유무, 화장실개수, 층수, 방개수, 주차가능대수, 비밀번호, 연락처, 메모) VALUES ?`;
->>>>>>> 52b01f20755d8f3a7789f8f30531be807c9ba969
 
       promises.push(
         new Promise((resolve, reject) => {
@@ -438,15 +183,12 @@ app.post('/import-csv', (req, res) => {
         const updateFields = [];
 
         // Loop through the fields you want to update
-<<<<<<< HEAD
         if (item['매물ID'])
           updateFields.push(`매물ID = ${db.escape(item['매물ID'])}`);
         if (item['사용승인일자'])
           updateFields.push(
             `사용승인일자 = ${db.escape(item['사용승인일자'])}`
           );
-=======
->>>>>>> 52b01f20755d8f3a7789f8f30531be807c9ba969
         if (item['등록일자'])
           updateFields.push(`등록일자 = ${db.escape(item['등록일자'])}`);
         if (item['부동산구분'])
@@ -463,12 +205,6 @@ app.post('/import-csv', (req, res) => {
           );
         if (item['담당자'])
           updateFields.push(`담당자 = ${db.escape(item['담당자'])}`);
-<<<<<<< HEAD
-        if (item['건물명'])
-          updateFields.push(`건물명 = ${db.escape(item['건물명'])}`);
-        if (item['상세주소'])
-          updateFields.push(`상세주소 = ${db.escape(item['상세주소'])}`);
-=======
         if (item['구']) updateFields.push(`구 = ${db.escape(item['구'])}`);
         if (item['읍면동'])
           updateFields.push(`읍면동 = ${db.escape(item['읍면동'])}`);
@@ -480,7 +216,6 @@ app.post('/import-csv', (req, res) => {
           updateFields.push(`신상세주소 = ${db.escape(item['신상세주소'])}`);
         if (item['건물명'])
           updateFields.push(`건물명 = ${db.escape(item['건물명'])}`);
->>>>>>> 52b01f20755d8f3a7789f8f30531be807c9ba969
         if (item['동']) updateFields.push(`동 = ${db.escape(item['동'])}`);
         if (item['호수'])
           updateFields.push(`호수 = ${db.escape(item['호수'])}`);
@@ -504,11 +239,8 @@ app.post('/import-csv', (req, res) => {
           updateFields.push(`화장실개수 = ${db.escape(item['화장실개수'])}`);
         if (item['층수'])
           updateFields.push(`층수 = ${db.escape(item['층수'])}`);
-<<<<<<< HEAD
-=======
         if (item['방개수'])
           updateFields.push(`방개수 = ${db.escape(item['방개수'])}`);
->>>>>>> 52b01f20755d8f3a7789f8f30531be807c9ba969
         if (item['주차가능대수'])
           updateFields.push(
             `주차가능대수 = ${db.escape(item['주차가능대수'])}`
@@ -519,34 +251,21 @@ app.post('/import-csv', (req, res) => {
           updateFields.push(`연락처 = ${db.escape(item['연락처'])}`);
         if (item['메모'])
           updateFields.push(`메모 = ${db.escape(item['메모'])}`);
-<<<<<<< HEAD
-        if (item['address_id'])
-          updateFields.push(`address_id = ${db.escape(item['address_id'])}`);
-=======
->>>>>>> 52b01f20755d8f3a7789f8f30531be807c9ba969
 
         if (updateFields.length > 0) {
           const updateSql = `UPDATE property SET ${updateFields.join(
             ', '
           )} WHERE 매물ID = ${db.escape(item['매물ID'])}`;
 
->>>>>>> ae7106980f0b542754a1ed52bc17bf2102513e4b
           promises.push(
             new Promise((resolve, reject) => {
               db.query(updateSql, (err, result) => {
                 if (err) {
                   console.error(
-<<<<<<< HEAD
-                    `Error updating record with 순번 ${item['순번']}:`,
-                    err
-                  );
-                  reject(`Error updating record with 순번 ${item['순번']}`);
-=======
                     `Error updating record with 매물ID ${item['매물ID']}:`,
                     err
                   );
                   reject(`Error updating record with 매물ID ${item['매물ID']}`);
->>>>>>> ae7106980f0b542754a1ed52bc17bf2102513e4b
                 } else {
                   resolve();
                 }
@@ -594,7 +313,7 @@ app.post('/login', async (req, res) => {
               fname: user.fname,
               lname: user.lname,
             },
-            JWT_SECRET,
+            jwtSecret,
             { expiresIn: '1h' }
           );
 
@@ -728,11 +447,7 @@ app.put('/update-property/:propertyId', async (req, res) => {
     .map((key) => `${key} = ?`)
     .join(', ');
 
-<<<<<<< HEAD
-  const sql = `UPDATE property SET ${setClause} WHERE 순번 = ?`;
-=======
   const sql = `UPDATE property SET ${setClause} WHERE 매물ID = ?`;
->>>>>>> ae7106980f0b542754a1ed52bc17bf2102513e4b
 
   const values = [...Object.values(updatedFields), propertyId];
 
@@ -751,11 +466,7 @@ app.put('/update-property/:propertyId', async (req, res) => {
 app.get('/detail/:propertyId', (req, res) => {
   const { propertyId } = req.params;
 
-<<<<<<< HEAD
-  const sql = 'SELECT * FROM property WHERE 순번 = ?';
-=======
   const sql = 'SELECT * FROM property WHERE 매물ID = ?';
->>>>>>> ae7106980f0b542754a1ed52bc17bf2102513e4b
 
   db.query(sql, [propertyId], (err, results) => {
     if (err) {
@@ -777,11 +488,7 @@ app.delete('/delete-property/:propertyId', (req, res) => {
   const propertyId = req.params.propertyId;
 
   // SQL query to delete a property by its ID
-<<<<<<< HEAD
-  const query = 'DELETE FROM property WHERE 순번 = ?';
-=======
   const query = 'DELETE FROM property WHERE 매물ID = ?';
->>>>>>> ae7106980f0b542754a1ed52bc17bf2102513e4b
 
   db.query(query, [propertyId], (err, result) => {
     if (err) {
@@ -839,113 +546,47 @@ app.post(
   upload.array('images', 10),
   async (req, res) => {
     try {
-<<<<<<< HEAD
       const propertyId = req.params.propertyId;
+
+      // Get the new image paths from uploaded files
       const newImagePaths = req.files.map(
         (file) => `/uploads/${path.basename(file.path)}`
-      ); // Get relative paths
-
-      // Retrieve the current image paths for the given propertyId
-      const currentResult = await query(
-        'SELECT img_path FROM property WHERE 순번 = ?',
-        [propertyId]
       );
-
-      if (currentResult.length === 0) {
-        return res.status(404).json({ error: 'Property not found' });
-      }
-
-      const currentImagePaths = currentResult[0].img_path
-        ? currentResult[0].img_path.split(',')
-        : [];
-
-      // Combine current and new image paths
-      const updatedImagePaths = [...currentImagePaths, ...newImagePaths];
-      const updatedImagePathsString = updatedImagePaths.join(',');
-
-      // Update the property with the new image paths
-      await query('UPDATE property SET img_path = ? WHERE 순번 = ?', [
-=======
-<<<<<<< HEAD
-        const propertyId = req.params.propertyId;
-
-        // Get relative paths by stripping the full local path
-        const newImagePaths = req.files.map(file => `/uploads/${path.basename(file.path)}`); 
-=======
-      const propertyId = req.params.propertyId;
-      const newImagePaths = req.files.map(
-        (file) => `/uploads/${path.basename(file.path)}`
-      ); // Get relative paths
->>>>>>> 9acbfa1dc9eb29eb6f924d70e0c0bad3fed42f2b
 
       // Retrieve the current image paths for the given propertyId
       const currentResult = await query(
         'SELECT img_path FROM property WHERE 매물ID = ?',
         [propertyId]
       );
-
-<<<<<<< HEAD
-        const currentImagePaths = currentResult[0].img_path ? currentResult[0].img_path.split(',').map(imgPath => {
-            // Clean current image paths in case they contain full paths
-            return imgPath.includes('/uploads/') ? imgPath.trim() : `/uploads/${path.basename(imgPath.trim())}`;
-        }) : [];
-=======
-      if (currentResult.length === 0) {
-        return res.status(404).json({ error: 'Property not found' });
-      }
->>>>>>> 9acbfa1dc9eb29eb6f924d70e0c0bad3fed42f2b
-
       const currentImagePaths = currentResult[0].img_path
-        ? currentResult[0].img_path.split(',')
+        ? currentResult[0].img_path
+            .split(',')
+            .map((imgPath) =>
+              imgPath.includes('/uploads/')
+                ? imgPath.trim()
+                : `/uploads/${path.basename(imgPath.trim())}`
+            )
         : [];
 
       // Combine current and new image paths
       const updatedImagePaths = [...currentImagePaths, ...newImagePaths];
       const updatedImagePathsString = updatedImagePaths.join(',');
 
-<<<<<<< HEAD
-        // Return the updated image URLs (all relative paths)
-        res.status(200).json({ imageUrls: updatedImagePaths });
-=======
       // Update the property with the new image paths
       await query('UPDATE property SET img_path = ? WHERE 매물ID = ?', [
->>>>>>> ae7106980f0b542754a1ed52bc17bf2102513e4b
         updatedImagePathsString,
         propertyId,
       ]);
 
       res.status(200).json({ imageUrls: newImagePaths });
-<<<<<<< HEAD
-=======
->>>>>>> 9acbfa1dc9eb29eb6f924d70e0c0bad3fed42f2b
->>>>>>> ae7106980f0b542754a1ed52bc17bf2102513e4b
     } catch (error) {
       console.error('Error uploading images:', error);
       res.status(500).json({ error: 'Failed to upload images' });
     }
   }
 );
-<<<<<<< HEAD
 
 app.post('/upload-images', upload.array('images'), (req, res) => {
-  const imagePaths = req.files.map((file) => file.path); // Get the paths of uploaded images
-  res.json({ images: imagePaths });
-});
-
-=======
-
-
-
-app.post('/upload-images', upload.array('images'), (req, res) => {
-<<<<<<< HEAD
-  const imagePaths = req.files.map((file) => {
-    // Extract the part of the path that starts with '/uploads/'
-    const relativePath = file.path.split('/uploads/')[1];
-    return `/uploads/${relativePath}`;
-  });
-
-  res.json({ images: imagePaths });
-=======
   try {
     const imagePaths = req.files.map((file) => {
       const uploadsIndex = file.path.indexOf('/uploads/');
@@ -966,20 +607,14 @@ app.post('/upload-images', upload.array('images'), (req, res) => {
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
->>>>>>> 52b01f20755d8f3a7789f8f30531be807c9ba969
 });
 
->>>>>>> ae7106980f0b542754a1ed52bc17bf2102513e4b
 app.get('/properties/:propertyId/images', async (req, res) => {
   try {
     const propertyId = req.params.propertyId;
 
     // Execute the query and get the results
-<<<<<<< HEAD
-    const query = 'SELECT img_path FROM property WHERE 순번 = ?';
-=======
     const query = 'SELECT img_path FROM property WHERE 매물ID = ?';
->>>>>>> ae7106980f0b542754a1ed52bc17bf2102513e4b
     db.query(query, [propertyId], (error, results) => {
       if (error) {
         console.error('Error executing query:', error);
@@ -1010,11 +645,7 @@ app.get('/memos/:propertyId', async (req, res) => {
   const { propertyId } = req.params;
 
   try {
-<<<<<<< HEAD
-    const query = 'SELECT 메모 FROM property WHERE 순번 = ?';
-=======
     const query = 'SELECT 메모 FROM property WHERE 매물ID = ?';
->>>>>>> ae7106980f0b542754a1ed52bc17bf2102513e4b
     db.query(query, [propertyId], (err, result) => {
       if (err) {
         console.error('Error fetching memo:', err);
@@ -1039,11 +670,7 @@ app.post('/memos/add', async (req, res) => {
   try {
     // Execute the query using db.query (for mysql package)
     db.query(
-<<<<<<< HEAD
-      'UPDATE property SET 메모 = ? WHERE 순번 = ?',
-=======
       'UPDATE property SET 메모 = ? WHERE 매물ID = ?',
->>>>>>> ae7106980f0b542754a1ed52bc17bf2102513e4b
       [content, propertyId],
       (error, result) => {
         if (error) {
@@ -1068,28 +695,6 @@ app.post('/memos/add', async (req, res) => {
 app.post('/properties/update', (req, res) => {
   const propertyData = req.body;
 
-<<<<<<< HEAD
-  // Convert the 정산금액 object to a JSON string if it's an object
-  if (typeof propertyData.정산금액 === 'object') {
-    propertyData.정산금액 = JSON.stringify(propertyData.정산금액);
-  }
-
-  console.log(propertyData.총수수료);
-
-  db.query(
-    'INSERT INTO property SET ? ON DUPLICATE KEY UPDATE 정산금액 = VALUES(정산금액)',
-    [propertyData, propertyData],
-    (err, result) => {
-      if (err) {
-        console.error('Database error:', err);
-        return res.status(500).send('Error saving property data');
-      }
-      res.send('Property data saved successfully');
-    }
-  );
-});
-
-=======
   db.query(
     'INSERT INTO property SET ? ',
     [propertyData, propertyData],
@@ -1103,7 +708,6 @@ app.post('/properties/update', (req, res) => {
   );
 });
 
->>>>>>> ae7106980f0b542754a1ed52bc17bf2102513e4b
 app.get('/get-favorites', (req, res) => {
   const userId = req.auth.id; // Get user ID from JWT payload
 
@@ -1154,7 +758,6 @@ app.post('/save-favorites', (req, res) => {
   );
 });
 
-<<<<<<< HEAD
 // Address
 app.get('/addresses', async (req, res) => {
   const { searchText } = req.query;
@@ -1274,10 +877,6 @@ app.get('/generate-sql', (req, res) => {
   });
 });
 
-app.listen(port, () => {
-  console.log(`Server is running on ${port} in ${process.env.NODE_ENV}`);
-=======
-<<<<<<< HEAD
 // Endpoint to search addresses based on Excel data
 app.get('/address-excel', (req, res) => {
   // Destructure address components from the request query parameters
@@ -1311,9 +910,7 @@ app.get('/address-excel', (req, res) => {
   });
 });
 
-=======
 // API to get rows from new-address and old-address tables using 매물ID
->>>>>>> 52b01f20755d8f3a7789f8f30531be807c9ba969
 app.get('/get-address/:id', async (req, res) => {
   const { id } = req.params; // Get the 매물ID from the URL parameter
   try {
@@ -1356,5 +953,4 @@ app.get('/get-address/:id', async (req, res) => {
 
 app.listen(8000, () => {
   console.log('Server is running on port 8000');
->>>>>>> ae7106980f0b542754a1ed52bc17bf2102513e4b
 });

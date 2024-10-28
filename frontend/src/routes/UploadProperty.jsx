@@ -37,11 +37,41 @@ const PropertyUpload = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false); // State to track authentication status
   const navigate = useNavigate(); // Hook for navigation
 
+  const [originalPropertyData, setOriginalPropertyData] = useState({
+    사용승인일자: '',
+    등록일자: '',
+    부동산구분: '',
+    거래방식: '',
+    거래완료여부: '',
+    거래완료일자: '',
+    담당자: '',
+    건물명: '',
+    상세주소: '',
+    동: '',
+    호수: '',
+    보증금: 0,
+    월세: 0,
+    관리비: 0,
+    전체m2: 0,
+    전용m2: 0,
+    전체평: 0,
+    전용평: 0,
+    EV유무: false,
+    화장실개수: 0,
+    층수: 0,
+    주차가능대수: 0,
+    비밀번호: '',
+    연락처: [],
+    메모: '',
+    img_path: '',
+    address_id: 0,
+  });
+  const [propertyData, setPropertyData] = useState(originalPropertyData);
+
   const [open, setOpen] = useState('false');
 
   const [images, setImages] = useState([]); // State for storing uploaded images
   const [selectedFiles, setSelectedFiles] = useState([]); // Store selected files for upload
-  const [memo, setMemo] = useState(''); // State for memo content
 
   // 부동산구분
   const [propertyTypes, setPropertyTypes] = useState([]);
@@ -55,119 +85,80 @@ const PropertyUpload = () => {
   const [transactionStatus, setTransactionStatus] = useState([]);
   const [selectedStatus, setSelectedStatus] = useState('');
 
-  // 거래완료여부
-  const [toiletsNum, setToiletsNum] = useState([]);
-  const [selectedToilet, setSelectedToilet] = useState('');
-
   // Address
   const [newAddress, setNewAddress] = useState(''); // Local state for new address input
   const [oldAddress, setOldAddress] = useState(''); // Local state for old address input
   const [newAddressSuggestions, setNewAddressSuggestions] = useState([]); // New address suggestions
   const [oldAddressSuggestions, setOldAddressSuggestions] = useState([]); // Old address suggestions
 
-  const [propertyData, setPropertyData] = useState({
-    등록일자: '',
-    부동산구분: '',
-    거래방식: '',
-    거래완료여부: '',
-    거래완료일자: '',
-    담당자: '',
-    구: '',
-    읍면동: '',
-    구상세주소: '',
-    도로명: '',
-    신상세주소: '',
-    건물명: '',
-    동: '',
-    호수: '',
-    보증금: 0,
-    월세: 0,
-    관리비: 0,
-    전체m2: 0,
-    전용m2: 0,
-    전체평: 0,
-    전용평: 0,
-    EV유무: false,
-    화장실개수: 0,
-    층수: 0,
-    방개수: 0,
-    주차가능대수: 0,
-    비밀번호: '',
-    이름: '',
-    휴대폰번호: '',
-    메모: '',
-    img_path: '',
-    정산금액: {
-      총수수료: 0,
-      소장: 0,
-      직원: [
-        { name: '직원1', money: 0 },
-        { name: '직원2', money: 0 },
-      ],
-    },
+  // Contact
+  const contactFieldsMap = {
+    매매: ['매도인', '매수인', '부동산'],
+    월세: ['임대인', '임차인', '부동산'],
+    전세: ['전대인', '전차인', '부동산'],
+  };
+  const contactFields = contactFieldsMap[propertyData.거래방식] || []; // Get the contact fields based on the transaction method
+  const [isConverted, setIsConverted] = useState(false); // Toggle state to track conversion
+
+  const [originalPrices, setOriginalPrices] = useState({}); // Store original prices
+  const [priceManwon, setPriceManwon] = useState({
+    보증금: propertyData.보증금 || '',
+    월세: propertyData.월세 || '',
+    '전체 금액': (propertyData.보증금 || 0) + (propertyData.월세 || 0),
   });
 
   useEffect(() => {
     console.log('Updated propertyData:', propertyData);
   }, [propertyData]);
 
+  // Authentication check
   useEffect(() => {
-    const checkAuthentication = async () => {
+    const checkAuth = async () => {
       try {
-        // Make a request to the server to verify the user's token (stored in HTTP-only cookie)
         const response = await axios.get(`${apiUrl}/check-auth`, {
           withCredentials: true,
         });
-        if (response.status === 200) {
-          setIsAuthenticated(true);
-        } else {
-          navigate('/login'); // Redirect to login if authentication fails
-        }
-      } catch (error) {
-        console.error('User is not authenticated:', error);
-        navigate('/login'); // Redirect to login if authentication fails
+        setIsAuthenticated(response.status === 200);
+      } catch {
+        navigate('/login');
       }
     };
+    checkAuth();
+  }, [navigate]);
 
-    checkAuthentication();
-  }, [navigate]); // Dependency on `navigate`
-
+  // Fetch dropdown options
   useEffect(() => {
-    const fetchDropdownConst = async () => {
+    const fetchOptions = async () => {
       try {
-        const propertyType = await axios.get(`${apiUrl}/property-types`);
-        setPropertyTypes(propertyType.data);
-
-        const transactionMethod = await axios.get(
-          `${apiUrl}/transaction-methods`
-        );
-        setTransactionMethod(transactionMethod.data);
-
-        const transactionStatus = await axios.get(
-          `${apiUrl}/transaction-status`
-        );
-        setTransactionStatus(transactionStatus.data);
+        const [propertyTypesRes, transactionMethodsRes, transactionStatusRes] =
+          await Promise.all([
+            axios.get(`${apiUrl}/property-types`),
+            axios.get(`${apiUrl}/transaction-methods`),
+            axios.get(`${apiUrl}/transaction-status`),
+          ]);
+        setPropertyTypes(propertyTypesRes.data);
+        setTransactionMethod(transactionMethodsRes.data);
+        setTransactionStatus(transactionStatusRes.data);
       } catch (error) {
-        console.error('Error fetching dropdown data', error); // Add error handling
+        console.error('Error fetching dropdown data', error);
       }
     };
-
-    fetchDropdownConst();
+    fetchOptions();
   }, []);
 
   if (!isAuthenticated) {
     return <div>Loading...</div>;
   }
-
-  const convertM2ToPyeong = (m2) => {
-    return Number((m2 / 3.3058).toFixed(2));
-  }; // Converts m² to 평
-  const convertPyeongToM2 = (pyeong) => {
-    return Number((pyeong * 3.3058).toFixed(2));
-  }; // Converts 평 to m²
-
+  // Utility functions
+  const convertM2ToPyeong = (m2) => Number((m2 / 3.3058).toFixed(2));
+  const convertPyeongToM2 = (pyeong) => Number((pyeong * 3.3058).toFixed(2));
+  const calculateTotalAmount = (보증금, 월세, isConverted) => {
+    return isConverted
+      ? ((parseInt(보증금, 10) + parseInt(월세, 10)) / 10000).toLocaleString()
+      : parseInt(보증금, 10) + parseInt(월세, 10);
+  };
   // Handle input changes
-  const handleInputChange = (e) => {
+  const handleInputChange = (e, contactType = null) => {
     let { name, type, value, checked } = e.target;
     let formattedValue;
     // Converting input if necessary
@@ -194,6 +185,11 @@ const PropertyUpload = () => {
     } else {
       formattedValue = value;
     }
+
+    setPriceManwon((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }));
 
     if (contactType) {
       // Handle contact-specific updates
@@ -269,73 +265,25 @@ const PropertyUpload = () => {
 
   // Handle image upload
   const handleImageUpload = async () => {
-    if (selectedFiles.length === 0) {
-      alert('No files selected for upload.');
-      return;
-    }
+    if (selectedFiles.length === 0)
+      return alert('No files selected for upload.');
 
     const formData = new FormData();
-
-    // Append each file to FormData
-    selectedFiles.forEach((file) => {
-      formData.append('images', file);
-    });
+    selectedFiles.forEach((file) => formData.append('images', file));
 
     try {
       const response = await axios.post(`${apiUrl}/upload-images`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
+        withCredentials: true, // Ensure cookies are sent with the request
       });
 
-      // Get image paths from the response
       const uploadedImages = response.data.images || [];
-      setImages((prevImages) => [...prevImages, ...uploadedImages]); // Accumulate images
-      console.log('uploadedImages: ', uploadedImages);
-
-      // Update propertyData with image paths
-      setPropertyData((prevData) => {
-        const existingPaths = prevData.img_path
-          ? prevData.img_path.split(',')
-          : []; // Handle empty img_path
-        return {
-          ...prevData,
-          img_path: [...existingPaths, ...uploadedImages].join(','), // Append new image paths
-        };
-      });
-
-      // Clear selected files
+      setImages((prev) => [...prev, ...uploadedImages]);
       setSelectedFiles([]);
-
       alert('Images uploaded and paths saved successfully!');
     } catch (error) {
       console.error('Error uploading images:', error);
       alert('Error uploading images');
-    }
-  };
-
-  const convertToManwon = () => {
-    if (!isConverted) {
-      // Store original prices
-      setOriginalPrices({
-        보증금: propertyData.보증금,
-        월세: propertyData.월세,
-        '전체 금액': propertyData.보증금 + propertyData.월세,
-      });
-
-      // Convert to 만원 (divide by 10,000)
-      const convertedData = {
-        보증금: Math.floor(propertyData.보증금 / 10000).toString(),
-        월세: Math.floor(propertyData.월세 / 10000).toString(),
-        '전체 금액': Math.floor(
-          (propertyData.보증금 + propertyData.월세) / 10000
-        ).toString(),
-      };
-
-      setPriceManwon(convertedData);
-      setIsConverted(true); // Mark as converted
-    } else {
-      // Restore original prices
-      setPriceManwon(originalPrices);
-      setIsConverted(false); // Mark as not converted
     }
   };
 
@@ -447,36 +395,78 @@ const PropertyUpload = () => {
     setOldAddressSuggestions([]); // Clear suggestions
   };
 
-  console.log(newAddressSuggestions);
+  const handleClear = (e) => {
+    if (e.target.name === 'priceClear') {
+      // Only clear 보증금 and 월세
+      setOriginalProperty((prevProperty) => ({
+        ...prevProperty,
+        보증금: 0,
+        월세: 0,
+      }));
+    } else {
+      // Reset all fields to the original state
+      setPropertyData(originalPropertyData);
+    }
+  };
+
+  const convertToManwon = () => {
+    if (!isConverted) {
+      // Store original prices
+      setOriginalPrices({
+        보증금: propertyData.보증금,
+        월세: propertyData.월세,
+        '전체 금액': propertyData.보증금 + propertyData.월세,
+      });
+
+      // Convert to 만원 (divide by 10,000)
+      const convertedData = {
+        보증금: (propertyData.보증금 / 10000).toString(),
+        월세: (propertyData.월세 / 10000).toString(),
+        '전체 금액': (
+          (propertyData.보증금 + propertyData.월세) /
+          10000
+        ).toString(),
+      };
+
+      setPriceManwon(convertedData);
+      setIsConverted(true); // Mark as converted
+    } else {
+      // Restore original prices
+      setPriceManwon(originalPrices);
+      setIsConverted(false); // Mark as not converted
+    }
+  };
 
   return (
     <main className='gap-y-10 w-full'>
-      <SearchHeader />
-
       <section className='w-11/12 flexCol gap-y-12'>
-        <article className='flexCol items-start gap-y-8'>
+        <article className='flexCol items-start gap-y-8 w-full'>
           <div className='w-full'>
-            <div className='grid grid-cols-3 grid-rows-2 h-52 overflow-hidden rounded-xl'>
-              {images && images.length > 0 ? (
-                images.map((imgPath, index) => (
+            <div className='grid grid-cols-3 grid-rows-2 gap-2 h-52 lg:min-h-80 overflow-hidden rounded-xl w-full'>
+              {Array.from({ length: 3 }).map((_, index) =>
+                images && images[index] ? (
                   <img
                     key={index}
-                    src={`${apiUrl}${imgPath}`}
+                    src={`http://localhost:8000${images[index]}`}
                     alt={`Property Image ${index + 1}`}
-                    className={`w-full h-full object-cover ${
+                    className={`w-full h-full object-cover before:content-[""] before:bg-primary ${
                       index === 0
                         ? 'col-span-2 row-span-2'
                         : 'col-span-1 row-span-1'
                     }`}
                   />
-                ))
-              ) : (
-                <p
-                  key='no-image'
-                  className={`bg-secondary-light flexCol mobile_1 col-span-2 row-span-2`}
-                >
-                  <FontAwesomeIcon icon={faImage} />
-                </p>
+                ) : (
+                  <p
+                    key={index}
+                    className={`bg-secondary-light flexCol mobile_1 ${
+                      index === 0
+                        ? 'col-span-2 row-span-2'
+                        : 'col-span-1 row-span-1'
+                    }`}
+                  >
+                    <FontAwesomeIcon icon={faImage} />
+                  </p>
+                )
               )}
             </div>
           </div>
@@ -540,7 +530,7 @@ const PropertyUpload = () => {
               <FontAwesomeIcon icon={faTag} />
               매물유형
             </p>
-            <ul className='grid grid-cols-3 w-full lg:w-8/12 gap-x-4'>
+            <ul className='grid grid-cols-3 w-full lg:w-8/12 gap-4'>
               {propertyTypes.map((option, index) => (
                 <button
                   key={index}
@@ -602,33 +592,34 @@ const PropertyUpload = () => {
               return (
                 <div className='w-full flexCol items-start gap-y-4'>
                   <p className='mobile_3_bold'>{fields[1]} 금액</p>
-                  {fields.map((field, index) => (
-                    <div key={index} className='w-full grid grid-rows-2'>
-                      <p className='mobile_4'>{field}</p>
-                      <div className='flexRow w-full justify-between'>
-                        <input
-                          type='number'
-                          min={0}
-                          name={field}
-                          value={
-                            isConverted
-                              ? (propertyData[field] / 10000).toLocaleString()
-                              : propertyData[field]
-                          } // Bind value from state
-                          onChange={handleInputChange}
-                          className='bg-white text-primary rounded-full w-10/12'
-                        />
-                        <p className='mobile_4'>
-                          {isConverted ? '만원' : '원'}
-                        </p>
+                  {fields.map((field, index) => {
+                    return (
+                      <div key={index} className='w-full grid grid-rows-2'>
+                        <p className='mobile_4'>{field}</p>
+                        <div className='flexRow w-full justify-between'>
+                          <input
+                            type='number'
+                            min={0}
+                            name={field === '전세' ? '월세' : field}
+                            value={
+                              priceManwon[field === '전세' ? '월세' : field] ||
+                              ''
+                            } // Bind value from state
+                            onChange={handleInputChange} // Ensure an `onChange` handler is present
+                            className='bg-white text-primary rounded-full w-10/12'
+                          />
+                          <p className='mobile_4'>
+                            {isConverted ? '만원' : '원'}
+                          </p>
+                        </div>
+                        {index === 1 && (
+                          <p className='w-full border-b border-primary mt-8'></p>
+                        )}
                       </div>
-                      {index === 1 && (
-                        <p className='w-full border-b border-primary mt-8'></p>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                   <div className='flexCol items-start w-full gap-y-4'>
-                    <p className='mobile_4'>전체금액</p>
+                    <p className=''>전체금액</p>
                     <div className='flexRow w-full justify-between'>
                       <input
                         type='number'
@@ -640,7 +631,7 @@ const PropertyUpload = () => {
                         )} // Bind value from state
                         className='bg-white text-primary rounded-full w-10/12'
                       />
-                      <p className='mobile_4'>{isConverted ? '만원' : '원'}</p>
+                      <p>{isConverted ? '만원' : '원'}</p>
                     </div>
                   </div>
                 </div>
@@ -684,7 +675,7 @@ const PropertyUpload = () => {
         <article className='w-10/12'>
           <button
             className='btn_clear w-full bg-secondary-yellow rounded-full'
-            onClick={() => setIsConverted(!isConverted)}
+            onClick={convertToManwon}
           >
             <FontAwesomeIcon icon={faMoneyBillTransfer} className='mr-2' />
             {isConverted ? '원' : '만원'}
@@ -895,13 +886,60 @@ const PropertyUpload = () => {
             <p className='mobile_3_bold flexRow gap-x-2'>
               <FontAwesomeIcon icon={faHouse} />신 주소
             </p>
-            <div className='w-full'></div>
+            <div className='w-full relative'>
+              <input
+                type='text'
+                name='newAddress'
+                value={newAddress || ''} // Ensure value is never undefined
+                onChange={handleNewAddressSearch}
+                className='w-full'
+                placeholder='Search for a new address'
+              />
+              {newAddressSuggestions.length > 0 && (
+                <ul className='absolute w-full  bg-white divide-y-2 border max-h-48 overflow-y-auto'>
+                  {newAddressSuggestions.map((address, index) => (
+                    <li
+                      key={index}
+                      onClick={() => handleNewAddressSelect(address)} // Select and store address_id
+                      className='py-1 pl-1 hover:bg-secondary-light'
+                    >
+                      {address.new_district} {address.new_town}{' '}
+                      {address.new_road_name} {address.new_building_main_number}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
           <div className='grid grid-rows-2 w-full'>
             <p className='mobile_3_bold flexRow gap-x-2'>
               <FontAwesomeIcon icon={faHouse} />구 주소
             </p>
-            <div className='w-full'></div>
+            <div className='w-full'>
+              <input
+                type='text'
+                name='oldAddress'
+                value={oldAddress || ''} // Ensure value is never undefined
+                onChange={handleOldAddressSearch}
+                className='w-full'
+                placeholder='Search for an old address'
+              />
+              {oldAddressSuggestions.length > 0 && (
+                <ul className='absolute w-full  bg-white divide-y-2 border max-h-48 overflow-y-auto'>
+                  {oldAddressSuggestions.map((address, index) => (
+                    <li
+                      key={index}
+                      onClick={() => handleOldAddressSelect(address)} // Select and store address_id
+                      className='py-1 pl-1 hover:bg-secondary-light'
+                    >
+                      {address.old_district} {address.old_town}{' '}
+                      {address.old_village} {address.old_lot_main_number}{' '}
+                      {address.old_building_name}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
           <div className='grid grid-rows-2 w-full'>
             <p className='mobile_3_bold flexRow gap-x-2'>
