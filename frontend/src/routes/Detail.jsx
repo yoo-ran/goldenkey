@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -27,26 +27,76 @@ import {
 
 const PropertyDetail = () => {
   const apiUrl = import.meta.env.VITE_API_URL;
+
+  const [originalPropertyData, setOriginalPropertyData] = useState({
+    매물ID: '',
+    사용승인일자: '',
+    등록일자: '',
+    부동산구분: '',
+    거래방식: '',
+    거래완료여부: '',
+    거래완료일자: '',
+    담당자: '',
+    건물명: '',
+    상세주소: '',
+    동: '',
+    호수: '',
+    보증금: 0,
+    월세: 0,
+    관리비: 0,
+    전체m2: 0,
+    전용m2: 0,
+    전체평: 0,
+    전용평: 0,
+    EV유무: false,
+    화장실개수: 0,
+    층수: 0,
+    주차가능대수: 0,
+    비밀번호: '',
+    연락처: [],
+    메모: '',
+    img_path: '',
+    address_id: 0,
+  });
+  const [propertyData, setPropertyData] = useState(originalPropertyData);
+
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true); // Loading state for checking authentication
   const navigate = useNavigate();
-  const location = useLocation();
-  // const { propertyId } = location.state || {};
-  const { propertyId } = 4;
+  const { propertyId } = useParams();
+
   const [isEditing, setIsEditing] = useState(false);
   const [images, setImages] = useState([]);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [isImgUploaded, setIsImgUploaded] = useState();
 
+  // Address
+  const [newAddress, setNewAddress] = useState(''); // Local state for new address input
+  const [oldAddress, setOldAddress] = useState(''); // Local state for old address input
+  const [newAddressSuggestions, setNewAddressSuggestions] = useState([]); // New address suggestions
+  const [oldAddressSuggestions, setOldAddressSuggestions] = useState([]); // Old address suggestions
+
   const [isConverted, setIsConverted] = useState(false); // Toggle state to track conversion
+  const [originalPrices, setOriginalPrices] = useState({
+    보증금: propertyData.보증금 || '',
+    월세: propertyData.월세 || '',
+    '전체 금액': (propertyData.보증금 || 0) + (propertyData.월세 || 0),
+  });
+  const [priceManwon, setPriceManwon] = useState(originalPrices);
+
+  // Contact
+  const contactFieldsMap = {
+    매매: ['매도인', '매수인', '부동산'],
+    월세: ['임대인', '임차인', '부동산'],
+    전세: ['전대인', '전차인', '부동산'],
+  };
+  const contactFields = contactFieldsMap[propertyData.거래방식] || []; // Get the contact fields based on the transaction method
+
   const [propertyTypes, setPropertyTypes] = useState([]);
 
   const [transactionMethod, setTransactionMethod] = useState([]);
 
   const [transactionStatus, setTransactionStatus] = useState([]);
-
-  useEffect(() => {
-    console.log('propertyData:', propertyData);
-    console.log('propertyData.address_id', propertyData.address_id);
-  }, [propertyData]); // Only runs when propertyData changes
 
   useEffect(() => {
     const checkAuthentication = async () => {
@@ -69,24 +119,27 @@ const PropertyDetail = () => {
 
   const fetchPropertyData = async () => {
     try {
-      const response = await axios.get(`${apiUrl}/detail/${propertyId}`);
+      const response = await axios.get(`${apiUrl}/detail/${propertyId}`, {
+        withCredentials: true, // Include cookies for session-based auth
+      });
       const fetchedData = response.data;
-      if (fetchedData.연락처) {
-        try {
-          fetchedData.연락처 = JSON.parse(fetchedData.연락처);
-        } catch (error) {
-          console.error('Error parsing 연락처:', error);
-          fetchedData.연락처 = {};
-        }
-      }
 
       setPropertyData(fetchedData);
+      const originalPrices = {
+        보증금: fetchedData.보증금 || '',
+        월세: fetchedData.월세 || '',
+        '전체 금액': (fetchedData.보증금 || 0) + (fetchedData.월세 || 0),
+      };
+      setPriceManwon(originalPrices);
 
-      const addressFromServer = await axios.get(
-        `${apiUrl}/get-address/${fetchedData.address_id}`
+      const res = await axios.get(
+        `${apiUrl}/get-address/${fetchedData.address_id}`,
+        {
+          withCredentials: true,
+        }
       );
-      setNewAddress(addressFromServer.data.newAddress);
-      setOldAddress(addressFromServer.data.oldAddress);
+      setNewAddress(res.data.newAddress);
+      setOldAddress(res.data.oldAddress);
 
       const propertyType = await axios.get(`${apiUrl}/property-types`);
       setPropertyTypes(propertyType.data);
@@ -124,9 +177,10 @@ const PropertyDetail = () => {
   }; // Converts 평 to m²
 
   const calculateTotalAmount = (보증금, 월세, isConverted) => {
-    return isConverted
-      ? ((parseInt(보증금, 10) + parseInt(월세, 10)) / 10000).toLocaleString()
-      : parseInt(보증금, 10) + parseInt(월세, 10);
+    const totalAmount = parseInt(보증금, 10) + parseInt(월세, 10);
+
+    // Return formatted total only if it's for display purposes
+    return isConverted ? (totalAmount / 10000).toLocaleString() : totalAmount;
   };
 
   const handleInputChange = (e, contactType = null) => {
@@ -155,6 +209,11 @@ const PropertyDetail = () => {
       formattedValue = value;
     }
 
+    setPriceManwon((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }));
+
     if (contactType) {
       // Handle contact-specific updates
       setPropertyData((prevState) => ({
@@ -173,6 +232,92 @@ const PropertyDetail = () => {
         ...propertyData,
         [name]: formattedValue,
       });
+    }
+  };
+
+  const parseContactData = (contactData) => {
+    try {
+      // Parse once, check if it’s still a string, and parse again if needed
+      const firstParse =
+        typeof contactData === 'string' ? JSON.parse(contactData) : contactData;
+      return typeof firstParse === 'string'
+        ? JSON.parse(firstParse)
+        : firstParse;
+    } catch (error) {
+      console.error('Error parsing 연락처:', error);
+      return {}; // Return empty object if parsing fails
+    }
+  };
+
+  const renderContacts = () => {
+    // Use the helper function to get parsed contact data
+    const contactData = parseContactData(propertyData.연락처);
+
+    return contactFields.map((contactType, index) => {
+      const contact = contactData[contactType] || {};
+      return (
+        <div key={index} className='flexCol gap-y-6 w-full items-start'>
+          <p className='mobile_3_bold flexRow gap-x-2'>
+            <FontAwesomeIcon icon={faUserPlus} />
+            {contactType}
+          </p>
+          <div className='flexCol gap-y-3 w-full'>
+            {isEditing ? (
+              <>
+                <input
+                  type='text'
+                  name='이름'
+                  value={contact.이름 || ''}
+                  onChange={(e) => handleContactChange(e, contactType)}
+                  placeholder={`${contactType} 이름을 입력하세요`}
+                  className='w-full'
+                />
+                <input
+                  type='text'
+                  name='전화번호'
+                  value={contact.전화번호 || ''}
+                  onChange={(e) => handleContactChange(e, contactType)}
+                  placeholder={`${contactType} 전화번호를 입력하세요`}
+                  className='w-full'
+                />
+              </>
+            ) : (
+              <>
+                <p className='pDisplay w-full'>{contact.이름 || ''}</p>
+                <p className='pDisplay w-full'>{contact.전화번호 || ''}</p>
+              </>
+            )}
+          </div>
+        </div>
+      );
+    });
+  };
+
+  const convertToManwon = () => {
+    if (!isConverted) {
+      // Store original prices
+      setOriginalPrices({
+        보증금: propertyData.보증금,
+        월세: propertyData.월세,
+        '전체 금액': propertyData.보증금 + propertyData.월세,
+      });
+
+      // Convert to 만원 (divide by 10,000)
+      const convertedData = {
+        보증금: (propertyData.보증금 / 10000).toString(),
+        월세: (propertyData.월세 / 10000).toString(),
+        '전체 금액': (
+          (propertyData.보증금 + propertyData.월세) /
+          10000
+        ).toString(),
+      };
+
+      setPriceManwon(convertedData);
+      setIsConverted(true); // Mark as converted
+    } else {
+      // Restore original prices
+      setPriceManwon(originalPrices);
+      setIsConverted(false); // Mark as not converted
     }
   };
 
@@ -253,8 +398,6 @@ const PropertyDetail = () => {
     return <div>Loading...</div>; // Show loading while checking authentication
   }
 
-  console.log(propertyData);
-
   const handleClear = (e) => {
     console.log(e.target.name);
     if (e.target.name === 'priceClear') {
@@ -268,6 +411,116 @@ const PropertyDetail = () => {
     }
   };
 
+  const handleNewAddressSearch = async (e) => {
+    const searchText = e.target.value;
+    setNewAddress(searchText); // Update local state for new address input
+
+    if (searchText.length > 0) {
+      try {
+        const response = await axios.get(
+          `${apiUrl}/addresses?searchText=${searchText}`
+        );
+        setNewAddressSuggestions(response.data); // Set suggestions for new address
+        console.log(response.data);
+      } catch (error) {
+        console.error('Error fetching new address suggestions:', error);
+      }
+    } else {
+      setNewAddressSuggestions([]); // Clear suggestions when input is less than 3 characters
+    }
+  };
+
+  // Handle the selection of a new address
+  const handleNewAddressSelect = (selectedAddress) => {
+    // Format the new address by combining different parts
+    const formattedNewAddress = `${selectedAddress.new_district} ${
+      selectedAddress.new_town
+    } ${selectedAddress.new_road_name} ${
+      selectedAddress.new_building_main_number
+    }${
+      selectedAddress.new_building_sub_number != 0
+        ? '-' + selectedAddress.new_building_sub_number
+        : ''
+    }`;
+    setNewAddress(formattedNewAddress); // Auto-fill the corresponding new address
+
+    // Set the old address in the local state
+    const formattedOldAddress = `${selectedAddress.old_district} ${
+      selectedAddress.old_town
+    } ${selectedAddress.old_village} ${selectedAddress.old_lot_main_number}${
+      selectedAddress.old_lot_sub_number != 0
+        ? '-' + selectedAddress.old_lot_sub_number
+        : ''
+    }`;
+    setOldAddress(formattedOldAddress); //
+
+    let addressId = selectedAddress.new_address_id;
+
+    // Convert to string representation of the full number
+    let addressIdString = addressId.toLocaleString('fullwide', {
+      useGrouping: false,
+    });
+    // Update propertyData with the selected new address_id
+    setPropertyData({
+      ...propertyData,
+      address_id: addressIdString, // Convert address_id to string
+    });
+
+    setNewAddressSuggestions([]); // Clear suggestions
+  };
+
+  const handleOldAddressSearch = async (e) => {
+    const searchText = e.target.value;
+    setOldAddress(searchText); // Update local state for old address input
+
+    if (searchText.length > 0) {
+      try {
+        const response = await axios.get(
+          `${apiUrl}/addresses?searchText=${searchText}`
+        );
+        setOldAddressSuggestions(response.data); // Set suggestions for old address
+      } catch (error) {
+        console.error('Error fetching old address suggestions:', error);
+      }
+    } else {
+      setOldAddressSuggestions([]); // Clear suggestions when input is less than 3 characters
+    }
+  };
+
+  // Handle the selection of an old address
+  const handleOldAddressSelect = (selectedAddress) => {
+    // Format the new address by combining different parts
+    const formattedNewAddress = `${selectedAddress.new_district} ${
+      selectedAddress.new_town
+    } ${selectedAddress.new_road_name} ${
+      selectedAddress.new_building_main_number
+    }${
+      selectedAddress.new_building_sub_number != 0
+        ? '-' + selectedAddress.new_building_sub_number
+        : ''
+    }`;
+    setNewAddress(formattedNewAddress); // Auto-fill the corresponding new address
+
+    const formattedOldAddress = `${selectedAddress.old_district} ${
+      selectedAddress.old_town
+    } ${selectedAddress.old_village} ${selectedAddress.old_lot_main_number}${
+      selectedAddress.old_lot_sub_number != 0
+        ? '-' + selectedAddress.old_lot_sub_number
+        : ''
+    }`;
+    setOldAddress(formattedOldAddress); // Auto-fill the corresponding old address
+
+    // Update propertyData with the selected old address_id
+    setPropertyData({
+      ...propertyData,
+      address_id: selectedAddress.new_address_id, // Save address_id only
+    });
+
+    setOldAddressSuggestions([]); // Clear suggestions
+  };
+
+  console.log(propertyData);
+  console.log(priceManwon);
   return (
     <main className='gap-y-10 w-full'>
       <section className='w-11/12 flexCol gap-y-12'>
@@ -346,7 +599,7 @@ const PropertyDetail = () => {
 
       {/* 거래상태, 매물기본정보, 주소 */}
       <section className='w-full flexCol py-6 gap-y-20'>
-        <article className='w-11/12 flexCol gap-y-8'>
+        <article className='w-11/12 md:w-10/12 flexCol gap-y-8'>
           <div className='w-full flexCol gap-y-4'>
             <p className='mobile_3_bold w-full flexRow gap-x-4'>
               <FontAwesomeIcon icon={faHourglass} />
@@ -401,7 +654,7 @@ const PropertyDetail = () => {
               ))}
             </ul>
           </div>
-          <div id='거래방식' className='w-full flexCol gap-y-4'>
+          <div id='거래방식' className='w-full  flexCol gap-y-4'>
             <p className='mobile_3_bold w-full flexRow gap-x-4'>
               <FontAwesomeIcon icon={faTag} />
               거래유형
@@ -432,11 +685,11 @@ const PropertyDetail = () => {
       </section>
 
       <section className='w-full flexCol gap-y-12 bg-primary-yellow py-12'>
-        <p className='mobile_3_bold w-11/12 flexRow gap-x-4'>
+        <p className='mobile_3_bold w-11/12 md:w-10/12 flexRow gap-x-4'>
           <FontAwesomeIcon icon={faMoneyBills} />
           거래금액
         </p>
-        <article className='w-11/12 flexCol'>
+        <article className='w-11/12 md:w-8/12 flexCol'>
           {(() => {
             // Helper function to render input fields
             const renderFields = (fields) => {
@@ -450,11 +703,9 @@ const PropertyDetail = () => {
                         <input
                           type='number'
                           min={0}
-                          name={field}
+                          name={field === '전세' ? '월세' : field}
                           value={
-                            isConverted
-                              ? (propertyData[field] / 10000).toLocaleString()
-                              : propertyData[field]
+                            priceManwon[field === '전세' ? '월세' : field] || ''
                           } // Bind value from state
                           onChange={handleInputChange}
                           disabled={isEditing ? false : true}
@@ -473,7 +724,7 @@ const PropertyDetail = () => {
                     <p className=''>전체금액</p>
                     <div className='flexRow w-full justify-between'>
                       <input
-                        type='number'
+                        type='text'
                         min={0}
                         disabled={isEditing ? false : true}
                         value={calculateTotalAmount(
@@ -528,7 +779,7 @@ const PropertyDetail = () => {
           <article className='w-full mt-4'>
             <button
               className='btn_clear w-full bg-secondary-yellow rounded-full'
-              onClick={() => setIsConverted(!isConverted)}
+              onClick={convertToManwon}
             >
               <FontAwesomeIcon icon={faMoneyBillTransfer} className='mr-2' />
               {isConverted ? '원' : '만원'}
@@ -552,19 +803,19 @@ const PropertyDetail = () => {
         )}
       </section>
 
-      <section className='w-11/12 flexCol gap-y-4'>
+      <section className='w-11/12 md:w-10/12 flexCol gap-y-4'>
         <p className='mobile_3_bold w-full'>매물 기본 정보</p>
         <article
-          className={`w-full flexCol gap-y-6 lg:gap-y-10 ${
+          className={`w-full flexCol gap-y-8 lg:gap-y-10 ${
             isEditing ? 'boxEdit' : 'boxDiplay'
           }`}
         >
-          <div className='w-full grid grid-rows-3 lg:grid-rows-2 gap-y-2'>
+          <div className='w-full  grid grid-rows-2  gap-y-2'>
             <p className='mobile_3_bold flexRow gap-x-2'>
               <FontAwesomeIcon icon={faRulerCombined} /> 공급면적
             </p>
-            <div className='flexCol lg:flex-row justify-between'>
-              <div className='flexRow justify-between lg:w-1/2'>
+            <div className='flexCol lg:flex-row justify-between gap-y-2'>
+              <div className='flexRow justify-between w-full lg:w-1/2'>
                 {isEditing ? (
                   <input
                     type='number'
@@ -578,11 +829,11 @@ const PropertyDetail = () => {
                   <p className='pDisplay w-11/12'>{propertyData.전체m2}</p>
                 )}
 
-                <p className='w-1/12 mobile_5 text-center'>
+                <p className='w-1/12 mobile_4 text-center'>
                   m<sup>2</sup>
                 </p>
               </div>
-              <div className='flexRow justify-between lg:w-1/2'>
+              <div className='flexRow justify-between w-full md:w-1/2'>
                 {isEditing ? (
                   <input
                     type='number'
@@ -597,17 +848,17 @@ const PropertyDetail = () => {
                   <p className='pDisplay w-11/12'>{propertyData.전체평}</p>
                 )}
 
-                <p className='w-1/12 mobile_5 text-center'>평</p>
+                <p className='w-1/12 mobile_4 text-center'>평</p>
               </div>
             </div>
           </div>
-          <div className='w-full grid grid-rows-3 lg:grid-rows-2 gap-y-2'>
+          <div className='w-full grid grid-rows-2 gap-y-2'>
             <p className='mobile_3_bold flexRow gap-x-2'>
               <FontAwesomeIcon icon={faRulerCombined} />
               전용면적{' '}
             </p>
-            <div className='flexCol lg:flex-row justify-between'>
-              <div className='flexRow justify-between lg:w-1/2'>
+            <div className='flexCol lg:flex-row justify-between gap-y-2'>
+              <div className='flexRow justify-between w-full lg:w-1/2'>
                 {isEditing ? (
                   <input
                     type='number'
@@ -618,14 +869,14 @@ const PropertyDetail = () => {
                     className='w-11/12'
                   />
                 ) : (
-                  <p className='pDisplay w-11/12'>{propertyData.전용m2}</p>
+                  <p className='pDisplay w-11/12 '>{propertyData.전용m2}</p>
                 )}
 
-                <p className='w-1/12 text-center'>
+                <p className='w-1/12 text-center mobile_4'>
                   m<sup>2</sup>
                 </p>
               </div>
-              <div className='flexRow justify-between lg:w-1/2'>
+              <div className='flexRow justify-between w-full lg:w-1/2'>
                 {isEditing ? (
                   <input
                     type='number'
@@ -639,11 +890,11 @@ const PropertyDetail = () => {
                   <p className='pDisplay w-11/12'>{propertyData.전용평}</p>
                 )}
 
-                <p className='w-1/12 text-center'>평</p>
+                <p className='w-1/12 text-center mobile_4'>평</p>
               </div>
             </div>
           </div>
-          <div className='w-full flexCol  '>
+          <div className='w-full flexCol gap-y-2'>
             <p className='mobile_3_bold flexRow gap-x-2 w-full'>
               <FontAwesomeIcon icon={faElevator} />
               엘레베이터
@@ -669,7 +920,7 @@ const PropertyDetail = () => {
                     {bool === Boolean(propertyData.EV유무) && (
                       <FontAwesomeIcon icon={faCircleCheck} />
                     )}
-                    <p className='mobile_5'>{bool ? '있음' : '없음'}</p>
+                    <p className='mobile_4'>{bool ? '있음' : '없음'}</p>
                   </button>
                 );
               })}
@@ -691,10 +942,10 @@ const PropertyDetail = () => {
                 className='w-7/12'
               />
             ) : (
-              <p className='pDisplay lg:w-8/12'>{propertyData.층수}</p>
+              <p className='pDisplay w-7/12 lg:w-8/12'>{propertyData.층수}</p>
             )}
 
-            <p className='mobile_5'>층</p>
+            <p className='mobile_4'>층</p>
           </div>
 
           <div className='w-full flexRow justify-between'>
@@ -712,9 +963,11 @@ const PropertyDetail = () => {
                 className='w-7/12'
               />
             ) : (
-              <p className='pDisplay lg:w-8/12'>{propertyData.주차가능대수}</p>
+              <p className='pDisplay w-7/12 lg:w-8/12'>
+                {propertyData.주차가능대수}
+              </p>
             )}
-            <p className='mobile_5'>대</p>
+            <p className='mobile_4'>대</p>
           </div>
 
           <div className='w-full flexRow justify-between'>
@@ -732,9 +985,11 @@ const PropertyDetail = () => {
                 className='w-7/12'
               />
             ) : (
-              <p className='pDisplay lg:w-8/12'>{propertyData.화장실개수}</p>
+              <p className='pDisplay w-7/12 lg:w-8/12'>
+                {propertyData.화장실개수}
+              </p>
             )}
-            <p className='mobile_5'>개</p>
+            <p className='mobile_4'>개</p>
           </div>
 
           <div className='w-full flexRow justify-between'>
@@ -751,9 +1006,11 @@ const PropertyDetail = () => {
                 className='w-7/12'
               />
             ) : (
-              <p className='pDisplay lg:w-8/12'>{propertyData.비밀번호}</p>
+              <p className='pDisplay w-7/12 lg:w-8/12'>
+                {propertyData.비밀번호}
+              </p>
             )}
-            <p className='mobile_5'>번</p>
+            <p className='mobile_4'>번</p>
           </div>
           <div className='w-full flexRow justify-between'>
             <p className='mobile_3_bold flexRow gap-x-2 w-3/12'>
@@ -770,16 +1027,16 @@ const PropertyDetail = () => {
                 className='w-7/12'
               />
             ) : (
-              <p className='pDisplay lg:w-8/12'>{propertyData.관리비}</p>
+              <p className='pDisplay w-7/12 lg:w-8/12'>{propertyData.관리비}</p>
             )}
-            <p className='mobile_5'>원</p>
+            <p className='mobile_4'>원</p>
           </div>
         </article>
       </section>
 
       <p className='w-11/12 border'></p>
 
-      <section className='w-11/12 flexCol py-6 gap-y-8'>
+      <section className='w-11/12  md:w-10/12 flexCol py-6 gap-y-8'>
         <p className='mobile_3_bold w-full'>주소</p>
         <article
           className={`w-full flexCol gap-y-6 ${
@@ -792,10 +1049,34 @@ const PropertyDetail = () => {
             </p>
             <div className='w-full'>
               {isEditing ? (
-                <input />
+                <div className='w-full relative'>
+                  <input
+                    type='text'
+                    name='newAddress'
+                    value={newAddress || ''} // Ensure value is never undefined
+                    onChange={handleNewAddressSearch}
+                    className='w-full'
+                    placeholder='Search for a new address'
+                  />
+                  {newAddressSuggestions.length > 0 && (
+                    <ul className='absolute w-full  bg-white divide-y-2 border max-h-48 overflow-y-auto'>
+                      {newAddressSuggestions.map((address, index) => (
+                        <li
+                          key={index}
+                          onClick={() => handleNewAddressSelect(address)} // Select and store address_id
+                          className='py-1 pl-1 hover:bg-secondary-light'
+                        >
+                          {address.new_district} {address.new_town}{' '}
+                          {address.new_road_name}{' '}
+                          {address.new_building_main_number}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               ) : (
                 newAddress && (
-                  <p className='pDisplay'>
+                  <p className='pDisplay w-full'>
                     {newAddress.시군구} {newAddress.읍면 && newAddress.읍면}{' '}
                     {newAddress.도로명} {newAddress.건물번호본번}
                     {newAddress.건물번호부번 !== 0 &&
@@ -811,10 +1092,34 @@ const PropertyDetail = () => {
             </p>
             <div className='w-full'>
               {isEditing ? (
-                <input></input>
+                <div className='w-full relative'>
+                  <input
+                    type='text'
+                    name='oldAddress'
+                    value={oldAddress || ''} // Ensure value is never undefined
+                    onChange={handleOldAddressSearch}
+                    className='w-full'
+                    placeholder='Search for an old address'
+                  />
+                  {oldAddressSuggestions.length > 0 && (
+                    <ul className='absolute w-full  bg-white divide-y-2 border max-h-48 overflow-y-auto'>
+                      {oldAddressSuggestions.map((address, index) => (
+                        <li
+                          key={index}
+                          onClick={() => handleOldAddressSelect(address)} // Select and store address_id
+                          className='py-1 pl-1 hover:bg-secondary-light'
+                        >
+                          {address.old_district} {address.old_town}{' '}
+                          {address.old_village} {address.old_lot_main_number}{' '}
+                          {address.old_building_name}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               ) : (
                 oldAddress && (
-                  <p className='pDisplay'>
+                  <p className='pDisplay w-full'>
                     {oldAddress.시군구} {oldAddress.읍면동}{' '}
                     {oldAddress.리명 && oldAddress.리명}
                     {oldAddress.지번본번}
@@ -865,52 +1170,15 @@ const PropertyDetail = () => {
         </article>
       </section>
 
-      <section className='w-11/12 flexCol py-6 gap-y-8'>
+      <section className='w-11/12 md:w-10/12 flexCol py-6 gap-y-8'>
         <p className='mobile_3_bold w-full'>연락처 정보</p>
         <article
           className={`w-full flexCol gap-y-6 ${
             isEditing ? 'boxEdit' : 'boxDiplay'
           }`}
         >
-          {propertyData.연락처 &&
-          Object.keys(propertyData.연락처).length > 0 ? (
-            Object.keys(propertyData.연락처).map((contactType, index) => (
-              <div key={index} className='flexCol gap-y-6 w-full items-start'>
-                <p className='mobile_3_bold flexRow gap-x-2'>
-                  <FontAwesomeIcon icon={faUserPlus} />
-                  {contactType}
-                </p>
-                {isEditing ? (
-                  <div className='flexCol gap-y-3 w-full'>
-                    <input
-                      type='text'
-                      name='이름'
-                      value={propertyData.연락처[contactType]?.이름 || ''}
-                      onChange={(e) => handleInputChange(e, contactType)}
-                      placeholder={`${contactType} 이름을 입력하세요`}
-                      className='w-full'
-                    />
-                    <input
-                      type='phone'
-                      name='전화번호'
-                      value={propertyData.연락처[contactType]?.전화번호 || ''}
-                      onChange={(e) => handleInputChange(e, contactType)}
-                      placeholder={`${contactType} 전화번호를 입력하세요`}
-                      className='w-full'
-                    />
-                  </div>
-                ) : (
-                  <div className='flexCol gap-y-3 w-full'>
-                    <p className='pDisplay w-full'>
-                      {propertyData.연락처[contactType]?.이름 || ''}
-                    </p>
-                    <p className='pDisplay w-full'>
-                      {propertyData.연락처[contactType]?.전화번호 || ''}
-                    </p>
-                  </div>
-                )}
-              </div>
-            ))
+          {contactFields.length > 0 ? (
+            renderContacts()
           ) : (
             <a
               href='#거래방식'
@@ -924,7 +1192,7 @@ const PropertyDetail = () => {
 
       <p className='w-11/12 border'></p>
 
-      <section className='w-11/12 flexCol py-6 gap-y-8'>
+      <section className='w-11/12 md:w-10/12 flexCol py-6 gap-y-8'>
         <p className='mobile_3_bold w-full'>등록 / 기타 정보</p>
         <article
           className={`w-full flexCol gap-y-6 ${

@@ -70,11 +70,11 @@ app.use(
       '/property-types',
       '/transaction-methods',
       '/transaction-status',
-      '/toilets-num',
       '/properties/update',
       '/addresses',
       '/generate-sql',
       '/address-excel',
+      /^\/get-address\/\d+$/,
     ],
   })
 );
@@ -105,7 +105,6 @@ app.get('/transaction-status', (req, res) => {
 app.post('/import-csv', (req, res) => {
   const properties = req.body; // JSON data from the frontend
   const uniqueFields = properties.map((item) => item['매물ID']); // Using '매물ID' as the unique identifier
-  console.log(uniqueFields);
 
   // Query to fetch existing records with the same 매물ID
   const query = `SELECT 매물ID FROM property WHERE 매물ID IN (?)`;
@@ -641,56 +640,56 @@ app.get('/properties/:propertyId/images', async (req, res) => {
 // Serve static files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-app.get('/memos/:propertyId', async (req, res) => {
-  const { propertyId } = req.params;
+// app.get('/memos/:propertyId', async (req, res) => {
+//   const { propertyId } = req.params;
 
-  try {
-    const query = 'SELECT 메모 FROM property WHERE 매물ID = ?';
-    db.query(query, [propertyId], (err, result) => {
-      if (err) {
-        console.error('Error fetching memo:', err);
-        return res.status(500).json({ error: 'Failed to fetch memo' });
-      }
+//   try {
+//     const query = 'SELECT 메모 FROM property WHERE 매물ID = ?';
+//     db.query(query, [propertyId], (err, result) => {
+//       if (err) {
+//         console.error('Error fetching memo:', err);
+//         return res.status(500).json({ error: 'Failed to fetch memo' });
+//       }
 
-      if (result.length === 0) {
-        return res.status(404).json({ message: 'Property not found' });
-      }
+//       if (result.length === 0) {
+//         return res.status(404).json({ message: 'Property not found' });
+//       }
 
-      res.json({ 메모: result[0].메모 || '' }); // Return the memo or empty if null
-    });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch memo' });
-  }
-});
+//       res.json({ 메모: result[0].메모 || '' }); // Return the memo or empty if null
+//     });
+//   } catch (error) {
+//     res.status(500).json({ error: 'Failed to fetch memo' });
+//   }
+// });
 
-// Route to add a memo
-app.post('/memos/add', async (req, res) => {
-  const { propertyId, content } = req.body;
+// // Route to add a memo
+// app.post('/memos/add', async (req, res) => {
+//   const { propertyId, content } = req.body;
 
-  try {
-    // Execute the query using db.query (for mysql package)
-    db.query(
-      'UPDATE property SET 메모 = ? WHERE 매물ID = ?',
-      [content, propertyId],
-      (error, result) => {
-        if (error) {
-          console.error('Error executing query:', error);
-          return res.status(500).json({ error: 'Failed to update memo' });
-        }
+//   try {
+//     // Execute the query using db.query (for mysql package)
+//     db.query(
+//       'UPDATE property SET 메모 = ? WHERE 매물ID = ?',
+//       [content, propertyId],
+//       (error, result) => {
+//         if (error) {
+//           console.error('Error executing query:', error);
+//           return res.status(500).json({ error: 'Failed to update memo' });
+//         }
 
-        // Check if any rows were affected (indicating success)
-        if (result.affectedRows > 0) {
-          res.json({ id: propertyId, content }); // Return the updated memo
-        } else {
-          res.status(404).json({ error: 'Property not found' });
-        }
-      }
-    );
-  } catch (error) {
-    console.error('Unexpected error:', error);
-    res.status(500).json({ error: 'Failed to update memo' });
-  }
-});
+//         // Check if any rows were affected (indicating success)
+//         if (result.affectedRows > 0) {
+//           res.json({ id: propertyId, content }); // Return the updated memo
+//         } else {
+//           res.status(404).json({ error: 'Property not found' });
+//         }
+//       }
+//     );
+//   } catch (error) {
+//     console.error('Unexpected error:', error);
+//     res.status(500).json({ error: 'Failed to update memo' });
+//   }
+// });
 
 app.post('/properties/update', (req, res) => {
   const propertyData = req.body;
@@ -895,7 +894,6 @@ app.get('/address-excel', (req, res) => {
 
   // Use the received parameters as query values
   const queryParams = [시군구, 읍면동, 리명, 지번본번, 지번부번];
-  console.log(queryParams);
 
   db.query(query, queryParams, (error, results) => {
     if (error) {

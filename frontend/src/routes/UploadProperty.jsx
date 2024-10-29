@@ -98,14 +98,14 @@ const PropertyUpload = () => {
     전세: ['전대인', '전차인', '부동산'],
   };
   const contactFields = contactFieldsMap[propertyData.거래방식] || []; // Get the contact fields based on the transaction method
-  const [isConverted, setIsConverted] = useState(false); // Toggle state to track conversion
 
-  const [originalPrices, setOriginalPrices] = useState({}); // Store original prices
-  const [priceManwon, setPriceManwon] = useState({
+  const [isConverted, setIsConverted] = useState(false); // Toggle state to track conversion
+  const [originalPrices, setOriginalPrices] = useState({
     보증금: propertyData.보증금 || '',
     월세: propertyData.월세 || '',
     '전체 금액': (propertyData.보증금 || 0) + (propertyData.월세 || 0),
   });
+  const [priceManwon, setPriceManwon] = useState(originalPrices);
 
   useEffect(() => {
     console.log('Updated propertyData:', propertyData);
@@ -504,7 +504,7 @@ const PropertyUpload = () => {
               <FontAwesomeIcon icon={faTag} />
               매물상태
             </p>
-            <ul className='grid grid-cols-2 w-full gap-x-4'>
+            <ul className='grid grid-cols-2 w-full md:w-8/12 gap-x-4'>
               {transactionStatus.map((option, index) => (
                 <button
                   key={index}
@@ -530,7 +530,7 @@ const PropertyUpload = () => {
               <FontAwesomeIcon icon={faTag} />
               매물유형
             </p>
-            <ul className='grid grid-cols-3 w-full lg:w-8/12 gap-4'>
+            <ul className='grid grid-cols-3 w-full md:w-8/12 gap-4'>
               {propertyTypes.map((option, index) => (
                 <button
                   key={index}
@@ -556,7 +556,7 @@ const PropertyUpload = () => {
               <FontAwesomeIcon icon={faTag} />
               거래유형
             </p>
-            <ul className='grid grid-cols-3 w-full lg:w-8/12 gap-x-4'>
+            <ul className='grid grid-cols-3 w-full md:w-8/12 gap-x-4'>
               {transactionMethod.map((option, index) => (
                 <button
                   key={index}
@@ -581,11 +581,11 @@ const PropertyUpload = () => {
       </section>
 
       <section className='w-full flexCol gap-y-12 bg-primary-yellow py-12'>
-        <p className='mobile_3_bold w-11/12 flexRow gap-x-4'>
+        <p className='mobile_3_bold w-11/12 md:w-8/12 flexRow gap-x-4'>
           <FontAwesomeIcon icon={faMoneyBills} />
           거래금액
         </p>
-        <article className='w-11/12 flexCol'>
+        <article className='w-11/12 md:w-8/12 flexCol'>
           {(() => {
             // Helper function to render input fields
             const renderFields = (fields) => {
@@ -672,7 +672,7 @@ const PropertyUpload = () => {
             }
           })()}
         </article>
-        <article className='w-10/12'>
+        <article className='w-10/12 md:w-8/12'>
           <button
             className='btn_clear w-full bg-secondary-yellow rounded-full'
             onClick={convertToManwon}
@@ -765,7 +765,7 @@ const PropertyUpload = () => {
                 <FontAwesomeIcon icon={faElevator} />
                 엘레베이터
               </p>
-              <div className='w-full lg:w-1/2 grid grid-cols-2 gap-x-8'>
+              <div className='w-full md:w-2/3 grid grid-cols-2 gap-x-8 md:gap-x-4'>
                 {[true, false].map((bool, index) => {
                   return (
                     <button
@@ -805,6 +805,7 @@ const PropertyUpload = () => {
                 value={propertyData.층수}
                 onChange={handleInputChange}
                 className='w-7/12'
+                placeholder='매물의 층수를 입력하세요'
               />
               <p className='mobile_5'>층</p>
             </div>
@@ -823,6 +824,7 @@ const PropertyUpload = () => {
                 value={propertyData.주차가능대수}
                 onChange={handleInputChange}
                 className='w-7/12'
+                placeholder='주차가능대수를 입력하세요'
               />
               <p className='mobile_5'>대</p>
             </div>
@@ -839,6 +841,7 @@ const PropertyUpload = () => {
                 value={propertyData.화장실개수}
                 onChange={handleInputChange}
                 className='w-7/12'
+                placeholder='화장실개수를 입력하세요'
               />
               <p className='mobile_5'>개</p>
             </div>
@@ -856,6 +859,7 @@ const PropertyUpload = () => {
                 value={propertyData.비밀번호}
                 onChange={handleInputChange}
                 className='w-7/12'
+                placeholder='비밀번호를 입력하세요'
               />
               <p className='mobile_5'>번</p>
             </div>
@@ -870,6 +874,7 @@ const PropertyUpload = () => {
                 value={propertyData.관리비}
                 onChange={handleInputChange}
                 className='w-7/12'
+                placeholder='관리비를 입력하세요'
               />
               <p className='mobile_5'>원</p>
             </div>
@@ -881,7 +886,7 @@ const PropertyUpload = () => {
 
       <section className='w-11/12 flexCol py-6 gap-y-8'>
         <p className='mobile_3_bold w-full'>주소</p>
-        <article className='boxEdit'>
+        <article className='boxEdit flexCol w-full gap-y-8'>
           <div className='grid grid-rows-2 w-full'>
             <p className='mobile_3_bold flexRow gap-x-2'>
               <FontAwesomeIcon icon={faHouse} />신 주소
@@ -953,6 +958,7 @@ const PropertyUpload = () => {
                   value={propertyData.동}
                   onChange={handleInputChange}
                   className='w-11/12'
+                  placeholder='동을 입력하세요'
                 />
                 동
               </div>
@@ -963,6 +969,7 @@ const PropertyUpload = () => {
                   value={propertyData.호수}
                   onChange={handleInputChange}
                   className='w-11/12'
+                  placeholder='호수를 입력하세요'
                 />
                 호
               </div>
@@ -973,7 +980,7 @@ const PropertyUpload = () => {
 
       <section className='w-11/12 flexCol py-6 gap-y-8'>
         <p className='mobile_3_bold w-full'>연락처 정보</p>
-        <article className='boxEdit w-full flexCol gap-y-6'>
+        <article className='boxEdit w-full flexCol gap-y-6 md:gap-y-10'>
           {contactFields.length > 0 ? (
             contactFields.map((contactType, index) => (
               <div key={index} className='flexCol gap-y-4 w-full items-start'>

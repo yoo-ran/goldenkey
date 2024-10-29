@@ -1,6 +1,8 @@
-// src/components/User.jsx
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
 import axios from 'axios';
+
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faChevronLeft,
@@ -21,6 +23,7 @@ import 'swiper/css/scrollbar';
 const Search = ({ searchTerm }) => {
   const [favoriteIds, setFavoriteIds] = useState([]);
   const [propertyId, setPropertyId] = useState();
+  const navigate = useNavigate();
 
   const [currentPage, setCurrentPage] = useState(1); // State to manage the current page
   const propertiesPerPage = 6; // Number of properties to display per page (adjust as needed)
@@ -343,16 +346,16 @@ const Search = ({ searchTerm }) => {
             : properties.length}
           개의 검색결과
         </h2>
-        <article className='w-full  grid grid-rows-6 lg:grid-rows-3 grid-cols-1 lg:grid-cols-3 gap-y-4 lg:gap-8 min-h-96'>
+        <article className='w-full grid grid-rows-6 md:grid-rows-3 grid-cols-1 md:grid-cols-3 gap-y-4 lg:gap-8 min-h-96 '>
           {(currentProperties.length > 0 ? currentProperties : properties).map(
             (property) => {
               const { 매물ID: propertyId } = property; // Assuming '매물ID' is the unique property ID
               const images = propertyImages[propertyId] || []; // Get images for this property
-
               return (
                 <div
                   key={propertyId}
-                  className='flexRow gap-x-4 lg:flexCol gap-y-4 '
+                  className='flexRow gap-x-4 lg:flexCol gap-y-4'
+                  onClick={() => navigate(`/detail/${propertyId}`)}
                 >
                   <div className='w-4/12 lg:w-full flexCol relative bg-secondary-light h-full rounded-2xl overflow-hidden'>
                     {images.length > 0 ? (
@@ -372,12 +375,12 @@ const Search = ({ searchTerm }) => {
                     >
                       <FontAwesomeIcon
                         icon={faRegularHeart}
-                        className='absolute top-0 right-0 text-primary border border-white p-1 rounded-full mobile_5'
+                        className='absolute top-0 right-0 md:right-1 md:top-1 text-primary border border-white p-1 rounded-full mobile_5'
                       />
                       {favoriteIds.includes(propertyId) ? (
                         <FontAwesomeIcon
                           icon={faSolidHeart}
-                          className='absolute top-0 right-0 border border-white p-1 rounded-full mobile_5 text-primary-yellow'
+                          className='absolute top-0 right-0 md:right-1 md:top-1 border border-white p-1 rounded-full mobile_5 text-primary-yellow'
                         />
                       ) : (
                         ''
@@ -506,12 +509,12 @@ const Search = ({ searchTerm }) => {
                     >
                       <FontAwesomeIcon
                         icon={faRegularHeart}
-                        className='absolute top-0 right-0 text-primary border border-white p-1 rounded-full mobile_5'
+                        className='absolute top-0 right-0 md:right-1 text-primary border border-white p-1 rounded-full mobile_5'
                       />
                       {favoriteIds.includes(propertyId) ? (
                         <FontAwesomeIcon
                           icon={faSolidHeart}
-                          className='absolute top-0 right-0 p-1 border border-white p-1 rounded-full mobile_5 text-primary-yellow'
+                          className='absolute top-0 right-0 md:right-1 p-1 border border-white rounded-full mobile_5 text-primary-yellow'
                         />
                       ) : (
                         ''

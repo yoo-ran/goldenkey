@@ -6,44 +6,45 @@ import ImportExcel from '../components/excelImport/ImportExcel';
 import ListForOwner from '../components/excelImport/ListForOwner';
 
 const ImportExcelPage = () => {
-    const apiUrl = import.meta.env.VITE_API_URL;
+  const apiUrl = import.meta.env.VITE_API_URL;
 
-    // Define the shared state
-    const [updateData, setUpdateData] = useState(false);
-    const [isAuthenticated, setIsAuthenticated] = useState(false); // State to track authentication status
-    const navigate = useNavigate(); // Hook for navigation
+  // Define the shared state
+  const [updateData, setUpdateData] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false); // State to track authentication status
+  const navigate = useNavigate(); // Hook for navigation
 
-    // Function to update the shared state
-    const handleDataUpdate = (onDataUpdate) => {
-        setUpdateData(onDataUpdate);
+  // Function to update the shared state
+  const handleDataUpdate = (onDataUpdate) => {
+    setUpdateData(onDataUpdate);
+  };
+
+  useEffect(() => {
+    const checkAuthentication = async () => {
+      try {
+        // Make a request to the server to verify the user's token (stored in HTTP-only cookie)
+        const response = await axios.get(`${apiUrl}/check-auth`, {
+          withCredentials: true,
+        });
+        if (response.status === 200) {
+          setIsAuthenticated(true);
+        } else {
+          navigate('/login'); // Redirect to login if authentication fails
+        }
+      } catch (error) {
+        console.error('User is not authenticated:', error);
+        navigate('/login'); // Redirect to login if authentication fails
+      }
     };
 
-    useEffect(() => {
-        const checkAuthentication = async () => {
-            try {
-                // Make a request to the server to verify the user's token (stored in HTTP-only cookie)
-                const response = await axios.get(`${apiUrl}/check-auth`, { withCredentials: true });
-                if (response.status === 200) {
-                    setIsAuthenticated(true);
-                } else {
-                    navigate('/login'); // Redirect to login if authentication fails
-                }
-            } catch (error) {
-                console.error('User is not authenticated:', error);
-                navigate('/login'); // Redirect to login if authentication fails
-            }
-        };
+    checkAuthentication();
+  }, [navigate]); // Dependency on `navigate`
 
-        checkAuthentication();
-    }, [navigate]); // Dependency on `navigate`
+  if (!isAuthenticated) {
+    return <div>Loading...</div>; // Optionally show a loading indicator while checking authentication
+  }
 
-    if (!isAuthenticated) {
-        return <div>Loading...</div>; // Optionally show a loading indicator while checking authentication
-    }
-
-  
   return (
-    <main className='flexCol gap-y-20'>
+    <main className='flexCol gap-y-20 my-10'>
       <section>
         <p className='mobile_1_bold mb-4'>엑셀 데이터</p>
         <ImportExcel onDataUpdate={handleDataUpdate} />

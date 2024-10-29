@@ -45,7 +45,7 @@ const App = () => {
                 <Route path="/search" element={<Search searchTerm={searchTerm} />} />
                 <Route path="/upload" element={<PropertyUpload />} />
                 <Route path="/listing" element={<Listing />} />
-                <Route path="/detail/:pId" element={<PropertyDetail />} />
+                <Route path="/detail/:propertyId" element={<PropertyDetail />} />
             </Routes>
         </Router>
     );

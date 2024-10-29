@@ -9,6 +9,7 @@ const Header = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate(); // Hook for navigation
   const [open, setOpen] = useState(false);
+
   useEffect(() => {
     const checkAuthentication = async () => {
       try {
@@ -19,30 +20,15 @@ const Header = () => {
         if (response.status === 200) {
           setIsAuthenticated(true);
         } else {
-          navigate('/login');
+          navigate('/login'); // Redirect to login if authentication fails
         }
       } catch (error) {
         console.error('User is not authenticated:', error);
-        navigate('/login');
-        setIsAuthenticated(false);
-        const detailPathRegex = /^\/detail\/\d+$/; // Matches /detail/1, /detail/2, etc.
-        if (
-          location.pathname !== '/listing' &&
-          !detailPathRegex.test(location.pathname)
-        ) {
-          navigate('/login');
-        }
+        navigate('/login'); // Redirect to login if authentication fails
       }
     };
-
-    const detailPathRegex = /^\/detail\/\d+$/; // Matches /detail/1, /detail/2, etc.
-    if (
-      location.pathname !== '/listing' &&
-      !detailPathRegex.test(location.pathname)
-    ) {
-      checkAuthentication();
-    }
-  }, [location.pathname, navigate]);
+    checkAuthentication();
+  }, [navigate]);
 
   return (
     <header
@@ -50,7 +36,7 @@ const Header = () => {
         isAuthenticated ? 'relative' : 'hidden'
       }`}
     >
-      <nav className='flexCol lg:py-5 relative'>
+      <nav className='flexCol  relative'>
         <ul
           className={`w-full absolute md:static md:pt-4 md:flex-row  divide-y-[0.1rem] md:divide-y-0 divide-secondary flexCol text-center mobile_3_bold bg-primary transition-[all] ${
             open ? ' top-16' : '-top-64'
@@ -113,6 +99,7 @@ const Header = () => {
           </li>
         </ul>
 
+        {/* hamburger menu*/}
         <div className='py-5 px-5 flexRow justify-between w-full z-50 bg-white md:flex-row-reverse'>
           <div
             className='w-8/12 h-5 relative md:hidden'

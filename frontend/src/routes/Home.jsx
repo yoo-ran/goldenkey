@@ -50,7 +50,7 @@ const Home = () => {
   const [openFilter, setOpenFilter] = useState(false);
   const [filterType, setFilterType] = useState('');
   const [propertyImages, setPropertyImages] = useState({}); // Store images by property ID
-
+  const navigate = useNavigate(); // Hook for navigation
   const handleDataFromOneroom = (data) => {
     setReceivedData(data);
     console.log('Data received from Oneroom:', data);
@@ -102,7 +102,7 @@ const Home = () => {
   };
 
   return (
-    <main className='w-full gap-y-10'>
+    <main className='w-full gap-y-10 z-30'>
       {/* 추천태그 */}
       <section className='w-11/12 lg:w-10/12 flexCol gap-y-4'>
         <h2 className='w-full'>추천태그</h2>
@@ -134,40 +134,6 @@ const Home = () => {
                 <span className='text-white'>{item.typeDescrp}</span>
               </div>
             </button>
-          ))}
-        </article>
-      </section>
-
-      {/* 추천태그 */}
-      <section className='w-11/12 lg:w-10/12 flexCol gap-y-4'>
-        <h2 className='w-full'>추천태그</h2>
-        <article className='w-full flexRow flex-wrap gap-3 mobile_5_bold text-primary'>
-          {recommendTag.map((tag, index) => (
-            <button
-              key={index}
-              className='bg-secondary-blue rounded px-3 py-2 hover:bg-secondary-yellow hover:text-primary-orange'
-            >
-              {tag}
-            </button>
-          ))}
-        </article>
-      </section>
-
-      {/* Property Type */}
-      <section className='w-11/12 lg:w-10/12'>
-        <article className='grid grid-cols-1 lg:grid-cols-2 gap-x-4 gap-y-6'>
-          {propertyType.map((item, id) => (
-            <div
-              key={id}
-              style={{ backgroundImage: `url(${item.img})` }}
-              className='relative overflow-hidden flexCol w-full lg: bg-cover bg-center rounded-4xl px-2 py-14'
-            >
-              <div className='absolute bg-black w-full h-full bg-opacity-50'></div>
-              <div className='border-l-8 pl-2 border-primary-yellow w-10/12 z-40 flexCol items-start gap-y-2 mobile_3_bold pl-8'>
-                <p className='text-primary-yellow '>{item.type}</p>
-                <span className='text-white'>{item.typeDescrp}</span>
-              </div>
-            </div>
           ))}
         </article>
       </section>
