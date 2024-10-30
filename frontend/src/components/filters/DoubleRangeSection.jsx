@@ -7,8 +7,10 @@ const DoubleRangeSection = ({
   subTitle2,
   min1,
   max1,
+  unit1,
   min2,
   max2,
+  unit2,
   onChange1,
   onChange2,
   handleClear,
@@ -18,7 +20,9 @@ const DoubleRangeSection = ({
     <p className='mobile_3_bold'>{title}</p>
 
     <div className='grid grid-rows-2'>
-      <p className='mobile_4_bold'>{subTitle1} (만원)</p>
+      <p className='mobile_4_bold'>
+        {subTitle1} ({unit1})
+      </p>
       <DoubleRangeSlider
         name={title}
         min={min1}
@@ -29,7 +33,9 @@ const DoubleRangeSection = ({
 
     {subTitle2 && (
       <div className='grid grid-rows-2'>
-        <p className='mobile_4_bold'>{subTitle2} (만원)</p>
+        <p className='mobile_4_bold'>
+          {subTitle2} ({unit2})
+        </p>
         <DoubleRangeSlider
           name={title}
           min={min2}

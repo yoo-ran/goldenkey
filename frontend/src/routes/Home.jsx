@@ -93,10 +93,6 @@ const Home = () => {
     fetchProperties();
   }, []);
 
-  const toggleForm = () => {
-    setIsLogin(!isLogin);
-  };
-
   const handleFilterPropertyType = (type) => {
     navigate('/search', { state: type });
   };
@@ -139,7 +135,7 @@ const Home = () => {
       </section>
 
       {/* 최근 검색한 매물 */}
-      <section className='w-11/12 flexCol gap-y-4'>
+      {/* <section className='w-11/12 flexCol gap-y-4'>
         <h2 className='flexRow gap-x-4 w-full'>
           최근 검색한 매물
           <FontAwesomeIcon icon={faChevronRight} />
@@ -163,7 +159,7 @@ const Home = () => {
             );
           })}
         </article>
-      </section>
+      </section> */}
     </main>
   );
 };

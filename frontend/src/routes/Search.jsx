@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import axios from 'axios';
@@ -21,6 +21,8 @@ import 'swiper/css/pagination';
 import 'swiper/css/scrollbar';
 
 const Search = ({ searchTerm }) => {
+  const apiUrl = import.meta.env.VITE_API_URL;
+
   const [favoriteIds, setFavoriteIds] = useState([]);
   const [propertyId, setPropertyId] = useState();
   const navigate = useNavigate();
@@ -30,7 +32,7 @@ const Search = ({ searchTerm }) => {
 
   const [properties, setProperties] = useState([]);
   const [propertyImages, setPropertyImages] = useState({}); // Store images by property ID
-  const [filteredProperties, setFilteredProperties] = useState([]);
+  // const [filteredProperties, setFilteredProperties] = useState([]);
   const location = useLocation(); // Retrieve the state (data) from navigation
   const rangeValues =
     location.state && location.state.transactionMethod
@@ -51,7 +53,7 @@ const Search = ({ searchTerm }) => {
   useEffect(() => {
     const fetchProperties = async () => {
       try {
-        const response = await axios.get('http://localhost:8000/listing');
+        const response = await axios.get(`${apiUrl}/listing`);
         const propertyList = response.data;
         setProperties(propertyList);
 
@@ -60,7 +62,7 @@ const Search = ({ searchTerm }) => {
           const { 매물ID: propertyId } = property; // Assuming property ID is in '매물ID' field
           try {
             const imgRes = await axios.get(
-              `http://localhost:8000/properties/${propertyId}/images`
+              `${apiUrl}/properties/${propertyId}/images`
             );
             // Store images for each property using its ID
             if (Array.isArray(imgRes.data.images)) {
@@ -86,86 +88,55 @@ const Search = ({ searchTerm }) => {
     fetchProperties();
   }, []);
 
-  useEffect(() => {
-    const filterProperties = () => {
-      const filtered = properties.filter((property) => {
-        const matchesSelectedMethod =
-          !rangeValues.transactionMethod.length ||
-          rangeValues.transactionMethod.includes(property.거래방식);
+  const filteredProperties = useMemo(() => {
+    let filtered = properties;
 
-        const withinDepositRange =
-          !rangeValues.depositRange.length ||
-          rangeValues.depositRange.some((range) => {
-            const method = Object.keys(range)[0];
-            const { min, max } = range[method];
-            return (
-              rangeValues.transactionMethod.includes(method) &&
-              property.보증금 / 10000 >= min &&
-              property.보증금 / 10000 <= max
-            );
-          });
+    // Priority 1: Filter by Transaction Method
+    if (rangeValues.transactionMethod.length > 0) {
+      filtered = filtered.filter((property) =>
+        rangeValues.transactionMethod.includes(property.거래방식)
+      );
+    }
 
-        const withinRentRange =
-          !rangeValues.rentRange.length ||
-          ['월세', '전세'].includes(property.거래방식)
-            ? rangeValues.rentRange.some((range) => {
-                const method = Object.keys(range)[0];
-                const { min, max } = range[method];
-                return (
-                  rangeValues.transactionMethod.includes(method) &&
-                  property.월세 / 10000 >= min &&
-                  property.월세 / 10000 <= max
-                );
-              })
-            : true;
+    // Priority 2: Filter by Deposit Range
+    if (rangeValues.depositRange.length > 0) {
+      filtered = filtered.filter((property) =>
+        rangeValues.depositRange.some((range) => {
+          const method = Object.keys(range)[0];
+          const { min, max } = range[method];
+          return (
+            rangeValues.transactionMethod.includes(method) &&
+            property.보증금 &&
+            property.보증금 / 100000000 >= min &&
+            property.보증금 / 100000000 <= max
+          );
+        })
+      );
+    }
 
-        const withinRoomSizeRange =
-          (!rangeValues.roomSizeRange.min && !rangeValues.roomSizeRange.max) ||
-          (property.전용평 >= rangeValues.roomSizeRange.min &&
-            property.전용평 <= rangeValues.roomSizeRange.max);
-
-        const haveParking =
-          rangeValues.isParking === false || property.주차가능대수 > 0;
-
-        const haveElevator =
-          rangeValues.isEV === false || property.EV유무 === 1;
-
-        const isWithinApprovalDateRange = (() => {
-          if (!rangeValues.approvalDate) return true;
-          const currentYear = new Date().getFullYear();
-          const approvalYear = new Date(property.사용승인일자).getFullYear();
-          const yearDifference = currentYear - approvalYear;
-
-          switch (rangeValues.approvalDate) {
-            case '5년 이내':
-              return yearDifference <= 5;
-            case '10년 이내':
-              return yearDifference <= 10;
-            case '15년 이내':
-              return yearDifference <= 15;
-            case '15년 이상':
-              return yearDifference > 15;
-            default:
-              return true;
-          }
-        })();
-
-        return (
-          matchesSelectedMethod &&
-          withinDepositRange &&
-          withinRentRange &&
-          withinRoomSizeRange &&
-          haveParking &&
-          haveElevator &&
-          isWithinApprovalDateRange
-        );
+    // Additional Filter by typeFromHome if it exists
+    if (typeFromHome) {
+      filtered = filtered.filter((property) => {
+        if (typeFromHome === '원룸 / 투룸') {
+          return (
+            property.부동산구분 === '원룸' || property.부동산구분 === '투룸'
+          );
+        } else if (typeFromHome === '아파트') {
+          return property.부동산구분 === '아파트';
+        } else if (typeFromHome === '주택, 빌라') {
+          return (
+            property.부동산구분 === '주택' || property.부동산구분 === '빌라'
+          );
+        } else if (typeFromHome === '오피스텔') {
+          return property.부동산구분 === '오피스텔';
+        }
+        return true;
       });
+    }
 
-      setFilteredProperties(filtered);
-
-      filterProperties();
-    };
-  }, [properties, rangeValues]);
+    console.log('Filtered Properties:', filtered);
+    return filtered;
+  }, [properties, rangeValues, typeFromHome]);
 
   const indexOfLastProperty = currentPage * propertiesPerPage;
   const indexOfFirstProperty = indexOfLastProperty - propertiesPerPage;
@@ -214,7 +185,10 @@ const Search = ({ searchTerm }) => {
       if (searchTerm) {
         try {
           const response = await axios.get(
-            `${apiUrl}/search-address?q=${searchTerm}`
+            `${apiUrl}/search-address?q=${searchTerm}`,
+            {
+              withCredentials: true,
+            }
           );
           const { addressIds } = response.data;
           console.log(addressIds);
@@ -247,42 +221,9 @@ const Search = ({ searchTerm }) => {
     fetchAddresses();
   }, [searchTerm]);
 
-  useEffect(() => {
-    const filtered = properties.filter((property) => {
-      // Filter by 부동산구분 based on the value of typeFromHome
-      const matchesTypeFromHome = (() => {
-        if (typeFromHome === '원룸 / 투룸') {
-          // Return true if 부동산구분 is either 원룸 or 투룸
-          return (
-            property.부동산구분 === '원룸' || property.부동산구분 === '투룸'
-          );
-        } else if (typeFromHome === '아파트') {
-          // Return true if 부동산구분 is 아파트
-          return property.부동산구분 === '아파트';
-        } else if (typeFromHome === '주택, 빌라') {
-          // Return true if 부동산구분 is 주택 or 빌라
-          return (
-            property.부동산구분 === '주택' || property.부동산구분 === '빌라'
-          );
-        } else if (typeFromHome === '오피스텔') {
-          // Return true if 부동산구분 is 오피스텔
-          return property.부동산구분 === '오피스텔';
-        } else {
-          // If typeFromHome does not match any condition, return false
-          return false;
-        }
-      })();
-
-      // Return true if the 부동산구분 matches the typeFromHome
-      return matchesTypeFromHome;
-    });
-
-    setFilteredProperties(filtered); // Update the filtered properties state
-  }, [typeFromHome]);
-
   const fetchFavoriteIds = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/get-favorites', {
+      const response = await axios.get(`${apiUrl}/get-favorites`, {
         withCredentials: true,
       });
       if (response.status === 200) {
@@ -360,7 +301,7 @@ const Search = ({ searchTerm }) => {
                   <div className='w-4/12 lg:w-full flexCol relative bg-secondary-light h-full rounded-2xl overflow-hidden'>
                     {images.length > 0 ? (
                       <img
-                        src={`http://localhost:8000/${images[0]}`}
+                        src={`${apiUrl}/${images[0]}`}
                         alt={`${property.건물명}`}
                         className='object-cover h-full'
                       />
@@ -494,7 +435,7 @@ const Search = ({ searchTerm }) => {
                     {images.length > 0 ? (
                       <div
                         style={{
-                          backgroundImage: `url(http://localhost:8000/${images[0]})`,
+                          backgroundImage: `url(${apiUrl}/${images[0]})`,
                         }}
                         className='w-full bg-cover bg-center rounded-2xl flex justify-end p-2 min-h-32 lg:min-h-44'
                       ></div>

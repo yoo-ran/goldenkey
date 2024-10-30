@@ -949,6 +949,42 @@ app.get('/get-address/:id', async (req, res) => {
   }
 });
 
+app.get('/search-address', (req, res) => {
+  const searchText = req.query.q;
+  console.log('searchText', searchText);
+
+  const query = `
+    SELECT 건물관리번호 FROM old_address
+    WHERE 시군구 LIKE ? OR 읍면 LIKE ? OR 도로명 LIKE ?
+    UNION
+    SELECT 건물관리번호 FROM new_address
+    WHERE 시군구 LIKE ? OR 읍면 LIKE ? OR 도로명 LIKE ?;
+  `;
+
+  const searchPattern = `%${searchText}%`;
+
+  db.query(
+    query,
+    [
+      searchPattern,
+      searchPattern,
+      searchPattern,
+      searchPattern,
+      searchPattern,
+      searchPattern,
+    ],
+    (error, results) => {
+      if (error) {
+        console.error('Error retrieving addresses:', error);
+        return res.status(500).json({ error: 'Failed to retrieve addresses' });
+      }
+
+      const addressIds = results.map((row) => row.건물관리번호);
+      res.json({ addressIds });
+    }
+  );
+});
+
 app.listen(8000, () => {
   console.log('Server is running on port 8000');
 });

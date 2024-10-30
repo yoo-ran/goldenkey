@@ -15,12 +15,21 @@ const defaultFilteringData = {
 };
 
 const House = ({ approvalDate, onOpen }) => {
+  const apiUrl = import.meta.env.VITE_API_URL;
+
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [isParking, setIsParking] = useState(false);
   const [isEV, setIsEV] = useState(false);
   const [transactionMethods, setTransactionMethods] = useState([]);
   const [filteringData, setFilteringData] = useState(defaultFilteringData);
+
+  const buyAndSaleMin = 0;
+  const buyAndSaleMax = 100; // 100억원 20,000,000,000
+  const monthlyRentMin = 0;
+  const monthlyRentMax = 500; // 500만원 5,000,000
+  const monthlyRentDepositMin = 0;
+  const monthlyRentDepositMax = 3; // 3억원, 300,000,000,
 
   const handleSubmit = useCallback(
     (e) => {
@@ -158,9 +167,7 @@ const House = ({ approvalDate, onOpen }) => {
 
   const fetchConstantVariable = useCallback(async () => {
     try {
-      const response = await axios.get(
-        'http://localhost:8000/transaction-methods'
-      );
+      const response = await axios.get(`${apiUrl}/transaction-methods`);
       setTransactionMethods(response.data);
     } catch (error) {
       console.error('Error fetching transaction methods:', error);
@@ -206,8 +213,9 @@ const House = ({ approvalDate, onOpen }) => {
                 <DoubleRangeSection
                   title='매매'
                   subTitle1='매매금'
-                  min1={0}
-                  max1={3000}
+                  min1={buyAndSaleMin}
+                  max1={buyAndSaleMax}
+                  unit1={'억원'}
                   onChange1={handleDepositRangeChange}
                   handleClear={handleClear}
                   handleSubmit={handleSubmit}
@@ -219,10 +227,12 @@ const House = ({ approvalDate, onOpen }) => {
                   title='월세'
                   subTitle1='보증금'
                   subTitle2='월세'
-                  min1={0}
-                  max1={3000}
-                  min2={0}
-                  max2={1000}
+                  min1={monthlyRentDepositMin}
+                  max1={monthlyRentDepositMax}
+                  unit1={'억원'}
+                  min2={monthlyRentMin}
+                  max2={monthlyRentMax}
+                  unit2={'만원'}
                   onChange1={handleDepositRangeChange}
                   onChange2={handleRentRangeChange}
                   handleClear={handleClear}

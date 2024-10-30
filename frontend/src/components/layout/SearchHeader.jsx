@@ -61,7 +61,6 @@ const SearchHeader = ({ onSendSearchTerm }) => {
     setOpenFilter(false);
   };
 
-  console.log(openFilter);
 
   return (
     <section
