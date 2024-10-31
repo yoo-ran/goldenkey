@@ -948,14 +948,15 @@ app.get('/get-address/:id', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
-
 app.get('/search-address', (req, res) => {
+  console.log('Route /search-address hit');
+
   const searchText = req.query.q;
   console.log('searchText', searchText);
 
   const query = `
     SELECT 건물관리번호 FROM old_address
-    WHERE 시군구 LIKE ? OR 읍면 LIKE ? OR 도로명 LIKE ?
+    WHERE 시군구 LIKE ? OR 읍면동 LIKE ?
     UNION
     SELECT 건물관리번호 FROM new_address
     WHERE 시군구 LIKE ? OR 읍면 LIKE ? OR 도로명 LIKE ?;

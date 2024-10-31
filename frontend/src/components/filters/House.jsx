@@ -158,6 +158,12 @@ const House = ({ approvalDate, onOpen }) => {
             };
           }
         });
+      } else if (name === 'approvalDate') {
+        // Toggle the approvalDate selection
+        setFilteringData((prev) => ({
+          ...prev,
+          approvalDate: prev.approvalDate === value ? '' : value,
+        }));
       } else {
         setFilteringData((prev) => ({ ...prev, [name]: value }));
       }

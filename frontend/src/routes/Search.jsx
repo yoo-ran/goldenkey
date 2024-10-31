@@ -24,13 +24,13 @@ const Search = ({ searchTerm }) => {
   const apiUrl = import.meta.env.VITE_API_URL;
 
   const [favoriteIds, setFavoriteIds] = useState([]);
-  const [propertyId, setPropertyId] = useState();
   const navigate = useNavigate();
 
   const [currentPage, setCurrentPage] = useState(1); // State to manage the current page
   const propertiesPerPage = 6; // Number of properties to display per page (adjust as needed)
 
   const [properties, setProperties] = useState([]);
+  const [filteredProperties, setFilteredProperties] = useState([]);
   const [propertyImages, setPropertyImages] = useState({}); // Store images by property ID
   // const [filteredProperties, setFilteredProperties] = useState([]);
   const location = useLocation(); // Retrieve the state (data) from navigation
@@ -88,7 +88,7 @@ const Search = ({ searchTerm }) => {
     fetchProperties();
   }, []);
 
-  const filteredProperties = useMemo(() => {
+  const filteredPropertiesMemo = useMemo(() => {
     let filtered = properties;
 
     // Priority 1: Filter by Transaction Method
@@ -114,6 +114,67 @@ const Search = ({ searchTerm }) => {
       );
     }
 
+    // Filter by Rent Range
+    filtered = filtered.filter((property) => {
+      const withinRentRange =
+        !rangeValues.rentRange.length ||
+        (['월세', '전세'].includes(property.거래방식) &&
+          rangeValues.rentRange.some((range) => {
+            const method = Object.keys(range)[0];
+            const { min, max } = range[method];
+            return (
+              rangeValues.transactionMethod.includes(method) &&
+              property.월세 / 10000 >= min &&
+              property.월세 / 10000 <= max
+            );
+          }));
+      return withinRentRange;
+    });
+
+    // Filter by Room Size Range
+    filtered = filtered.filter((property) => {
+      const withinRoomSizeRange =
+        (!rangeValues.roomSizeRange.min && !rangeValues.roomSizeRange.max) ||
+        (property.전용평 >= rangeValues.roomSizeRange.min &&
+          property.전용평 <= rangeValues.roomSizeRange.max);
+      return withinRoomSizeRange;
+    });
+
+    // Filter by Parking Availability
+    filtered = filtered.filter((property) => {
+      const haveParking = !rangeValues.isParking || property.주차가능대수 > 0;
+      return haveParking;
+    });
+
+    // Filter by Elevator Availability
+    filtered = filtered.filter((property) => {
+      const haveElevator = !rangeValues.isEV || property.EV유무 === 1;
+      return haveElevator;
+    });
+
+    // Filter by Approval Date Range
+    filtered = filtered.filter((property) => {
+      const isWithinApprovalDateRange = (() => {
+        if (!rangeValues.approvalDate) return true;
+        const currentYear = new Date().getFullYear();
+        const approvalYear = new Date(property.사용승인일자).getFullYear();
+        const yearDifference = currentYear - approvalYear;
+        switch (rangeValues.approvalDate) {
+          case '5년 이내':
+            return yearDifference <= 5;
+          case '10년 이내':
+            return yearDifference <= 10;
+          case '15년 이내':
+            return yearDifference <= 15;
+          case '15년 이상':
+            return yearDifference > 15;
+          default:
+            return true;
+        }
+      })();
+      return isWithinApprovalDateRange;
+    });
+
     // Additional Filter by typeFromHome if it exists
     if (typeFromHome) {
       filtered = filtered.filter((property) => {
@@ -134,18 +195,56 @@ const Search = ({ searchTerm }) => {
       });
     }
 
-    console.log('Filtered Properties:', filtered);
     return filtered;
   }, [properties, rangeValues, typeFromHome]);
+
+  // Update the filtered properties state when the memoized value changes
+  useEffect(() => {
+    setFilteredProperties(filteredPropertiesMemo);
+  }, [filteredPropertiesMemo]);
+
+  useEffect(() => {
+    const fetchAddresses = async () => {
+      if (!searchTerm) {
+        setFilteredProperties(properties); // Reset to all properties if no search term
+        return;
+      }
+
+      try {
+        const response = await axios.get(
+          `${apiUrl}/search-address?q=${searchTerm}`,
+          { withCredentials: true }
+        );
+        const { addressIds } = response.data;
+
+        // Filter properties based on addressIds or 건물명
+        const filtered =
+          addressIds.length > 0
+            ? properties.filter((property) =>
+                addressIds.includes(property.address_id)
+              )
+            : properties.filter(
+                (property) =>
+                  property.건물명 && property.건물명.includes(searchTerm)
+              );
+
+        setFilteredProperties(filtered.length > 0 ? filtered : properties);
+      } catch (error) {
+        console.error('Error fetching addresses:', error);
+      }
+    };
+
+    fetchAddresses();
+  }, [searchTerm, properties, filteredPropertiesMemo]);
 
   const indexOfLastProperty = currentPage * propertiesPerPage;
   const indexOfFirstProperty = indexOfLastProperty - propertiesPerPage;
 
   // Slice the properties array to get only the ones for the current page
-  const currentProperties = (
-    filteredProperties.length > 0 ? filteredProperties : properties
-  ).slice(indexOfFirstProperty, indexOfLastProperty);
-
+  const currentProperties = filteredProperties.slice(
+    (currentPage - 1) * propertiesPerPage,
+    currentPage * propertiesPerPage
+  );
   // Determine the total number of pages
   const totalPages = Math.ceil(
     (filteredProperties.length > 0
@@ -179,47 +278,6 @@ const Search = ({ searchTerm }) => {
 
     return result.trim(); // Return the formatted string, removing any unnecessary spaces
   };
-
-  useEffect(() => {
-    const fetchAddresses = async () => {
-      if (searchTerm) {
-        try {
-          const response = await axios.get(
-            `${apiUrl}/search-address?q=${searchTerm}`,
-            {
-              withCredentials: true,
-            }
-          );
-          const { addressIds } = response.data;
-          console.log(addressIds);
-          // Initialize filtered properties
-          let filtered = [];
-
-          // Case 1: Filter by addressIds if they are returned (meaning it's a 주소)
-          if (addressIds.length > 0 && properties.length > 0) {
-            filtered = properties.filter(
-              (property) => addressIds.includes(property.address_id) // Assuming `address_id` is the correct field
-            );
-          }
-
-          // Case 2: If no addressIds (meaning searchTerm might be 건물명), filter by 건물명
-          if (addressIds.length === 0) {
-            filtered = properties.filter(
-              (property) =>
-                property.건물명 && property.건물명.includes(searchTerm) // Filter by 건물명
-            );
-          }
-
-          // Set filtered properties if there are matches, otherwise show all properties
-          setFilteredProperties(filtered.length > 0 ? filtered : properties);
-        } catch (error) {
-          console.error('Error fetching addresses:', error);
-        }
-      }
-    };
-
-    fetchAddresses();
-  }, [searchTerm]);
 
   const fetchFavoriteIds = async () => {
     try {
@@ -311,8 +369,11 @@ const Search = ({ searchTerm }) => {
                       </p>
                     )}
                     <div
-                      onClick={() => heartClick(propertyId)}
-                      className='absolute top-1 right-1'
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevents the navigation action
+                        heartClick(propertyId); // Only adds/removes from favorites
+                      }}
+                      className='absolute top-1 right-1 z-40'
                     >
                       <FontAwesomeIcon
                         icon={faRegularHeart}
@@ -332,11 +393,13 @@ const Search = ({ searchTerm }) => {
                     {/* <p className='mobile_1_bold'>{property.거래방식}</p> */}
                     <p className='mobile_1_bold'>
                       {property.거래방식}{' '}
-                      {property.거래방식 === '매매'
-                        ? formatToKoreanCurrency(property.보증금)
-                        : `${Math.floor(
-                            property.보증금 / 10000
-                          )} / ${formatToKoreanCurrency(property.월세)}`}
+                      {property.거래방식 === '월세'
+                        ? `${
+                            property.보증금 >= 100000000
+                              ? formatToKoreanCurrency(property.보증금)
+                              : `${Math.floor(property.보증금 / 10000)}`
+                          } / ${formatToKoreanCurrency(property.월세)}`
+                        : formatToKoreanCurrency(property.보증금)}
                     </p>
                     <div>
                       <ul className='flexRow mobile_5'>
@@ -466,9 +529,13 @@ const Search = ({ searchTerm }) => {
                       <div className='flexCol items-start gap-y-2 '>
                         <p className='mobile_1_bold'>
                           {property.거래방식} &nbsp;
-                          {property.거래방식 === '매매'
-                            ? formatToKoreanCurrency(property.보증금)
-                            : property.보증금 / property.월세}
+                          {property.거래방식 === '월세'
+                            ? `${
+                                property.보증금 >= 100000000
+                                  ? formatToKoreanCurrency(property.보증금)
+                                  : `${Math.floor(property.보증금 / 10000)}`
+                              } / ${formatToKoreanCurrency(property.월세)}`
+                            : formatToKoreanCurrency(property.보증금)}
                         </p>
                         <p className='mobile_3'>{property.건물명}</p>
                       </div>
