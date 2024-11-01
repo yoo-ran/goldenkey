@@ -1,6 +1,9 @@
 require('dotenv').config();
 const express = require('express');
+const path = require('path');
 const session = require('express-session');
+
+const sessionStore = new MySQLStore(db);
 const MySQLStore = require('express-mysql-session')(session);
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
@@ -8,7 +11,6 @@ const mysql = require('mysql');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 const multer = require('multer');
-const path = require('path');
 const fs = require('fs'); // For file system operations
 const jwt = require('jsonwebtoken');
 const { expressjwt: jwtMiddleware } = require('express-jwt'); // Import the express-jwt middleware
@@ -23,7 +25,10 @@ const {
 } = require('./constants'); // Import the constants
 
 const corsOptions = {
-  origin: 'http://localhost:5173', // Update to match your frontend's URL
+  origin:
+    process.env.NODE_ENV === 'production'
+      ? 'https://goldenkey.yoorankim.com'
+      : 'http://localhost:5173',
   credentials: true,
 };
 
@@ -36,19 +41,14 @@ const db = mysql.createPool({
   port: process.env.DB_PORT || 8889,
 });
 
-const sessionStore = new MySQLStore(db);
-
 const app = express();
 app.use(express.json());
 app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use(cookieParser()); // Enables parsing of cookies
 
-// Serve static files from the frontend's dist folder in production
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../frontend/dist'))); // Adjust path if necessary
-
-  // Catch-all route to serve index.html for any unknown routes
+  app.use(express.static(path.join(__dirname, '../frontend/dist')));
   app.get('*', (req, res) => {
     res.sendFile(path.resolve(__dirname, '../frontend/dist', 'index.html'));
   });
