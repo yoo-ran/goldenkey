@@ -43,11 +43,16 @@ app.use(express.json());
 app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use(cookieParser()); // Enables parsing of cookies
-app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
-app.get('*', (req, res) => {
-  res.sendFile(path.resolve(__dirname, '../frontend/dist', 'index.html'));
-});
+// Serve static files from the frontend's dist folder in production
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../frontend/dist'))); // Adjust path if necessary
+
+  // Catch-all route to serve index.html for any unknown routes
+  app.get('*', (req, res) => {
+    res.sendFile(path.resolve(__dirname, '../frontend/dist', 'index.html'));
+  });
+}
 
 app.use(
   session({
