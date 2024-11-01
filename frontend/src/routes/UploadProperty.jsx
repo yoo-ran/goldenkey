@@ -38,6 +38,7 @@ const PropertyUpload = () => {
   const navigate = useNavigate(); // Hook for navigation
 
   const [originalPropertyData, setOriginalPropertyData] = useState({
+    매물ID: 0,
     사용승인일자: '',
     등록일자: '',
     부동산구분: '',
@@ -67,8 +68,7 @@ const PropertyUpload = () => {
     address_id: 0,
   });
   const [propertyData, setPropertyData] = useState(originalPropertyData);
-
-  const [open, setOpen] = useState('false');
+  const [propertyId, setPropertyId] = useState(0);
 
   const [images, setImages] = useState([]); // State for storing uploaded images
   const [selectedFiles, setSelectedFiles] = useState([]); // Store selected files for upload
@@ -101,15 +101,15 @@ const PropertyUpload = () => {
 
   const [isConverted, setIsConverted] = useState(false); // Toggle state to track conversion
   const [originalPrices, setOriginalPrices] = useState({
-    보증금: propertyData.보증금 || '',
-    월세: propertyData.월세 || '',
+    보증금: propertyData.보증금 || 0,
+    월세: propertyData.월세 || 0,
     '전체 금액': (propertyData.보증금 || 0) + (propertyData.월세 || 0),
   });
-  const [priceManwon, setPriceManwon] = useState(originalPrices);
 
-  useEffect(() => {
-    console.log('Updated propertyData:', propertyData);
-  }, [propertyData]);
+  const [displayValues, setDisplayValues] = useState({
+    보증금: propertyData.보증금,
+    월세: propertyData.월세,
+  });
 
   // Authentication check
   useEffect(() => {
@@ -143,25 +143,77 @@ const PropertyUpload = () => {
         console.error('Error fetching dropdown data', error);
       }
     };
+
+    const fetchPrpertyIDs = async () => {
+      try {
+        const response = await axios.get(`${apiUrl}/get-propertyIDs`);
+        const propertyIDs = response.data.map((item) => item.매물ID); // Extract all existing IDs
+
+        // Function to generate a unique random ID
+        const generateUniqueID = () => {
+          let newID;
+          do {
+            newID = Math.floor(1000000000 + Math.random() * 9000000000); // Generate random 5-digit number
+          } while (propertyIDs.includes(newID)); // Check if it already exists in propertyIDs
+          return newID;
+        };
+
+        const newPropertyID = generateUniqueID();
+        setPropertyId(newPropertyID);
+        setPropertyData((prev) => ({
+          ...prev,
+          매물ID: newPropertyID,
+        }));
+      } catch (error) {
+        console.error('Error fetching property Ids data', error);
+      }
+    };
     fetchOptions();
+    fetchPrpertyIDs();
   }, []);
 
   if (!isAuthenticated) {
     return <div>Loading...</div>;
   }
+
+  // Focus handler to clear leading zero only if type is number
+  const handleFocus = (e) => {
+    const { name, value, type } = e.target;
+
+    if (type === 'number' && value === '0') {
+      setPropertyData((prevState) => ({
+        ...prevState,
+        [name]: '', // Clear the input value if it is just '0'
+      }));
+    }
+  };
+
+  // Blur handler to add zero only if type is number and input is empty
+  const handleBlur = (e) => {
+    const { name, value, type } = e.target;
+
+    if (type === 'number' && value === '') {
+      setPropertyData((prevState) => ({
+        ...prevState,
+        [name]: '0', // Set the input value to '0' if left empty
+      }));
+    }
+  };
+
   // Utility functions
   const convertM2ToPyeong = (m2) => Number((m2 / 3.3058).toFixed(2));
   const convertPyeongToM2 = (pyeong) => Number((pyeong * 3.3058).toFixed(2));
   const calculateTotalAmount = (보증금, 월세, isConverted) => {
-    return isConverted
-      ? ((parseInt(보증금, 10) + parseInt(월세, 10)) / 10000).toLocaleString()
-      : parseInt(보증금, 10) + parseInt(월세, 10);
+    const totalAmount = parseInt(보증금, 10) + parseInt(월세, 10);
+    // Divide by 10,000 and format with two decimal places if converted, otherwise return the raw total
+    return isConverted ? totalAmount / 10000 : totalAmount;
   };
+
   // Handle input changes
   const handleInputChange = (e, contactType = null) => {
-    let { name, type, value, checked } = e.target;
+    let { name, value, type } = e.target;
     let formattedValue;
-    // Converting input if necessary
+
     if (name === 'EV유무') {
       formattedValue = value;
     } else if (name === '전체m2') {
@@ -186,10 +238,45 @@ const PropertyUpload = () => {
       formattedValue = value;
     }
 
-    setPriceManwon((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
+    if (name === '보증금' || name === '월세') {
+      console.log(Number(formattedValue));
+      console.log(isConverted);
+      formattedValue = Number(formattedValue);
+      // When it's convertd to manwon
+      if (isConverted) {
+        // Update display in manwon
+        setDisplayValues((prev) => ({
+          ...prev,
+          [name]: formattedValue,
+        }));
+
+        // Update originalPrices and propertyData by converting back to won
+        const newOriginalValue = formattedValue * 10000;
+        console.log(newOriginalValue);
+        setOriginalPrices((prev) => ({
+          ...prev,
+          [name]: newOriginalValue,
+        }));
+        setPropertyData((prev) => ({
+          ...prev,
+          [name]: newOriginalValue,
+        }));
+      } else {
+        // If not converted, update both display and original values in won
+        setDisplayValues((prev) => ({
+          ...prev,
+          [name]: formattedValue,
+        }));
+        setOriginalPrices((prev) => ({
+          ...prev,
+          [name]: formattedValue,
+        }));
+        setPropertyData((prev) => ({
+          ...prev,
+          [name]: formattedValue,
+        }));
+      }
+    }
 
     if (contactType) {
       // Handle contact-specific updates
@@ -205,11 +292,22 @@ const PropertyUpload = () => {
       }));
     } else {
       // Handle general property data updates
+      console.log('propertyData in handleInput', propertyData);
       setPropertyData({
         ...propertyData,
         [name]: formattedValue,
       });
     }
+  };
+
+  const convertToManwon = () => {
+    setDisplayValues({
+      보증금: isConverted
+        ? originalPrices.보증금
+        : originalPrices.보증금 / 10000,
+      월세: isConverted ? originalPrices.월세 : originalPrices.월세 / 10000,
+    });
+    setIsConverted(!isConverted);
   };
 
   const formatDateForMySQL = (date) => {
@@ -235,7 +333,7 @@ const PropertyUpload = () => {
       비밀번호: 비밀번호 || '미정', // Default to "미정" if 비밀번호 is not provided
       연락처: typeof 연락처 === 'object' ? JSON.stringify(연락처) : 연락처, // Ensure 연락처 is a string
     };
-
+    console.log('formattedFieldsToUpdate', formattedFieldsToUpdate);
     try {
       const savePropertyPromise = axios.post(
         `${apiUrl}/properties/update`,
@@ -257,16 +355,15 @@ const PropertyUpload = () => {
     }
   };
 
-  // Handle image selection
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
-    setSelectedFiles((prevFiles) => [...prevFiles, ...files]);
+    setSelectedFiles(files);
   };
 
-  // Handle image upload
   const handleImageUpload = async () => {
-    if (selectedFiles.length === 0)
+    if (selectedFiles.length === 0) {
       return alert('No files selected for upload.');
+    }
 
     const formData = new FormData();
     selectedFiles.forEach((file) => formData.append('images', file));
@@ -277,13 +374,41 @@ const PropertyUpload = () => {
         withCredentials: true, // Ensure cookies are sent with the request
       });
 
+      // Append the uploaded image paths to the existing images JSON array
       const uploadedImages = response.data.images || [];
-      setImages((prev) => [...prev, ...uploadedImages]);
+      setImages((prevImages) => {
+        // If images is an object, ensure it remains as a JSON-compatible structure
+        const updatedImages = [...Object.values(prevImages), ...uploadedImages];
+        return Object.assign({}, updatedImages); // Convert back to object if needed
+      });
+
       setSelectedFiles([]);
       alert('Images uploaded and paths saved successfully!');
     } catch (error) {
       console.error('Error uploading images:', error);
       alert('Error uploading images');
+    }
+  };
+  console.log(images);
+  const handleDeleteImage = async (imagePath) => {
+    try {
+      // Update the images state by removing the specific image entry
+      setImages((prevImages) => {
+        const updatedImages = { ...prevImages };
+
+        // Find the key associated with the image path and delete it
+        const keyToDelete = Object.keys(updatedImages).find(
+          (key) => updatedImages[key] === imagePath
+        );
+
+        if (keyToDelete) {
+          delete updatedImages[keyToDelete];
+        }
+
+        return updatedImages;
+      });
+    } catch (error) {
+      console.error('Error deleting image:', error);
     }
   };
 
@@ -398,7 +523,7 @@ const PropertyUpload = () => {
   const handleClear = (e) => {
     if (e.target.name === 'priceClear') {
       // Only clear 보증금 and 월세
-      setOriginalProperty((prevProperty) => ({
+      setPropertyData((prevProperty) => ({
         ...prevProperty,
         보증금: 0,
         월세: 0,
@@ -406,34 +531,7 @@ const PropertyUpload = () => {
     } else {
       // Reset all fields to the original state
       setPropertyData(originalPropertyData);
-    }
-  };
-
-  const convertToManwon = () => {
-    if (!isConverted) {
-      // Store original prices
-      setOriginalPrices({
-        보증금: propertyData.보증금,
-        월세: propertyData.월세,
-        '전체 금액': propertyData.보증금 + propertyData.월세,
-      });
-
-      // Convert to 만원 (divide by 10,000)
-      const convertedData = {
-        보증금: (propertyData.보증금 / 10000).toString(),
-        월세: (propertyData.월세 / 10000).toString(),
-        '전체 금액': (
-          (propertyData.보증금 + propertyData.월세) /
-          10000
-        ).toString(),
-      };
-
-      setPriceManwon(convertedData);
-      setIsConverted(true); // Mark as converted
-    } else {
-      // Restore original prices
-      setPriceManwon(originalPrices);
-      setIsConverted(false); // Mark as not converted
+      setImages([]);
     }
   };
 
@@ -443,11 +541,13 @@ const PropertyUpload = () => {
         <article className='flexCol items-start gap-y-8 w-full'>
           <div className='w-full'>
             <div className='grid grid-cols-3 grid-rows-2 gap-2 h-52 lg:min-h-80 overflow-hidden rounded-xl w-full'>
-              {Array.from({ length: 3 }).map((_, index) =>
-                images && images[index] ? (
+              {Array.from({ length: 3 }).map((_, index) => {
+                const image = Object.values(images)[index]; // Get the image at the current index or undefined if it doesn't exist
+
+                return image ? (
                   <img
                     key={index}
-                    src={`http://localhost:8000${images[index]}`}
+                    src={`${apiUrl}${image}`}
                     alt={`Property Image ${index + 1}`}
                     className={`w-full h-full object-cover before:content-[""] before:bg-primary ${
                       index === 0
@@ -466,8 +566,8 @@ const PropertyUpload = () => {
                   >
                     <FontAwesomeIcon icon={faImage} />
                   </p>
-                )
-              )}
+                );
+              })}
             </div>
           </div>
         </article>
@@ -592,32 +692,29 @@ const PropertyUpload = () => {
               return (
                 <div className='w-full flexCol items-start gap-y-4'>
                   <p className='mobile_3_bold'>{fields[1]} 금액</p>
-                  {fields.map((field, index) => {
-                    return (
-                      <div key={index} className='w-full grid grid-rows-2'>
-                        <p className='mobile_4'>{field}</p>
-                        <div className='flexRow w-full justify-between'>
-                          <input
-                            type='number'
-                            min={0}
-                            name={field === '전세' ? '월세' : field}
-                            value={
-                              priceManwon[field === '전세' ? '월세' : field] ||
-                              ''
-                            } // Bind value from state
-                            onChange={handleInputChange} // Ensure an `onChange` handler is present
-                            className='bg-white text-primary rounded-full w-10/12'
-                          />
-                          <p className='mobile_4'>
-                            {isConverted ? '만원' : '원'}
-                          </p>
-                        </div>
-                        {index === 1 && (
-                          <p className='w-full border-b border-primary mt-8'></p>
-                        )}
+                  {fields.map((field, index) => (
+                    <div key={index} className='w-full grid grid-rows-2'>
+                      <p className='mobile_4'>{field}</p>
+                      <div className='flexRow w-full justify-between'>
+                        <input
+                          type='number'
+                          min={0}
+                          name={field}
+                          value={displayValues[field] || ''}
+                          onChange={handleInputChange}
+                          onFocus={handleFocus}
+                          onBlur={handleBlur}
+                          className='bg-white text-primary rounded-full w-10/12'
+                        />
+                        <p className='mobile_4'>
+                          {isConverted ? '만원' : '원'}
+                        </p>
                       </div>
-                    );
-                  })}
+                      {index === 1 && (
+                        <p className='w-full border-b border-primary mt-8'></p>
+                      )}
+                    </div>
+                  ))}
                   <div className='flexCol items-start w-full gap-y-4'>
                     <p className=''>전체금액</p>
                     <div className='flexRow w-full justify-between'>
@@ -628,7 +725,8 @@ const PropertyUpload = () => {
                           propertyData.보증금,
                           propertyData.월세,
                           isConverted
-                        )} // Bind value from state
+                        )}
+                        readOnly
                         className='bg-white text-primary rounded-full w-10/12'
                       />
                       <p>{isConverted ? '만원' : '원'}</p>
@@ -639,10 +737,14 @@ const PropertyUpload = () => {
             };
 
             // Logic to determine the type of transaction and labels
-            if (propertyData.거래방식 === '매매') {
+            if (
+              propertyData.거래방식 === '매매' ||
+              propertyData.거래방식 === '전세'
+            ) {
+              // Grouped logic for "매매" and "전세"
               return (
                 <div className='w-full grid grid-rows-2'>
-                  <p className='mobile_3_bold'>매매 금액</p>
+                  <p className='mobile_3_bold'>거래 금액</p>
                   <div className='flexRow w-full justify-between'>
                     <input
                       type='number'
@@ -650,10 +752,12 @@ const PropertyUpload = () => {
                       name='보증금'
                       value={
                         isConverted
-                          ? (propertyData.보증금 / 10000).toLocaleString()
+                          ? propertyData.보증금 / 10000
                           : propertyData.보증금
                       }
                       onChange={handleInputChange}
+                      onFocus={handleFocus}
+                      onBlur={handleBlur}
                       className='bg-white text-primary rounded-full w-10/12'
                     />
                     <p>{isConverted ? '만원' : '원'}</p>
@@ -661,17 +765,13 @@ const PropertyUpload = () => {
                 </div>
               );
             } else if (propertyData.거래방식 === '월세') {
-              // For 월세
+              // Separate logic for "월세"
               const fields = ['보증금', '월세'];
-
-              return renderFields(fields);
-            } else if (propertyData.거래방식 === '전세') {
-              // For 전세
-              const fields = ['보증금', '전세'];
               return renderFields(fields);
             }
           })()}
         </article>
+
         <article className='w-10/12 md:w-8/12'>
           <button
             className='btn_clear w-full bg-secondary-yellow rounded-full'
@@ -706,6 +806,8 @@ const PropertyUpload = () => {
                   min={0}
                   value={propertyData.전체m2}
                   onChange={handleInputChange}
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
                   className='w-10/12'
                 />
                 <p className='w-1/12 mobile_5'>
@@ -719,6 +821,8 @@ const PropertyUpload = () => {
                   min={0}
                   value={propertyData.전체평}
                   onChange={handleInputChange}
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
                   className='w-10/12'
                   placeholder='숫자를 입력하세요'
                 />
@@ -739,6 +843,8 @@ const PropertyUpload = () => {
                   min={0}
                   value={propertyData.전용m2}
                   onChange={handleInputChange}
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
                   className='w-10/12'
                 />
                 <p className='w-1/12 mobile_5'>
@@ -752,6 +858,8 @@ const PropertyUpload = () => {
                   min={0}
                   value={propertyData.전용평}
                   onChange={handleInputChange}
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
                   className='w-10/12'
                 />
                 <p className='w-1/12 mobile_5'>평</p>
@@ -804,6 +912,8 @@ const PropertyUpload = () => {
                 min='0'
                 value={propertyData.층수}
                 onChange={handleInputChange}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
                 className='w-7/12'
                 placeholder='매물의 층수를 입력하세요'
               />
@@ -823,6 +933,8 @@ const PropertyUpload = () => {
                 min='0'
                 value={propertyData.주차가능대수}
                 onChange={handleInputChange}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
                 className='w-7/12'
                 placeholder='주차가능대수를 입력하세요'
               />
@@ -840,6 +952,8 @@ const PropertyUpload = () => {
                 min='0'
                 value={propertyData.화장실개수}
                 onChange={handleInputChange}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
                 className='w-7/12'
                 placeholder='화장실개수를 입력하세요'
               />
@@ -944,6 +1058,22 @@ const PropertyUpload = () => {
                   ))}
                 </ul>
               )}
+            </div>
+          </div>
+          <div className='grid grid-rows-2 w-full'>
+            <p className='mobile_3_bold flexRow gap-x-2'>
+              <FontAwesomeIcon icon={faHouse} />
+              상세주소
+            </p>
+            <div className='flexRow gap-x-2'>
+              <input
+                type='text'
+                name='상세주소'
+                value={propertyData.상세주소}
+                onChange={handleInputChange}
+                className='w-full'
+                placeholder='상세주소를 입력하세요'
+              />
             </div>
           </div>
           <div className='grid grid-rows-2 w-full'>
@@ -1074,7 +1204,7 @@ const PropertyUpload = () => {
             />
           </div>
 
-          <div className='w-full grid grid-rows-2'>
+          <div className='w-full flexCol items-start gap-y-4'>
             <p className='mobile_3_bold flexRow gap-x-2'>
               <FontAwesomeIcon icon={faImage} />
               매물사진
@@ -1085,6 +1215,7 @@ const PropertyUpload = () => {
                 multiple
                 onChange={handleImageChange}
                 className='w-9/12'
+                placeholder='이미지를 추가하세요'
               />
               <button
                 onClick={handleImageUpload}
@@ -1092,6 +1223,27 @@ const PropertyUpload = () => {
               >
                 업로드
               </button>
+            </div>
+            <div className='flexCol gap-y-4 w-full '>
+              {images &&
+                Object.values(images).map((imagePath, index) => (
+                  <div key={index} className='flexRow w-full justify-between'>
+                    <img
+                      src={`${apiUrl}${imagePath}`}
+                      alt={`Property Image ${index + 1}`}
+                      className='w-1/3 h-20 object-cover'
+                    />
+                    <button
+                      onClick={() => handleDeleteImage(imagePath)}
+                      className='bg-red-500 text-white rounded-lg px-4 py-1'
+                    >
+                      X
+                    </button>
+                  </div>
+                ))}
+              {images && Object.keys(images).length === 0 && (
+                <p className='text-center py-4'>No images available.</p>
+              )}
             </div>
           </div>
           <div className='w-full flexCol items-start'>

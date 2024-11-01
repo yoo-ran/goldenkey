@@ -61,8 +61,10 @@ app.use(
     path: [
       '/login',
       '/listing',
+      '/get-propertyIDs',
       /^\/detail\/.*/, // Matches /detail/{any path}
       /^\/properties\/\d+\/images$/, // Matches /properties/{id}/images
+      /^\/properties\/\d+\/images\/\d+$/,
       /^\/delete-property\/\d+$/, // Matches /delete-property/{id}
       /^\/update-property\/\d+$/, // Matches /update-property/{id}
       /^\/upload-images\/\d*$/, // Matches /upload-images/{id}
@@ -430,6 +432,17 @@ app.get('/listing', (req, res) => {
   });
 });
 
+app.get('/get-propertyIDs', (req, res) => {
+  db.query('SELECT 매물ID FROM property', (err, results) => {
+    if (err) {
+      console.error('Error fetching properties:', err);
+      res.status(500).send('Server error');
+      return;
+    }
+    res.json(results);
+  });
+});
+
 const util = require('util');
 
 // Promisify the db.query method
@@ -557,30 +570,28 @@ app.post(
         'SELECT img_path FROM property WHERE 매물ID = ?',
         [propertyId]
       );
+
+      // Parse the current image paths as a JSON array, or set as empty array if null
       const currentImagePaths = currentResult[0].img_path
-        ? currentResult[0].img_path
-            .split(',')
-            .map((imgPath) =>
-              imgPath.includes('/uploads/')
-                ? imgPath.trim()
-                : `/uploads/${path.basename(imgPath.trim())}`
-            )
+        ? JSON.parse(currentResult[0].img_path)
         : [];
 
       // Combine current and new image paths
       const updatedImagePaths = [...currentImagePaths, ...newImagePaths];
-      const updatedImagePathsString = updatedImagePaths.join(',');
 
-      // Update the property with the new image paths
+      // Update the property with the new image paths as a JSON array
       await query('UPDATE property SET img_path = ? WHERE 매물ID = ?', [
-        updatedImagePathsString,
+        JSON.stringify(updatedImagePaths),
         propertyId,
       ]);
 
-      res.status(200).json({ imageUrls: newImagePaths });
+      res.status(200).json({
+        message: 'Images uploaded successfully',
+        images: updatedImagePaths,
+      });
     } catch (error) {
       console.error('Error uploading images:', error);
-      res.status(500).json({ error: 'Failed to upload images' });
+      res.status(500).json({ error: 'Server error during image upload' });
     }
   }
 );
@@ -612,7 +623,7 @@ app.get('/properties/:propertyId/images', async (req, res) => {
   try {
     const propertyId = req.params.propertyId;
 
-    // Execute the query and get the results
+    // Execute the query to get img_path as a JSON array
     const query = 'SELECT img_path FROM property WHERE 매물ID = ?';
     db.query(query, [propertyId], (error, results) => {
       if (error) {
@@ -625,10 +636,12 @@ app.get('/properties/:propertyId/images', async (req, res) => {
         return res.status(404).json({ error: 'Property not found' });
       }
 
-      // Extract the image paths and split them into an array
+      // Parse img_path JSON array
       const imgPaths = results[0].img_path
-        ? results[0].img_path.split(',')
+        ? JSON.parse(results[0].img_path)
         : [];
+
+      // Send the image paths as JSON response
       res.json({ images: imgPaths });
     });
   } catch (error) {
@@ -637,59 +650,59 @@ app.get('/properties/:propertyId/images', async (req, res) => {
   }
 });
 
+app.delete('/properties/:propertyId/images/:imageId', (req, res) => {
+  const { propertyId, imageId } = req.params;
+
+  // Fetch the current image paths for the property
+  db.query(
+    'SELECT img_path FROM property WHERE 매물ID = ?',
+    [propertyId],
+    (err, results) => {
+      if (err || results.length === 0) {
+        return res.status(404).json({ message: 'Property or image not found' });
+      }
+
+      // Parse JSON array of image paths
+      let imgPaths = JSON.parse(results[0].img_path || '[]');
+      const imagePath = imgPaths.find((path) => path.includes(imageId));
+
+      if (!imagePath) {
+        return res.status(404).json({ message: 'Image not found' });
+      }
+
+      // Remove image path from the JSON array
+      imgPaths = imgPaths.filter((path) => path !== imagePath);
+
+      // Update the database with the new image paths array
+      db.query(
+        'UPDATE property SET img_path = ? WHERE 매물ID = ?',
+        [JSON.stringify(imgPaths), propertyId],
+        (updateErr) => {
+          if (updateErr) {
+            console.error('Error updating image paths:', updateErr);
+            return res.status(500).json({ message: 'Error updating database' });
+          }
+
+          // Delete the actual image file
+          const fullPath = path.join(__dirname, imagePath);
+          fs.unlink(fullPath, (fsErr) => {
+            if (fsErr) {
+              console.error('Error deleting file:', fsErr);
+              return res
+                .status(500)
+                .json({ message: 'Error deleting image file' });
+            }
+
+            res.json({ message: 'Image deleted successfully' });
+          });
+        }
+      );
+    }
+  );
+});
+
 // Serve static files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// app.get('/memos/:propertyId', async (req, res) => {
-//   const { propertyId } = req.params;
-
-//   try {
-//     const query = 'SELECT 메모 FROM property WHERE 매물ID = ?';
-//     db.query(query, [propertyId], (err, result) => {
-//       if (err) {
-//         console.error('Error fetching memo:', err);
-//         return res.status(500).json({ error: 'Failed to fetch memo' });
-//       }
-
-//       if (result.length === 0) {
-//         return res.status(404).json({ message: 'Property not found' });
-//       }
-
-//       res.json({ 메모: result[0].메모 || '' }); // Return the memo or empty if null
-//     });
-//   } catch (error) {
-//     res.status(500).json({ error: 'Failed to fetch memo' });
-//   }
-// });
-
-// // Route to add a memo
-// app.post('/memos/add', async (req, res) => {
-//   const { propertyId, content } = req.body;
-
-//   try {
-//     // Execute the query using db.query (for mysql package)
-//     db.query(
-//       'UPDATE property SET 메모 = ? WHERE 매물ID = ?',
-//       [content, propertyId],
-//       (error, result) => {
-//         if (error) {
-//           console.error('Error executing query:', error);
-//           return res.status(500).json({ error: 'Failed to update memo' });
-//         }
-
-//         // Check if any rows were affected (indicating success)
-//         if (result.affectedRows > 0) {
-//           res.json({ id: propertyId, content }); // Return the updated memo
-//         } else {
-//           res.status(404).json({ error: 'Property not found' });
-//         }
-//       }
-//     );
-//   } catch (error) {
-//     console.error('Unexpected error:', error);
-//     res.status(500).json({ error: 'Failed to update memo' });
-//   }
-// });
 
 app.post('/properties/update', (req, res) => {
   const propertyData = req.body;
