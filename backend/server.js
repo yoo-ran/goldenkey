@@ -14,6 +14,8 @@ const jwt = require('jsonwebtoken');
 const { expressjwt: jwtMiddleware } = require('express-jwt'); // Import the express-jwt middleware
 const jwtSecret = process.env.JWT_SECRET || 'default_secret_key';
 
+const PORT = process.env.PORT || 8000;
+
 const {
   PROPERTY_TYPES,
   TRANSACTION_METHOD,
@@ -41,6 +43,11 @@ app.use(express.json());
 app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use(cookieParser()); // Enables parsing of cookies
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
+
+app.get('*', (req, res) => {
+  res.sendFile(path.resolve(__dirname, '../frontend/dist', 'index.html'));
+});
 
 app.use(
   session({
@@ -1000,6 +1007,4 @@ app.get('/search-address', (req, res) => {
   );
 });
 
-app.listen(8000, () => {
-  console.log('Server is running on port 8000');
-});
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
