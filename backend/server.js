@@ -1,22 +1,23 @@
 require('dotenv').config();
-const express = require('express');
-const path = require('path');
-const session = require('express-session');
 
-const sessionStore = new MySQLStore(db);
+const express = require('express');
+const session = require('express-session');
 const MySQLStore = require('express-mysql-session')(session);
+const mysql = require('mysql');
+const path = require('path');
+
+const app = express();
+const PORT = process.env.PORT || 8000;
+
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
-const mysql = require('mysql');
-const cors = require('cors');
 const bcrypt = require('bcrypt');
 const multer = require('multer');
 const fs = require('fs'); // For file system operations
+
 const jwt = require('jsonwebtoken');
 const { expressjwt: jwtMiddleware } = require('express-jwt'); // Import the express-jwt middleware
 const jwtSecret = process.env.JWT_SECRET || 'default_secret_key';
-
-const PORT = process.env.PORT || 8000;
 
 const {
   PROPERTY_TYPES,
@@ -24,6 +25,7 @@ const {
   TRANSACTION_STATUS,
 } = require('./constants'); // Import the constants
 
+const cors = require('cors');
 const corsOptions = {
   origin:
     process.env.NODE_ENV === 'production'
@@ -38,10 +40,11 @@ const db = mysql.createPool({
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
-  port: process.env.DB_PORT || 8889,
+  port: process.env.DB_PORT,
 });
 
-const app = express();
+const sessionStore = new MySQLStore({}, db);
+
 app.use(express.json());
 app.use(cors(corsOptions));
 app.use(bodyParser.json());
@@ -63,6 +66,9 @@ app.use(
   })
 );
 
+console.log('Environment:', process.env.NODE_ENV);
+console.log('Database Host:', process.env.DB_HOST);
+console.log('Server running on port', PORT);
 // JWT Middleware to protect routes
 app.use(
   jwtMiddleware({
@@ -93,15 +99,6 @@ app.use(
     ],
   })
 );
-
-// Function to fetch existing properties from the database
-const fetchExistingProperties = (callback) => {
-  const query = 'SELECT propertyId FROM properties'; // Adjust with relevant columns
-  db.query(query, (err, results) => {
-    if (err) return callback(err, null);
-    callback(null, results);
-  });
-};
 
 // Constant
 app.get('/property-types', (req, res) => {
