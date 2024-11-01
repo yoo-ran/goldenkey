@@ -1,10 +1,10 @@
 // src/App.jsx
-import { BrowserRouter as Router, Routes, Route,} from 'react-router-dom';
-import { useState } from 'react'; 
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { useState } from 'react';
 
 import Home from './routes/Home';
 import Login from './components/Login';
-import User from "./components/User"
+import User from './components/User';
 import Signup from './components/Signup';
 import Delete from './components/Delete';
 import Header from './components/layout/Header';
@@ -15,40 +15,49 @@ import PropertyDetail from './routes/Detail';
 import PropertyUpload from './routes/UploadProperty';
 import Search from './routes/Search';
 import SearchHeader from './components/layout/SearchHeader';
+import Logout from './components/Logout';
 
-
-
-import "./index.css"
-
+import './index.css';
 
 const App = () => {
-    const [searchTerm, setSearchTerm] = useState(""); // State for search term
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  //   const navigate = useNavigate();
 
-    const handleSearchTerm = (term) => {
-        setSearchTerm(term); // Update search term from SearchHeader
-    };
+  const handleSearchTerm = (term) => {
+    setSearchTerm(term);
+  };
 
-    return (
-        <Router>
-            <Header />
-            <SearchHeader onSendSearchTerm={handleSearchTerm} />
-            
-            <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/user-page" element={<User />} />
-                <Route path="/signup" element={<Signup />} />
-                <Route path="/delete" element={<Delete />} />
-                <Route path="/importExcel" element={<ImportExcel />} />
-                <Route path="/favorite" element={<Favorite />} />
-                {/* Pass searchTerm to the Search component */}
-                <Route path="/search" element={<Search searchTerm={searchTerm} />} />
-                <Route path="/upload" element={<PropertyUpload />} />
-                <Route path="/listing" element={<Listing />} />
-                <Route path="/detail/:propertyId" element={<PropertyDetail />} />
-            </Routes>
-        </Router>
-    );
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+  };
+
+  return (
+    <Router>
+      <Header isAuthenticated={isAuthenticated} onLogout={handleLogout} />
+      <SearchHeader
+        onSendSearchTerm={handleSearchTerm}
+        isAuthenticated={isAuthenticated}
+      />
+      <Routes>
+        <Route path='/' element={<Home />} />
+        <Route
+          path='/login'
+          element={<Login setIsAuthenticated={setIsAuthenticated} />}
+        />
+        <Route path='/user-page' element={<User />} />
+        <Route path='/signup' element={<Signup />} />
+        <Route path='/delete' element={<Delete />} />
+        <Route path='/importExcel' element={<ImportExcel />} />
+        <Route path='/favorite' element={<Favorite />} />
+        <Route path='/search' element={<Search searchTerm={searchTerm} />} />
+        <Route path='/upload' element={<PropertyUpload />} />
+        <Route path='/listing' element={<Listing />} />
+        <Route path='/detail/:propertyId' element={<PropertyDetail />} />
+        <Route path='/logout' element={<Logout onLogout={handleLogout} />} />
+      </Routes>
+    </Router>
+  );
 };
 
 export default App;

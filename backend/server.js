@@ -60,6 +60,7 @@ app.use(
   }).unless({
     path: [
       '/login',
+      '/logout',
       '/listing',
       '/get-propertyIDs',
       /^\/detail\/.*/, // Matches /detail/{any path}

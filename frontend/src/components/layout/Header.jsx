@@ -3,32 +3,9 @@ import { Link, useLocation } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-const Header = () => {
-  const apiUrl = import.meta.env.VITE_API_URL;
+const Header = ({ isAuthenticated }) => {
   const location = useLocation(); // Get the current location
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const navigate = useNavigate(); // Hook for navigation
   const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    const checkAuthentication = async () => {
-      try {
-        // Make a request to the server to verify the user's token (stored in HTTP-only cookie)
-        const response = await axios.get(`${apiUrl}/check-auth`, {
-          withCredentials: true,
-        });
-        if (response.status === 200) {
-          setIsAuthenticated(true);
-        } else {
-          navigate('/login'); // Redirect to login if authentication fails
-        }
-      } catch (error) {
-        console.error('User is not authenticated:', error);
-        navigate('/login'); // Redirect to login if authentication fails
-      }
-    };
-    checkAuthentication();
-  }, [navigate]);
 
   return (
     <header
@@ -123,7 +100,7 @@ const Header = () => {
           </div>
           <button className='hover:bg-navy transition-all bg-primary-yellow text-primary px-4 lg:py-2 rounded-lg block'>
             {isAuthenticated ? (
-              <Link to='/login'>로그아웃</Link>
+              <Link to='/logout'>로그아웃</Link>
             ) : (
               <Link to='/login'>로그인</Link>
             )}
