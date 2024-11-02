@@ -66,9 +66,6 @@ app.use(
   })
 );
 
-console.log('Environment:', process.env.NODE_ENV);
-console.log('Database Host:', process.env.DB_HOST);
-console.log('Server running on port', PORT);
 // JWT Middleware to protect routes
 app.use(
   jwtMiddleware({
@@ -99,7 +96,9 @@ app.use(
     ],
   })
 );
-
+app.get('/', (req, res) => {
+  res.send('Backend is running');
+});
 // Constant
 app.get('/property-types', (req, res) => {
   res.json(PROPERTY_TYPES); // Send the enum values to the frontend
