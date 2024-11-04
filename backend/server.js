@@ -42,7 +42,6 @@ const db = mysql.createPool({
   database: process.env.DB_NAME,
   port: process.env.DB_PORT,
 });
-
 const sessionStore = new MySQLStore({}, db);
 
 app.use(express.json());
@@ -89,6 +88,7 @@ app.use(
       '/transaction-methods',
       '/transaction-status',
       '/properties/update',
+      '/get-favorite',
       '/addresses',
       '/generate-sql',
       '/address-excel',
@@ -778,7 +778,6 @@ app.post('/save-favorites', (req, res) => {
     }
   );
 });
-
 // Address
 app.get('/addresses', async (req, res) => {
   const { searchText } = req.query;

@@ -30,9 +30,8 @@ const Search = ({ searchTerm }) => {
   const propertiesPerPage = 6; // Number of properties to display per page (adjust as needed)
 
   const [properties, setProperties] = useState([]);
-  const [filteredProperties, setFilteredProperties] = useState([]);
   const [propertyImages, setPropertyImages] = useState({}); // Store images by property ID
-  // const [filteredProperties, setFilteredProperties] = useState([]);
+  // const [filteredPropertiesMemo, setFilteredProperties] = useState([]);
   const location = useLocation(); // Retrieve the state (data) from navigation
   const rangeValues =
     location.state && location.state.transactionMethod
@@ -54,39 +53,34 @@ const Search = ({ searchTerm }) => {
     const fetchProperties = async () => {
       try {
         const response = await axios.get(`${apiUrl}/listing`);
-        const propertyList = response.data;
-        setProperties(propertyList);
-
-        // Fetch images for each property
-        for (const property of propertyList) {
-          const { 매물ID: propertyId } = property; // Assuming property ID is in '매물ID' field
-          try {
-            const imgRes = await axios.get(
-              `${apiUrl}/properties/${propertyId}/images`
-            );
-            // Store images for each property using its ID
-            if (Array.isArray(imgRes.data.images)) {
-              setPropertyImages((prev) => ({
-                ...prev,
-                [propertyId]: imgRes.data.images,
-              }));
-            } else {
-              console.error('Unexpected response structure:', imgRes.data);
-            }
-          } catch (imageError) {
-            console.error(
-              `Error fetching images for property ${propertyId}:`,
-              imageError
-            );
-          }
-        }
+        setProperties(response.data);
       } catch (error) {
         console.error('Error fetching properties:', error);
       }
     };
-
     fetchProperties();
   }, []);
+
+  useEffect(() => {
+    const fetchImages = async () => {
+      const imagePromises = properties.map(async (property) => {
+        const { 매물ID: propertyId } = property;
+        try {
+          const imgRes = await axios.get(
+            `${apiUrl}/properties/${propertyId}/images`
+          );
+          return { [propertyId]: imgRes.data.images || [] };
+        } catch {
+          return { [propertyId]: [] };
+        }
+      });
+
+      const images = await Promise.all(imagePromises);
+      setPropertyImages(Object.assign({}, ...images));
+    };
+
+    if (properties.length > 0) fetchImages();
+  }, [properties]);
 
   const filteredPropertiesMemo = useMemo(() => {
     let filtered = properties;
@@ -114,23 +108,40 @@ const Search = ({ searchTerm }) => {
       );
     }
 
-    // Filter by Rent Range
     filtered = filtered.filter((property) => {
+      // Check if we need to filter by transaction method
+      const includeAllTransactionMethods =
+        rangeValues.transactionMethod.length === 0;
+
+      // If the property is not 월세, skip the rent range filter and include it if it's in transaction method (or if all are included)
+      if (property.거래방식 !== '월세') {
+        return (
+          includeAllTransactionMethods ||
+          rangeValues.transactionMethod.includes(property.거래방식)
+        );
+      }
+
+      // Apply rent range filter for 월세 properties only
       const withinRentRange =
         !rangeValues.rentRange.length ||
-        (['월세', '전세'].includes(property.거래방식) &&
-          rangeValues.rentRange.some((range) => {
-            const method = Object.keys(range)[0];
-            const { min, max } = range[method];
-            return (
-              rangeValues.transactionMethod.includes(method) &&
-              property.월세 / 10000 >= min &&
-              property.월세 / 10000 <= max
-            );
-          }));
+        rangeValues.rentRange.some((range) => {
+          const method = Object.keys(range)[0];
+          const { min, max } = range[method];
+          return (
+            (includeAllTransactionMethods ||
+              rangeValues.transactionMethod.includes(method)) &&
+            property.월세 / 10000 >= min &&
+            property.월세 / 10000 <= max
+          );
+        });
+
       return withinRentRange;
     });
 
+    console.log(
+      'before filtering by transaction method:',
+      filtered.map((p) => p.거래방식)
+    );
     // Filter by Room Size Range
     filtered = filtered.filter((property) => {
       const withinRoomSizeRange =
@@ -139,6 +150,11 @@ const Search = ({ searchTerm }) => {
           property.전용평 <= rangeValues.roomSizeRange.max);
       return withinRoomSizeRange;
     });
+
+    console.log(
+      'after filtering by transaction method:',
+      filtered.map((p) => p.거래방식)
+    );
 
     // Filter by Parking Availability
     filtered = filtered.filter((property) => {
@@ -194,19 +210,13 @@ const Search = ({ searchTerm }) => {
         return true;
       });
     }
-
     return filtered;
   }, [properties, rangeValues, typeFromHome]);
-
-  // Update the filtered properties state when the memoized value changes
-  useEffect(() => {
-    setFilteredProperties(filteredPropertiesMemo);
-  }, [filteredPropertiesMemo]);
 
   useEffect(() => {
     const fetchAddresses = async () => {
       if (!searchTerm) {
-        setFilteredProperties(properties); // Reset to all properties if no search term
+        console.log('searchTerm  !searchTerm');
         return;
       }
 
@@ -227,7 +237,6 @@ const Search = ({ searchTerm }) => {
                 (property) =>
                   property.건물명 && property.건물명.includes(searchTerm)
               );
-
         setFilteredProperties(filtered.length > 0 ? filtered : properties);
       } catch (error) {
         console.error('Error fetching addresses:', error);
@@ -235,20 +244,20 @@ const Search = ({ searchTerm }) => {
     };
 
     fetchAddresses();
-  }, [searchTerm, properties, filteredPropertiesMemo]);
+  }, [searchTerm, properties]);
 
   const indexOfLastProperty = currentPage * propertiesPerPage;
   const indexOfFirstProperty = indexOfLastProperty - propertiesPerPage;
 
   // Slice the properties array to get only the ones for the current page
-  const currentProperties = filteredProperties.slice(
+  const currentProperties = filteredPropertiesMemo.slice(
     (currentPage - 1) * propertiesPerPage,
     currentPage * propertiesPerPage
   );
   // Determine the total number of pages
   const totalPages = Math.ceil(
-    (filteredProperties.length > 0
-      ? filteredProperties.length
+    (filteredPropertiesMemo.length > 0
+      ? filteredPropertiesMemo.length
       : properties.length) / propertiesPerPage
   );
 
@@ -340,85 +349,83 @@ const Search = ({ searchTerm }) => {
       {/* 검색결과 */}
       <section className='w-11/12 flexCol gap-y-4'>
         <h2 className='w-full'>
-          {filteredProperties.length > 0
-            ? filteredProperties.length
+          {filteredPropertiesMemo.length > 0
+            ? filteredPropertiesMemo.length
             : properties.length}
           개의 검색결과
         </h2>
         <article className='w-full grid grid-rows-6 md:grid-rows-3 grid-cols-1 md:grid-cols-3 gap-y-4 lg:gap-8 min-h-96 '>
-          {(currentProperties.length > 0 ? currentProperties : properties).map(
-            (property) => {
-              const { 매물ID: propertyId } = property; // Assuming '매물ID' is the unique property ID
-              const images = propertyImages[propertyId] || []; // Get images for this property
-              return (
-                <div
-                  key={propertyId}
-                  className='flexRow gap-x-4 lg:flexCol gap-y-4'
-                  onClick={() => navigate(`/detail/${propertyId}`)}
-                >
-                  <div className='w-4/12 lg:w-full flexCol relative bg-secondary-light h-full rounded-2xl overflow-hidden'>
-                    {images.length > 0 ? (
-                      <img
-                        src={`${apiUrl}/${images[0]}`}
-                        alt={`${property.건물명}`}
-                        className='object-cover h-full'
+          {currentProperties.map((property) => {
+            const { 매물ID: propertyId } = property; // Assuming '매물ID' is the unique property ID
+            const images = propertyImages[propertyId] || []; // Get images for this property
+            return (
+              <div
+                key={propertyId}
+                className='flexRow gap-x-4 lg:flexCol gap-y-4'
+                onClick={() => navigate(`/detail/${propertyId}`)}
+              >
+                <div className='w-4/12 lg:w-full flexCol relative bg-secondary-light h-full rounded-2xl overflow-hidden'>
+                  {images.length > 0 ? (
+                    <img
+                      src={`${apiUrl}${images[0]}`}
+                      alt={`${property.건물명}`}
+                      className='object-cover h-full'
+                    />
+                  ) : (
+                    <p className=' flexCol text-center mobile_5 lg:min-h-48 '>
+                      No images available
+                    </p>
+                  )}
+                  <div
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevents the navigation action
+                      heartClick(propertyId); // Only adds/removes from favorites
+                    }}
+                    className='absolute top-1 right-1 z-30'
+                  >
+                    <FontAwesomeIcon
+                      icon={faRegularHeart}
+                      className='absolute top-0 right-0 md:right-1 md:top-1 text-primary border border-white p-1 rounded-full mobile_5'
+                    />
+                    {favoriteIds.includes(propertyId) ? (
+                      <FontAwesomeIcon
+                        icon={faSolidHeart}
+                        className='absolute top-0 right-0 md:right-1 md:top-1 border border-white p-1 rounded-full mobile_5 text-primary-yellow'
                       />
                     ) : (
-                      <p className=' flexCol text-center mobile_5 lg:min-h-48 '>
-                        No images available
-                      </p>
+                      ''
                     )}
-                    <div
-                      onClick={(e) => {
-                        e.stopPropagation(); // Prevents the navigation action
-                        heartClick(propertyId); // Only adds/removes from favorites
-                      }}
-                      className='absolute top-1 right-1 z-40'
-                    >
-                      <FontAwesomeIcon
-                        icon={faRegularHeart}
-                        className='absolute top-0 right-0 md:right-1 md:top-1 text-primary border border-white p-1 rounded-full mobile_5'
-                      />
-                      {favoriteIds.includes(propertyId) ? (
-                        <FontAwesomeIcon
-                          icon={faSolidHeart}
-                          className='absolute top-0 right-0 md:right-1 md:top-1 border border-white p-1 rounded-full mobile_5 text-primary-yellow'
-                        />
-                      ) : (
-                        ''
-                      )}
-                    </div>
-                  </div>
-                  <div className='flexCol items-start w-8/12 gap-y-4 lg:w-11/12'>
-                    {/* <p className='mobile_1_bold'>{property.거래방식}</p> */}
-                    <p className='mobile_1_bold'>
-                      {property.거래방식}{' '}
-                      {property.거래방식 === '월세'
-                        ? `${
-                            property.보증금 >= 100000000
-                              ? formatToKoreanCurrency(property.보증금)
-                              : `${Math.floor(property.보증금 / 10000)}`
-                          } / ${formatToKoreanCurrency(property.월세)}`
-                        : formatToKoreanCurrency(property.보증금)}
-                    </p>
-                    <div>
-                      <ul className='flexRow mobile_5'>
-                        <li>{property.부동산구분}</li>
-                        <li>|</li>
-                        <li>{property.건물명}</li>
-                      </ul>
-                      <ul className='flexRow gap-x-1 mobile_5'>
-                        <li>
-                          {property.전체m2}m<sup>2</sup>,
-                        </li>
-                        <li>관리비 {property.관리비}원</li>
-                      </ul>
-                    </div>
                   </div>
                 </div>
-              );
-            }
-          )}
+                <div className='flexCol items-start w-8/12 gap-y-4 lg:w-11/12'>
+                  {/* <p className='mobile_1_bold'>{property.거래방식}</p> */}
+                  <p className='mobile_1_bold'>
+                    {property.거래방식}{' '}
+                    {property.거래방식 === '월세'
+                      ? `${
+                          property.보증금 >= 100000000
+                            ? formatToKoreanCurrency(property.보증금)
+                            : `${Math.floor(property.보증금 / 10000)}`
+                        } / ${formatToKoreanCurrency(property.월세)}`
+                      : formatToKoreanCurrency(property.보증금)}
+                  </p>
+                  <div>
+                    <ul className='flexRow mobile_5'>
+                      <li>{property.부동산구분}</li>
+                      <li>|</li>
+                      <li>{property.건물명}</li>
+                    </ul>
+                    <ul className='flexRow gap-x-1 mobile_5'>
+                      <li>
+                        {property.전체m2}m<sup>2</sup>,
+                      </li>
+                      <li>관리비 {property.관리비}원</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </article>
         <div className='flex justify-center mt-4'>
           <button

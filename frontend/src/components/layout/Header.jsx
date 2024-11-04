@@ -8,11 +8,7 @@ const Header = ({ isAuthenticated }) => {
   const [open, setOpen] = useState(false);
 
   return (
-    <header
-      className={`font-head w-full z-50 ${
-        isAuthenticated ? 'relative' : 'hidden'
-      }`}
-    >
+    <header className={`font-head w-full z-50`}>
       <nav className='flexCol  relative'>
         <ul
           className={`w-full absolute md:static md:pt-4 md:flex-row  divide-y-[0.1rem] md:divide-y-0 divide-secondary flexCol text-center mobile_3_bold bg-primary transition-[all] ${

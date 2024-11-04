@@ -185,7 +185,7 @@ const House = ({ approvalDate, onOpen }) => {
   }, [fetchConstantVariable]);
 
   return (
-    <main className='w-full flexCol gap-y-8'>
+    <main className='w-full flexCol gap-y-8 z-40'>
       <form className='w-full flexCol gap-y-20' onSubmit={handleSubmit}>
         <section className='flexCol lg:flex-row gap-y-10 lg:gap-x-8 items-start lg:justify-between w-11/12'>
           <article className='flexCol gap-y-10 justify-between w-full lg:w-1/2'>

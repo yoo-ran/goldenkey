@@ -36,10 +36,10 @@ const ListForOwner = ({ updateData }) => {
         // Re-fetch the updated properties after change
         props.context.componentParent.fetchProperties();
 
-        alert('Property updated successfully!');
+        alert('매물이 성공적으로 수정되었습니다!');
       } catch (error) {
         console.error('Error updating property:', error);
-        alert('Error updating property.');
+        alert('매물 수정 중 오류가 발생했습니다.');
       }
     };
 
@@ -83,7 +83,8 @@ const ListForOwner = ({ updateData }) => {
             let contacts = {};
             if (property.연락처) {
               try {
-                contacts = JSON.parse(JSON.parse(property.연락처));
+                contacts = JSON.parse(property.연락처);
+                // contacts = JSON.parse(JSON.parse(property.연락처));
               } catch (error) {
                 console.error('Error parsing 연락처:', error);
               }

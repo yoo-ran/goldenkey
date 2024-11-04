@@ -1,28 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom'; // For navigation to the login page
-import axios from 'axios';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faHouseChimneyWindow,
-  faHouse,
-  faBuilding,
-  faSearch,
-  faFilter,
-  faSort,
-} from '@fortawesome/free-solid-svg-icons';
+import { faSearch, faFilter } from '@fortawesome/free-solid-svg-icons';
 
 import House from '../filters/House.jsx';
 
 const approvalDate = ['15년 이상', '15년 이내', '10년 이내', '5년 이내'];
 
-const SearchHeader = ({ onSendSearchTerm, isAuthenticated  }) => {
-  const apiUrl = import.meta.env.VITE_API_URL;
-
+const SearchHeader = ({ onSendSearchTerm }) => {
   const [openFilter, setOpenFilter] = useState(false);
   const navigate = useNavigate(); // Hook for navigation
   const [filterType, setFilterType] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-
 
   const searchHandle = (e) => {
     const searchTerm = e.target.value;
@@ -41,13 +30,8 @@ const SearchHeader = ({ onSendSearchTerm, isAuthenticated  }) => {
     setOpenFilter(false);
   };
 
-
   return (
-    <section
-      className={`w-full md:w-full z-40 flexCol my-6 ${
-        isAuthenticated ? 'relative' : 'hidden'
-      }`}
-    >
+    <section className={`w-full md:w-full z-40 flexCol my-6 `}>
       {/* filter */}
       <div className={`relative w-full  flexCol gap-y-4`}>
         <article

@@ -23,7 +23,6 @@ import {
   faMoneyBillTransfer,
 } from '@fortawesome/free-solid-svg-icons';
 
-import SearchHeader from '../components/layout/SearchHeader';
 import {
   faCalendarCheck,
   faCalendarDays,
@@ -33,9 +32,6 @@ import {
 
 const PropertyUpload = () => {
   const apiUrl = import.meta.env.VITE_API_URL;
-
-  const [isAuthenticated, setIsAuthenticated] = useState(false); // State to track authentication status
-  const navigate = useNavigate(); // Hook for navigation
 
   const [originalPropertyData, setOriginalPropertyData] = useState({
     매물ID: 0,
@@ -68,22 +64,18 @@ const PropertyUpload = () => {
     address_id: 0,
   });
   const [propertyData, setPropertyData] = useState(originalPropertyData);
-  const [propertyId, setPropertyId] = useState(0);
-
+  const [propertyId, setPropertyId] = useState();
   const [images, setImages] = useState([]); // State for storing uploaded images
   const [selectedFiles, setSelectedFiles] = useState([]); // Store selected files for upload
 
   // 부동산구분
   const [propertyTypes, setPropertyTypes] = useState([]);
-  const [selectedType, setSelectedType] = useState('');
 
   // 거래방식
   const [transactionMethod, setTransactionMethod] = useState([]);
-  const [selectedMethod, setSelectedMethod] = useState('');
 
   // 거래완료여부
   const [transactionStatus, setTransactionStatus] = useState([]);
-  const [selectedStatus, setSelectedStatus] = useState('');
 
   // Address
   const [newAddress, setNewAddress] = useState(''); // Local state for new address input
@@ -111,22 +103,6 @@ const PropertyUpload = () => {
     월세: propertyData.월세,
   });
 
-  // Authentication check
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const response = await axios.get(`${apiUrl}/check-auth`, {
-          withCredentials: true,
-        });
-        setIsAuthenticated(response.status === 200);
-      } catch {
-        navigate('/login');
-      }
-    };
-    checkAuth();
-  }, [navigate]);
-
-  // Fetch dropdown options
   useEffect(() => {
     const fetchOptions = async () => {
       try {
@@ -171,10 +147,6 @@ const PropertyUpload = () => {
     fetchOptions();
     fetchPrpertyIDs();
   }, []);
-
-  if (!isAuthenticated) {
-    return <div>Loading...</div>;
-  }
 
   // Focus handler to clear leading zero only if type is number
   const handleFocus = (e) => {
@@ -324,6 +296,7 @@ const PropertyUpload = () => {
 
     // Set default dates to current date if not provided
     const currentDate = formatDateForMySQL(new Date());
+
     const formattedFieldsToUpdate = {
       ...fieldsToUpdate,
       등록일자: 등록일자 ? formatDateForMySQL(new Date(등록일자)) : currentDate,
@@ -348,10 +321,10 @@ const PropertyUpload = () => {
       // Wait for both promises to complete (save property and upload images)
       await Promise.all([savePropertyPromise, uploadImagePromise]);
 
-      alert('Data saved successfully!');
+      alert('매물이 성공적으로 저장되었습니다!');
     } catch (error) {
       console.error('Error saving data:', error);
-      alert('Error saving data');
+      alert('매물 저장 중 오류가 발생했습니다.');
     }
   };
 
@@ -374,22 +347,26 @@ const PropertyUpload = () => {
         withCredentials: true, // Ensure cookies are sent with the request
       });
 
-      // Append the uploaded image paths to the existing images JSON array
+      // Append the uploaded image paths to the images array in `propertyData`
       const uploadedImages = response.data.images || [];
-      setImages((prevImages) => {
-        // If images is an object, ensure it remains as a JSON-compatible structure
-        const updatedImages = [...Object.values(prevImages), ...uploadedImages];
-        return Object.assign({}, updatedImages); // Convert back to object if needed
-      });
+      const updatedImages = [...Object.values(images), ...uploadedImages];
+
+      setImages(updatedImages); // Update local images state
+
+      // Update propertyData to store the JSON string of image paths
+      setPropertyData((prevPropertyData) => ({
+        ...prevPropertyData,
+        img_path: JSON.stringify(updatedImages),
+      }));
 
       setSelectedFiles([]);
-      alert('Images uploaded and paths saved successfully!');
+      alert('이미지가 성공적으로 업로드 되었습니다!');
     } catch (error) {
       console.error('Error uploading images:', error);
-      alert('Error uploading images');
+      alert('이미지 업로드 중 오류가 발생했습니다.');
     }
   };
-  console.log(images);
+
   const handleDeleteImage = async (imagePath) => {
     try {
       // Update the images state by removing the specific image entry
@@ -415,7 +392,6 @@ const PropertyUpload = () => {
   const handleNewAddressSearch = async (e) => {
     const searchText = e.target.value;
     setNewAddress(searchText); // Update local state for new address input
-
     if (searchText.length > 0) {
       try {
         const response = await axios.get(

@@ -1,20 +1,6 @@
 // src/components/Home.jsx
-import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import axios from 'axios';
-
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faBuilding,
-  faChevronRight,
-  faCircleUser,
-  faGear,
-  faHouse,
-  faHouseChimneyWindow,
-  faSearch,
-} from '@fortawesome/free-solid-svg-icons';
-import { faHeart } from '@fortawesome/free-regular-svg-icons';
 
 import apartmentImg from '../assets/home/apartment.jpg';
 import houseImg from '../assets/home/house.jpg';
@@ -44,54 +30,9 @@ const recommendTag = [
 ];
 
 const Home = () => {
-  const apiUrl = import.meta.env.VITE_API_URL;
-  const [isLogin, setIsLogin] = useState(true);
-  const [properties, setProperties] = useState([]);
-  const [openFilter, setOpenFilter] = useState(false);
-  const [filterType, setFilterType] = useState('');
-  const [propertyImages, setPropertyImages] = useState({}); // Store images by property ID
+
   const navigate = useNavigate(); // Hook for navigation
-  const handleDataFromOneroom = (data) => {
-    setReceivedData(data);
-    console.log('Data received from Oneroom:', data);
-  };
 
-  useEffect(() => {
-    const fetchProperties = async () => {
-      try {
-        const response = await axios.get(`${apiUrl}/listing`);
-        setProperties(response.data);
-
-        for (const property of properties) {
-          const { 순번: propertyId } = property; // Assuming property ID is in '순번' field
-          try {
-            const imgRes = await axios.get(
-              `${apiUrl}/properties/${propertyId}/images`
-            );
-
-            // Store images for each property using its ID
-            if (Array.isArray(imgRes.data.images)) {
-              setPropertyImages((prev) => ({
-                ...prev,
-                [propertyId]: imgRes.data.images,
-              }));
-            } else {
-              console.error('Unexpected response structure:', imgRes.data);
-            }
-          } catch (imageError) {
-            console.error(
-              `Error fetching images for property ${propertyId}:`,
-              imageError
-            );
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching properties:', error);
-      }
-    };
-
-    fetchProperties();
-  }, []);
 
   const handleFilterPropertyType = (type) => {
     navigate('/search', { state: type });

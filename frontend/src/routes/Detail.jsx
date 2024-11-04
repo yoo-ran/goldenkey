@@ -60,8 +60,6 @@ const PropertyDetail = () => {
 
   const [propertyData, setPropertyData] = useState(initialPropertyData);
 
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true); // Loading state for checking authentication
   const navigate = useNavigate();
   const { propertyId } = useParams();
 
@@ -101,22 +99,6 @@ const PropertyDetail = () => {
     transactionMethod: [],
     transactionStatus: [],
   });
-
-  useEffect(() => {
-    const checkAuthentication = async () => {
-      try {
-        const response = await axios.get(`${apiUrl}/check-auth`, {
-          withCredentials: true,
-        });
-        setIsAuthenticated(response.status === 200);
-      } catch {
-        setIsAuthenticated(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-    checkAuthentication();
-  }, []);
 
   const fetchPropertyData = async () => {
     try {
@@ -159,7 +141,6 @@ const PropertyDetail = () => {
         `${apiUrl}/properties/${propertyId}/images`
       );
       setImages(imgRes.data.images || []);
-      
     } catch (error) {
       console.error('Error fetching property data:', error);
     }
@@ -167,8 +148,8 @@ const PropertyDetail = () => {
   console.log(images);
 
   useEffect(() => {
-    if (isAuthenticated) fetchPropertyData();
-  }, [propertyId, isAuthenticated, isImgUploaded]);
+    fetchPropertyData();
+  }, [propertyId, isImgUploaded]);
 
   // Focus handler to clear leading zero only if type is number
   const handleFocus = (e) => {
@@ -383,7 +364,7 @@ const PropertyDetail = () => {
         'Error deleting property:',
         error.response ? error.response.data : error.message
       );
-      alert('Error deleting property.');
+      alert('매물 삭제 중 오류가 발생했습니다. 다시 시도해 주세요.');
     }
   };
 
@@ -410,7 +391,7 @@ const PropertyDetail = () => {
         `${apiUrl}/update-property/${propertyId}`,
         formattedFieldsToUpdate
       );
-      alert('Data saved successfully!');
+      alert('매물이 성공적으로 저장되었습니다!');
       fetchPropertyData();
       setIsEditing(false);
     } catch (error) {
@@ -436,18 +417,14 @@ const PropertyDetail = () => {
           headers: { 'Content-Type': 'multipart/form-data' },
         }
       );
-      alert('Images uploaded successfully!');
+      alert('이미지가 성공적으로 업로드되었습니다!');
       setImages(response.data.images);
       setIsImgUploaded(images.length);
     } catch (error) {
       console.error('Error uploading images:', error);
-      alert('Error uploading images');
+      alert('이미지 업로드중 오류가 발생하였습니다.');
     }
   };
-
-  if (loading) {
-    return <div>Loading...</div>; // Show loading while checking authentication
-  }
 
   const handleDeleteImage = async (imageId) => {
     try {
@@ -1393,9 +1370,10 @@ const PropertyDetail = () => {
               </div>
               <div className='flexCol gap-y-4'>
                 {Array.from(images).map((imagePath, index) => (
-                  <div key={index} className='flexRow justify-between'>
+                  <div key={index} className='flexRow justify-between w-full'>
                     <img
                       src={`${apiUrl}${imagePath}`}
+                      // alt={`${apiUrl}${imagePath}`}
                       alt={`Property Image ${index + 1}`}
                       className='w-1/2 object-cover'
                     />
