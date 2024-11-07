@@ -31,6 +31,10 @@ const ImportExcel = ({ onDataUpdate }) => {
     지번부번: '',
   });
 
+  const generateRandomId = () => {
+    return Math.floor(10000 + Math.random() * 90000);
+  };
+
   // First, fetch the existing property data (like property IDs) from your backend
   const fetchDbProperties = async () => {
     try {
@@ -234,21 +238,15 @@ const ImportExcel = ({ onDataUpdate }) => {
     while (worksheet['A' + rowIndex]) {
       const row = {};
       const dbRow = {};
-      const propertyIdCell = worksheet['B' + rowIndex];
+      let propertyId = worksheet['B' + rowIndex]?.v;
 
-      const propertyId = propertyIdCell ? propertyIdCell.v : null;
-      console.log(propertyId);
-
-      // If no propertyId is present, skip the row
+      // If property ID is missing or already exists in the database, generate a new one
       if (
         !propertyId ||
         dbProperties.some((property) => property.매물ID === propertyId)
       ) {
-        rowIndex++; // Skip this row and move to the next one
-        continue;
+        propertyId = generateRandomId();
       }
-
-      row['매물ID'] = propertyId; // Capture the static value of the property ID
 
       const contacts = {}; // Object to hold contact information
       let rolesMapping = null; // Initialize outside of the column loop
@@ -260,6 +258,12 @@ const ImportExcel = ({ onDataUpdate }) => {
           ? worksheet[column + rowIndex].v
           : '';
 
+        // Assign values to rows only for other columns (skip 매물ID as it's already set)
+        if (columns[column] === '매물ID') {
+          cellValue = propertyId;
+          row[columns[column]] = propertyId;
+          dbRow[columns[column]] = propertyId;
+        }
         // Check if the column is '등록일자' or '거래완료일자' to convert serial to date
         if (
           columns[column] === '등록일자' ||
@@ -267,10 +271,6 @@ const ImportExcel = ({ onDataUpdate }) => {
           (columns[column] === '사용승인일자' && !isNaN(cellValue))
         ) {
           cellValue = excelDateToJSDate(cellValue);
-        }
-
-        if (columns[column] === '매물ID') {
-          console.log(cellValue);
         }
 
         if (
@@ -324,7 +324,6 @@ const ImportExcel = ({ onDataUpdate }) => {
 
           // Set the field value (e.g., '이름' or '전화번호')
           contacts[role][field] = cellValue;
-
           // Save the contacts object in dbRow["연락처"]
           dbRow['연락처'] = JSON.stringify(contacts);
         }
@@ -365,11 +364,9 @@ const ImportExcel = ({ onDataUpdate }) => {
 
       // Fetch addressId based on the concatenated address fields
       try {
-        console.log(addressParams);
-        const response = await axios.get(
-          'http://localhost:8000/address-excel',
-          { params: addressParams }
-        ); // Pass the collected address components as search parameters
+        const response = await axios.get(`${apiUrl}/address-excel`, {
+          params: addressParams,
+        }); // Pass the collected address components as search parameters
         const { addressIds } = response.data;
         if (addressIds.length > 0) {
           // Convert addressIds[0] to a number before assigning it
@@ -387,8 +384,9 @@ const ImportExcel = ({ onDataUpdate }) => {
       rowIndex++;
     }
 
-    console.log('rowData', rowData);
     console.log('dbRowData', dbRowData);
+    console.log('rowData', rowData);
+    return { dbRowData }; // Return both rowData and dbRowData as an object if needed
   };
 
   const convertToDateOnly = (isoString) => {
@@ -401,9 +399,11 @@ const ImportExcel = ({ onDataUpdate }) => {
 
   const compareAndUpdateColumns = async (dbProperties, excelProperties) => {
     const updatedRows = [];
-
+    console.log('compareAndUpdateColumns DB', dbProperties);
+    console.log('compareAndUpdateColumns Excel', excelProperties);
     for (const excelRow of excelProperties) {
       // Find the corresponding row in the DB
+
       const dbRow = dbProperties.find(
         (dbRow) => dbRow.매물ID === excelRow.매물ID
       );
@@ -414,14 +414,6 @@ const ImportExcel = ({ onDataUpdate }) => {
         // Create a deep copy of dbRow to avoid reference issues
         const updatedRow = JSON.parse(JSON.stringify(dbRow));
 
-        // Normalize date fields (convert to 'YYYY-MM-DD')
-        const db등록일자 = dbRow.등록일자
-          ? convertToDateOnly(dbRow.등록일자)
-          : null;
-        const db거래완료일자 = dbRow.거래완료일자
-          ? convertToDateOnly(dbRow.거래완료일자)
-          : null;
-
         // Compare each column and prompt user for update
         for (let key in excelRow) {
           if (excelRow.hasOwnProperty(key) && dbRow.hasOwnProperty(key)) {
@@ -429,6 +421,8 @@ const ImportExcel = ({ onDataUpdate }) => {
             let dbValue = dbRow[key];
             let excelValue = excelRow[key];
 
+            console.log('dbValue', dbValue);
+            console.log('excelValue', excelValue);
             // Normalize dates in excelRow if applicable
             if (
               key === '등록일자' ||
@@ -512,41 +506,34 @@ const ImportExcel = ({ onDataUpdate }) => {
         'https://docs.google.com/spreadsheets/d/1cE9XxIZLY52PFsJZJdTY6AQE6Qhs7T_cWhU9nh2c5KE/export?format=xlsx'
       );
       const data = await response.arrayBuffer();
+
       // Convert data to workbook and process it
       const workbook = convertDataToWorkbook(data);
-      console.log(workbook);
+      console.log('workbook', workbook);
 
       // Properly await the populated data
-      const excelRowData = await populateGrid(workbook, dbProperties);
+      const excelRow = await populateGrid(workbook, dbProperties);
+      const excelRowData = excelRow.dbRowData;
+      console.log('excelRowData', excelRowData);
 
       if (!Array.isArray(excelRowData)) {
         throw new Error('Invalid Excel data format.');
       }
-
-      console.log(excelRowData);
 
       // Compare each row in the Excel data with the database data
       const updatedRows = await compareAndUpdateColumns(
         dbProperties,
         excelRowData
       );
-      console.log(updatedRows);
 
-      // Now finalData contains the '정산금액' key with the calculated values
-      if (finalData.length > 0) {
-        // Send all data (new and updated records) to the backend
-        const result = await axios.post(`${apiUrl}/import-csv`, finalData, {
-          withCredentials: true,
-        });
-        console.log(result);
-        onDataUpdate(true);
-        alert('Data imported successfully!');
-      } else {
-        alert('No changes made to the database.');
-      }
-
+      // Identify new records in the Excel data that don't exist in the database
+      const newRecords = excelRowData.filter(
+        (excelRow) =>
+          !dbProperties.some((dbRow) => dbRow.매물ID === excelRow.매물ID)
+      );
       // Combine both new and updated records into one dataset
       const finalData = [...newRecords, ...updatedRows];
+      console.log('finalData', finalData);
 
       // Normalize dates
       finalData.forEach((row) => {
@@ -559,18 +546,14 @@ const ImportExcel = ({ onDataUpdate }) => {
           : null;
       });
 
-      // Get object length from the first row (if available)
-      const objectLength =
-        finalData.length > 0 ? Object.keys(finalData[0]).length : 0;
-
-      console.log(objectLength);
-      console.log('finalData', finalData);
-
+      // Now finalData contains the '정산금액' key with the calculated values
       if (finalData.length > 0) {
+        // Send all data (new and updated records) to the backend
         const result = await axios.post(`${apiUrl}/import-csv`, finalData, {
           withCredentials: true,
         });
         console.log(result);
+        downloadUpdatedExcel(finalData);
         onDataUpdate(true);
         alert('Data imported successfully!');
       } else {
@@ -580,6 +563,41 @@ const ImportExcel = ({ onDataUpdate }) => {
       alert('Error importing data.');
       console.error(error);
     }
+  };
+
+  const downloadUpdatedExcel = (data) => {
+    if (data.length === 0) {
+      alert('No data available to download.');
+      return;
+    }
+
+    // Extract headers from the first object in the data array
+    const headers = Object.keys(data[0]);
+
+    // Map the data to an array format suitable for aoa_to_sheet
+    const excelData = [
+      headers, // First row with headers
+      ...data.map((row) => headers.map((header) => row[header])), // Map each row of data
+    ];
+
+    const worksheet = XLSX.utils.aoa_to_sheet(excelData); // Use array of arrays (AOA) format
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'UpdatedData');
+
+    // Generate a buffer for the workbook
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: 'xlsx',
+      type: 'array',
+    });
+
+    // Create a Blob from the buffer and initiate download
+    const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'UpdatedData.xlsx';
+    a.click();
+    window.URL.revokeObjectURL(url);
   };
 
   return (

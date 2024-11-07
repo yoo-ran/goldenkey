@@ -138,10 +138,6 @@ const Search = ({ searchTerm }) => {
       return withinRentRange;
     });
 
-    console.log(
-      'before filtering by transaction method:',
-      filtered.map((p) => p.거래방식)
-    );
     // Filter by Room Size Range
     filtered = filtered.filter((property) => {
       const withinRoomSizeRange =
@@ -150,11 +146,6 @@ const Search = ({ searchTerm }) => {
           property.전용평 <= rangeValues.roomSizeRange.max);
       return withinRoomSizeRange;
     });
-
-    console.log(
-      'after filtering by transaction method:',
-      filtered.map((p) => p.거래방식)
-    );
 
     // Filter by Parking Availability
     filtered = filtered.filter((property) => {
@@ -500,17 +491,17 @@ const Search = ({ searchTerm }) => {
 
               return (
                 <SwiperSlide key={propertyId}>
-                  <article className='flexCol justify-between gap-y-4  bg-white rounded-3xl px-2 py-3 lg:px-3'>
+                  <article className='flexCol justify-between gap-y-4  bg-white rounded-2xl px-2 py-3 lg:px-3'>
                     {/* Property Images */}
+
                     {images.length > 0 ? (
-                      <div
-                        style={{
-                          backgroundImage: `url(${apiUrl}/${images[0]})`,
-                        }}
-                        className='w-full bg-cover bg-center rounded-2xl flex justify-end p-2 min-h-32 lg:min-h-44'
-                      ></div>
+                      <img
+                        src={`${apiUrl}${images[0]}`}
+                        alt={`${property.건물명}`}
+                        className='object-cover h-full rounded-lg'
+                      />
                     ) : (
-                      <p className='bg-secondary-light text-center py-4 rounded-lg min-h-32 lg:min-h-44 flexCol'>
+                      <p className=' flexCol text-center mobile_5 lg:min-h-48 '>
                         No images available
                       </p>
                     )}

@@ -186,7 +186,7 @@ const ListForOwner = ({ updateData }) => {
       };
 
       try {
-        await axios.put(`http://localhost:8000/update-property/${propertyId}`, {
+        await axios.put(`${apiUrl}/update-property/${propertyId}`, {
           contacts_json: JSON.stringify(updatedContacts), // Update JSON in the database
         });
         alert('Property updated successfully!');
@@ -197,7 +197,7 @@ const ListForOwner = ({ updateData }) => {
     } else {
       // Handle other non-JSON fields normally
       try {
-        await axios.put(`http://localhost:8000/update-property/${propertyId}`, {
+        await axios.put(`${apiUrl}/update-property/${propertyId}`, {
           [field]: newValue,
         });
         alert('Property updated successfully!');

@@ -924,7 +924,6 @@ app.get('/address-excel', (req, res) => {
 
     // Return the address IDs in the response
     const addressIds = results.map((row) => row.건물관리번호); // Assuming 건물관리번호 is the correct field
-    console.log(addressIds);
     res.json({ addressIds });
   });
 });
@@ -970,10 +969,7 @@ app.get('/get-address/:id', async (req, res) => {
   }
 });
 app.get('/search-address', (req, res) => {
-  console.log('Route /search-address hit');
-
   const searchText = req.query.q;
-  console.log('searchText', searchText);
 
   const query = `
     SELECT 건물관리번호 FROM old_address

@@ -65,7 +65,7 @@ const App = ({ onSessionTimeout }) => {
     setIsAuthenticated(false);
     onSessionTimeout(); // Redirect to login on logout
   };
-
+  
   return (
     <>
       {isAuthenticated && (

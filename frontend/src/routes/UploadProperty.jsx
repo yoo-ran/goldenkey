@@ -5,19 +5,15 @@ import { useNavigate } from 'react-router-dom'; // For navigation to the login p
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faBuilding,
-  faCalendar,
   faCar,
-  faChevronDown,
   faCircleCheck,
   faElevator,
-  faHourglass,
   faHouse,
   faKey,
   faDroplet,
   faMoneyBill,
   faMoneyBills,
   faRulerCombined,
-  faRulerVertical,
   faTag,
   faUserPlus,
   faMoneyBillTransfer,
@@ -344,22 +340,22 @@ const PropertyUpload = () => {
     try {
       const response = await axios.post(`${apiUrl}/upload-images`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
-        withCredentials: true, // Ensure cookies are sent with the request
+        withCredentials: true,
       });
 
-      // Append the uploaded image paths to the images array in `propertyData`
+      // Get uploaded image paths from the response
       const uploadedImages = response.data.images || [];
-      const updatedImages = [...Object.values(images), ...uploadedImages];
+      const updatedImages = [...images, ...uploadedImages];
 
       setImages(updatedImages); // Update local images state
 
-      // Update propertyData to store the JSON string of image paths
+      // Update propertyData to store `img_path` as a JSON string of image paths
       setPropertyData((prevPropertyData) => ({
         ...prevPropertyData,
         img_path: JSON.stringify(updatedImages),
       }));
 
-      setSelectedFiles([]);
+      setSelectedFiles([]); // Clear selected files
       alert('이미지가 성공적으로 업로드 되었습니다!');
     } catch (error) {
       console.error('Error uploading images:', error);
@@ -524,7 +520,7 @@ const PropertyUpload = () => {
                   <img
                     key={index}
                     src={`${apiUrl}${image}`}
-                    alt={`Property Image ${index + 1}`}
+                    alt={`매물 이미지 ${index + 1}`}
                     className={`w-full h-full object-cover before:content-[""] before:bg-primary ${
                       index === 0
                         ? 'col-span-2 row-span-2'
@@ -1201,23 +1197,26 @@ const PropertyUpload = () => {
               </button>
             </div>
             <div className='flexCol gap-y-4 w-full '>
-              {images &&
-                Object.values(images).map((imagePath, index) => (
-                  <div key={index} className='flexRow w-full justify-between'>
-                    <img
-                      src={`${apiUrl}${imagePath}`}
-                      alt={`Property Image ${index + 1}`}
-                      className='w-1/3 h-20 object-cover'
-                    />
-                    <button
-                      onClick={() => handleDeleteImage(imagePath)}
-                      className='bg-red-500 text-white rounded-lg px-4 py-1'
-                    >
-                      X
-                    </button>
-                  </div>
-                ))}
-              {images && Object.keys(images).length === 0 && (
+              {images && images.length > 0 ? (
+                images.map((imagePath, index) => {
+                  console.log(`${apiUrl}${imagePath}`); // Check if these paths are correct
+                  return (
+                    <div key={index} className='flexRow w-full justify-between'>
+                      <img
+                        src={`${apiUrl}${imagePath}`}
+                        alt={`매물 이미지 ${index + 1}`}
+                        className='w-1/3 h-20 object-cover'
+                      />
+                      <button
+                        onClick={() => handleDeleteImage(imagePath)}
+                        className='bg-red-500 text-white rounded-lg px-4 py-1'
+                      >
+                        X
+                      </button>
+                    </div>
+                  );
+                })
+              ) : (
                 <p className='text-center py-4'>No images available.</p>
               )}
             </div>
