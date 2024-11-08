@@ -106,6 +106,14 @@ const PropertyDetail = () => {
         withCredentials: true,
       });
       const { data: fetchedData } = propertyRes;
+      if (typeof fetchedData.연락처 === 'string') {
+        try {
+          fetchedData.연락처 = JSON.parse(fetchedData.연락처);
+        } catch (error) {
+          console.error('Error parsing 연락처:', error);
+          fetchedData.연락처 = {}; // Set to an empty object if parsing fails
+        }
+      }
 
       setPropertyData(fetchedData);
       setDisplayValues({
@@ -118,6 +126,7 @@ const PropertyDetail = () => {
         '전체 금액': (fetchedData.보증금 || 0) + (fetchedData.월세 || 0),
       });
 
+      console.log(fetchedData.address_id);
       const addressRes = await axios.get(
         `${apiUrl}/get-address/${fetchedData.address_id}`,
         { withCredentials: true }
@@ -195,7 +204,6 @@ const PropertyDetail = () => {
 
   const handleInputChange = (e, contactType = null) => {
     let { name, type, value } = e.target;
-    console.log(name, value);
     let formattedValue;
 
     // Converting input if necessary
@@ -271,76 +279,14 @@ const PropertyDetail = () => {
           },
         },
       }));
-    } else {
-      // Handle general property data updates
-      setPropertyData({
-        ...propertyData,
-        [name]: formattedValue,
-      });
     }
 
     setPropertyData((prev) => ({
       ...prev,
       [name]: formattedValue,
     }));
-  };
 
-  const parseContactData = (contactData) => {
-    try {
-      // Parse once, check if it’s still a string, and parse again if needed
-      const firstParse =
-        typeof contactData === 'string' ? JSON.parse(contactData) : contactData;
-      return typeof firstParse === 'string'
-        ? JSON.parse(firstParse)
-        : firstParse;
-    } catch (error) {
-      console.error('Error parsing 연락처:', error);
-      return {}; // Return empty object if parsing fails
-    }
-  };
-
-  const renderContacts = () => {
-    // Use the helper function to get parsed contact data
-    const contactData = parseContactData(propertyData.연락처);
-
-    return contactFields.map((contactType, index) => {
-      const contact = contactData[contactType] || {};
-      return (
-        <div key={index} className='flexCol gap-y-6 w-full items-start'>
-          <p className='mobile_3_bold flexRow gap-x-2'>
-            <FontAwesomeIcon icon={faUserPlus} />
-            {contactType}
-          </p>
-          <div className='flexCol gap-y-3 w-full'>
-            {isEditing ? (
-              <>
-                <input
-                  type='text'
-                  name='이름'
-                  value={contact.이름 || ''}
-                  onChange={(e) => handleContactChange(e, contactType)}
-                  placeholder={`${contactType} 이름을 입력하세요`}
-                  className='w-full'
-                />
-                <input
-                  type='text'
-                  name='전화번호'
-                  value={contact.전화번호 || ''}
-                  onChange={(e) => handleContactChange(e, contactType)}
-                  placeholder={`${contactType} 전화번호를 입력하세요`}
-                  className='w-full'
-                />
-              </>
-            ) : (
-              <>
-                <p className='pDisplay w-full'>{contact.이름 || ''}</p>
-                <p className='pDisplay w-full'>{contact.전화번호 || ''}</p>
-              </>
-            )}
-          </div>
-        </div>
-      );
-    });
+    console.log('propertyData', propertyData);
   };
 
   const convertToManwon = () => {
@@ -378,6 +324,8 @@ const PropertyDetail = () => {
         연락처,
         ...fieldsToUpdate
       } = propertyData;
+
+      console.log(propertyData);
       const formattedFieldsToUpdate = {
         ...fieldsToUpdate,
         등록일자: new Date(등록일자).toISOString().split('T')[0],
@@ -386,7 +334,8 @@ const PropertyDetail = () => {
         비밀번호: 비밀번호 || '미정', // Default to "미정" if 비밀번호 is not provided
         연락처: typeof 연락처 === 'object' ? JSON.stringify(연락처) : 연락처, // Ensure 연락처 is a string
       };
-      console.log(formattedFieldsToUpdate);
+      console.log('formattedFieldsToUpdate', formattedFieldsToUpdate);
+
       await axios.put(
         `${apiUrl}/update-property/${propertyId}`,
         formattedFieldsToUpdate
@@ -1250,7 +1199,49 @@ const PropertyDetail = () => {
           }`}
         >
           {contactFields.length > 0 ? (
-            renderContacts()
+            contactFields.map((contactType, index) => {
+              return (
+                <div key={index} className='flexCol gap-y-6 w-full items-start'>
+                  <p className='mobile_3_bold flexRow gap-x-2'>
+                    <FontAwesomeIcon icon={faUserPlus} />
+                    {contactType}
+                  </p>
+                  <div className='flexCol gap-y-3 w-full'>
+                    {isEditing ? (
+                      <>
+                        <input
+                          type='text'
+                          name='이름'
+                          value={propertyData.연락처[contactType]?.이름 || ''}
+                          onChange={(e) => handleInputChange(e, contactType)}
+                          placeholder={`${contactType} 이름을 입력하세요`}
+                          className='w-full'
+                        />
+                        <input
+                          type='text'
+                          name='전화번호'
+                          value={
+                            propertyData.연락처[contactType]?.전화번호 || ''
+                          }
+                          onChange={(e) => handleInputChange(e, contactType)}
+                          placeholder={`${contactType} 전화번호를 입력하세요`}
+                          className='w-full'
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <p className='pDisplay w-full'>
+                          {propertyData.연락처[contactType]?.이름 || ''}
+                        </p>
+                        <p className='pDisplay w-full'>
+                          {propertyData.연락처[contactType]?.전화번호 || ''}
+                        </p>
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })
           ) : (
             <a
               href='#거래방식'

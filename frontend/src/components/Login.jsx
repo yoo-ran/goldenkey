@@ -41,11 +41,12 @@ function Login({ setIsAuthenticated }) {
         'Error during login:',
         error.response ? error.response.data : error.message
       );
-      setIsLogin(false);
       setError(true);
       setIsAuthenticated(false);
     }
   };
+
+  
 
   return (
     <div className='w-full flexCol h-screen border'>

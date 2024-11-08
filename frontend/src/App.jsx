@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
@@ -17,57 +17,27 @@ import Logout from './components/Logout';
 
 import './index.css';
 
-const App = ({ onSessionTimeout }) => {
+const App = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return sessionStorage.getItem('isAuthenticated') === 'true';
+  });
 
-  // Check authentication on initial load
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const response = await axios.get('/check-auth', {
-          withCredentials: true,
-        });
-        if (response.status === 200) {
-          setIsAuthenticated(true);
-        }
-      } catch (error) {
-        setIsAuthenticated(false);
-      }
-    };
-    checkAuth();
-  }, []);
+    sessionStorage.setItem('isAuthenticated', isAuthenticated);
+  }, [isAuthenticated]);
 
-  // Add axios interceptor to handle session timeout
-  useEffect(() => {
-    const interceptor = axios.interceptors.response.use(
-      (response) => response,
-      (error) => {
-        if (error.response && error.response.status === 401) {
-          setIsAuthenticated(false);
-          onSessionTimeout(); // Call the function passed via props
-        }
-        return Promise.reject(error);
-      }
-    );
-
-    // Eject interceptor on cleanup
-    return () => {
-      axios.interceptors.response.eject(interceptor);
-    };
-  }, [onSessionTimeout]);
-
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    sessionStorage.removeItem('isAuthenticated');
+  };
   const handleSearchTerm = (term) => {
     setSearchTerm(term);
   };
 
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    onSessionTimeout(); // Redirect to login on logout
-  };
-  
+  console.log(isAuthenticated);
   return (
-    <>
+    <BrowserRouter>
       {isAuthenticated && (
         <>
           <Header isAuthenticated={isAuthenticated} onLogout={handleLogout} />
@@ -114,7 +84,7 @@ const App = ({ onSessionTimeout }) => {
           <Route path='*' element={<Navigate to='/login' />} />
         )}
       </Routes>
-    </>
+    </BrowserRouter>
   );
 };
 

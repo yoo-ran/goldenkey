@@ -331,6 +331,7 @@ app.post('/login', async (req, res) => {
           res.cookie('authToken', token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+            sameSite: 'Strict',
             maxAge: 3600000, // 1 hour
           });
 
@@ -355,16 +356,30 @@ app.post('/login', async (req, res) => {
 });
 
 app.get('/check-auth', (req, res) => {
-  // If the token is valid, express-jwt attaches the decoded token to req.auth
+  console.log('Checking authentication status');
   if (req.auth) {
+    console.log('User authenticated:', req.auth);
     return res.status(200).json({
       message: 'Authenticated',
       user: req.auth,
     });
   } else {
+    console.log('No valid auth token');
     return res.status(401).json({ message: 'Not authenticated' });
   }
 });
+
+// app.get('/check-auth', (req, res) => {
+//   // If the token is valid, express-jwt attaches the decoded token to req.auth
+//   if (req.auth) {
+//     return res.status(200).json({
+//       message: 'Authenticated',
+//       user: req.auth,
+//     });
+//   } else {
+//     return res.status(401).json({ message: 'Not authenticated' });
+//   }
+// });
 
 // Protected route (accessible only with a valid JWT)
 app.get('/protected', jwtMiddleware, (req, res) => {
@@ -400,7 +415,7 @@ app.post('/logout', (req, res) => {
   res.clearCookie('authToken', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production', // Secure only in production
-    sameSite: 'strict',
+    sameSite: 'Strict',
   });
   return res.status(200).json({ message: 'Logged out successfully' });
 });
