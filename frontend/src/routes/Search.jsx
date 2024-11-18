@@ -31,7 +31,7 @@ const Search = ({ searchTerm }) => {
 
   const [properties, setProperties] = useState([]);
   const [propertyImages, setPropertyImages] = useState({}); // Store images by property ID
-  // const [filteredPropertiesMemo, setFilteredProperties] = useState([]);
+  const [filteredProperties, setFilteredProperties] = useState([]);
   const location = useLocation(); // Retrieve the state (data) from navigation
   const rangeValues =
     location.state && location.state.transactionMethod
@@ -206,8 +206,8 @@ const Search = ({ searchTerm }) => {
 
   useEffect(() => {
     const fetchAddresses = async () => {
-      if (!searchTerm) {
-        console.log('searchTerm  !searchTerm');
+      if (!searchTerm || searchTerm.trim() === '') {
+        setFilteredProperties(properties); // Default to memoized properties
         return;
       }
 
@@ -218,40 +218,43 @@ const Search = ({ searchTerm }) => {
         );
         const { addressIds } = response.data;
 
-        // Filter properties based on addressIds or 건물명
-        const filtered =
-          addressIds.length > 0
-            ? properties.filter((property) =>
-                addressIds.includes(property.address_id)
-              )
-            : properties.filter(
-                (property) =>
-                  property.건물명 && property.건물명.includes(searchTerm)
-              );
-        setFilteredProperties(filtered.length > 0 ? filtered : properties);
+        const filtered = addressIds.length
+          ? properties.filter((property) =>
+              addressIds.includes(property.address_id)
+            )
+          : properties.filter(
+              (property) =>
+                property.건물명 && property.건물명.includes(searchTerm.trim())
+            );
+
+        setFilteredProperties(filtered);
       } catch (error) {
         console.error('Error fetching addresses:', error);
+        setFilteredProperties(filteredPropertiesMemo); // Fallback to memoized properties
       }
     };
 
     fetchAddresses();
-  }, [searchTerm, properties]);
+  }, [searchTerm, properties, filteredPropertiesMemo]);
 
-  const indexOfLastProperty = currentPage * propertiesPerPage;
-  const indexOfFirstProperty = indexOfLastProperty - propertiesPerPage;
+  const combinedProperties = useMemo(() => {
+    return filteredProperties.length > 0
+      ? filteredProperties
+      : filteredPropertiesMemo;
+  }, [filteredProperties, filteredPropertiesMemo]);
 
-  // Slice the properties array to get only the ones for the current page
-  const currentProperties = filteredPropertiesMemo.slice(
-    (currentPage - 1) * propertiesPerPage,
-    currentPage * propertiesPerPage
+  // Compute currentProperties based on pagination
+  const currentProperties = useMemo(() => {
+    const indexOfLastProperty = currentPage * propertiesPerPage;
+    const indexOfFirstProperty = indexOfLastProperty - propertiesPerPage;
+    return combinedProperties.slice(indexOfFirstProperty, indexOfLastProperty);
+  }, [combinedProperties, currentPage, propertiesPerPage]);
+
+  // Pagination handler
+  const totalPages = useMemo(
+    () => Math.ceil(combinedProperties.length / propertiesPerPage),
+    [combinedProperties, propertiesPerPage]
   );
-  // Determine the total number of pages
-  const totalPages = Math.ceil(
-    (filteredPropertiesMemo.length > 0
-      ? filteredPropertiesMemo.length
-      : properties.length) / propertiesPerPage
-  );
-
   // Handler for changing the page
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
@@ -338,7 +341,7 @@ const Search = ({ searchTerm }) => {
   return (
     <main className='w-full gap-y-16'>
       {/* 검색결과 */}
-      <section className='w-11/12 flexCol gap-y-4'>
+      <section className='w-11/12  lg:w-8/12 flexCol gap-y-4'>
         <h2 className='w-full'>
           {filteredPropertiesMemo.length > 0
             ? filteredPropertiesMemo.length
@@ -450,10 +453,10 @@ const Search = ({ searchTerm }) => {
       </section>
 
       {/* 추천물건 */}
-      <section className='w-full relative bg-primary-yellow flexCol gap-y-4 py-10 px-2 overflow-hidden'>
-        <h2 className='w-11/12 text-white'>추천물건</h2>
+      <section className='w-full  relative bg-primary-yellow flexCol gap-y-4 py-10 px-2 overflow-hidden'>
+        <h2 className='w-11/12 lg:w-8/12 text-white'>추천물건</h2>
 
-        <div className='absolute top-1/2 z-30 w-full lg:w-11/12 flexRow justify-between px-1 mobile_1_bold'>
+        <div className='absolute   lg:w-9/12 top-1/2 z-30 w-full lg:w-11/12 flexRow justify-between px-1 mobile_1_bold'>
           <div className='swiper-button-prev text-primary'>
             <FontAwesomeIcon icon={faChevronLeft} />
           </div>
@@ -466,7 +469,7 @@ const Search = ({ searchTerm }) => {
           modules={[Navigation, Pagination, Scrollbar]}
           // pagination={{ clickable: true }} // Show pagination dots
           scrollbar={{ draggable: true }} // Enable draggable scrollbar
-          className='w-11/12 lg:w-10/12 '
+          className='w-11/12 lg:w-8/12 '
           breakpoints={{
             // when window width is >= 640px
             0: {

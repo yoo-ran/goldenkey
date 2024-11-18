@@ -1,7 +1,6 @@
 // src/components/Home.jsx
 import { useNavigate } from 'react-router-dom';
 
-
 import apartmentImg from '../assets/home/apartment.jpg';
 import houseImg from '../assets/home/house.jpg';
 import officeTellImg from '../assets/home/officetell.jpg';
@@ -30,16 +29,14 @@ const recommendTag = [
 ];
 
 const Home = () => {
-
   const navigate = useNavigate(); // Hook for navigation
-
 
   const handleFilterPropertyType = (type) => {
     navigate('/search', { state: type });
   };
 
   return (
-    <main className='w-full gap-y-10 z-30'>
+    <main className='w-full  lg:w-8/12 gap-y-10 z-30'>
       {/* 추천태그 */}
       <section className='w-11/12 lg:w-10/12 flexCol gap-y-4'>
         <h2 className='w-full'>추천태그</h2>

@@ -31,7 +31,9 @@ const SearchHeader = ({ onSendSearchTerm }) => {
   };
 
   return (
-    <section className={`w-full md:w-full z-40 flexCol my-6 `}>
+    <section
+      className={`w-full md:w-full  lg:w-8/12 z-40 flexCol my-6 lg:my-10 `}
+    >
       {/* filter */}
       <div className={`relative w-full  flexCol gap-y-4`}>
         <article

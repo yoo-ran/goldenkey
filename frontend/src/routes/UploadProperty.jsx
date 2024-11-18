@@ -287,8 +287,14 @@ const PropertyUpload = () => {
 
   // Save data to the database
   const handleSave = async () => {
-    const { 등록일자, 거래완료일자, 비밀번호, 연락처, ...fieldsToUpdate } =
-      propertyData;
+    const {
+      등록일자,
+      사용승인일자,
+      거래완료일자,
+      비밀번호,
+      연락처,
+      ...fieldsToUpdate
+    } = propertyData;
 
     // Set default dates to current date if not provided
     const currentDate = formatDateForMySQL(new Date());
@@ -296,6 +302,9 @@ const PropertyUpload = () => {
     const formattedFieldsToUpdate = {
       ...fieldsToUpdate,
       등록일자: 등록일자 ? formatDateForMySQL(new Date(등록일자)) : currentDate,
+      사용승인일자: 사용승인일자
+        ? formatDateForMySQL(new Date(사용승인일자))
+        : currentDate,
       거래완료일자: 거래완료일자
         ? formatDateForMySQL(new Date(거래완료일자))
         : currentDate,
@@ -303,6 +312,14 @@ const PropertyUpload = () => {
       연락처: typeof 연락처 === 'object' ? JSON.stringify(연락처) : 연락처, // Ensure 연락처 is a string
     };
     console.log('formattedFieldsToUpdate', formattedFieldsToUpdate);
+    for (const key in formattedFieldsToUpdate) {
+      if (
+        formattedFieldsToUpdate[key] === null ||
+        formattedFieldsToUpdate[key] === undefined
+      ) {
+        formattedFieldsToUpdate[key] = ''; // Default to an empty string for missing values
+      }
+    }
     try {
       const savePropertyPromise = axios.post(
         `${apiUrl}/properties/update`,
@@ -364,21 +381,11 @@ const PropertyUpload = () => {
   };
 
   const handleDeleteImage = async (imagePath) => {
+    console.log(imagePath); // Log the image path being deleted
     try {
-      // Update the images state by removing the specific image entry
       setImages((prevImages) => {
-        const updatedImages = { ...prevImages };
-
-        // Find the key associated with the image path and delete it
-        const keyToDelete = Object.keys(updatedImages).find(
-          (key) => updatedImages[key] === imagePath
-        );
-
-        if (keyToDelete) {
-          delete updatedImages[keyToDelete];
-        }
-
-        return updatedImages;
+        // Filter out the specific imagePath from the array
+        return prevImages.filter((image) => image !== imagePath);
       });
     } catch (error) {
       console.error('Error deleting image:', error);
@@ -509,7 +516,7 @@ const PropertyUpload = () => {
 
   return (
     <main className='gap-y-10 w-full'>
-      <section className='w-11/12 flexCol gap-y-12'>
+      <section className='w-11/12 lg:w-8/12  flexCol gap-y-12'>
         <article className='flexCol items-start gap-y-8 w-full'>
           <div className='w-full'>
             <div className='grid grid-cols-3 grid-rows-2 gap-2 h-52 lg:min-h-80 overflow-hidden rounded-xl w-full'>
@@ -569,8 +576,8 @@ const PropertyUpload = () => {
       <p className='w-11/12 border'></p>
 
       {/* 거래상태, 매물기본정보, 주소 */}
-      <section className='w-full flexCol py-6 gap-y-20'>
-        <article className='w-11/12 flexCol gap-y-8'>
+      <section className='w-full  flexCol py-6 gap-y-20'>
+        <article className='w-11/12 lg:w-8/12 flexCol gap-y-8'>
           <div className='w-full flexCol gap-y-4'>
             <p className='mobile_3_bold w-full flexRow gap-x-4'>
               <FontAwesomeIcon icon={faTag} />
@@ -657,7 +664,7 @@ const PropertyUpload = () => {
           <FontAwesomeIcon icon={faMoneyBills} />
           거래금액
         </p>
-        <article className='w-11/12 md:w-8/12 flexCol'>
+        <article className='w-11/12 :w-8/12 flexCol'>
           {(() => {
             // Helper function to render input fields
             const renderFields = (fields) => {
@@ -744,7 +751,7 @@ const PropertyUpload = () => {
           })()}
         </article>
 
-        <article className='w-10/12 md:w-8/12'>
+        <article className='w-10/12 lg:w-8/12'>
           <button
             className='btn_clear w-full bg-secondary-yellow rounded-full'
             onClick={convertToManwon}
@@ -753,7 +760,7 @@ const PropertyUpload = () => {
             {isConverted ? '원' : '만원'}
           </button>
         </article>
-        <article className='grid grid-rows-2 w-6/12 gap-y-4'>
+        <article className='grid grid-rows-2 w-6/12 lg:w-8/12 gap-y-4'>
           <button className='btn_clear' name='priceClear' onClick={handleClear}>
             초기화
           </button>
@@ -763,7 +770,7 @@ const PropertyUpload = () => {
         </article>
       </section>
 
-      <section className='w-11/12 flexCol gap-y-4'>
+      <section className='w-11/12  lg:w-8/12 flexCol gap-y-4'>
         <p className='mobile_3_bold w-full'>매물 기본 정보</p>
         <article className='boxEdit w-full flexCol gap-y-6 lg:gap-y-12'>
           <div className='w-full grid grid-rows-2 gap-y-2'>
@@ -970,7 +977,7 @@ const PropertyUpload = () => {
 
       <p className='w-11/12 border'></p>
 
-      <section className='w-11/12 flexCol py-6 gap-y-8'>
+      <section className='w-11/12  lg:w-8/12 flexCol py-6 gap-y-8'>
         <p className='mobile_3_bold w-full'>주소</p>
         <article className='boxEdit flexCol w-full gap-y-8'>
           <div className='grid grid-rows-2 w-full'>
@@ -1080,7 +1087,7 @@ const PropertyUpload = () => {
         </article>
       </section>
 
-      <section className='w-11/12 flexCol py-6 gap-y-8'>
+      <section className='w-11/12  lg:w-8/12 flexCol py-6 gap-y-8'>
         <p className='mobile_3_bold w-full'>연락처 정보</p>
         <article className='boxEdit w-full flexCol gap-y-6 md:gap-y-10'>
           {contactFields.length > 0 ? (
@@ -1123,7 +1130,7 @@ const PropertyUpload = () => {
 
       <p className='w-11/12 border'></p>
 
-      <section className='w-11/12 flexCol py-6 gap-y-8'>
+      <section className='w-11/12  lg:w-8/12 flexCol py-6 gap-y-8'>
         <p className='mobile_3_bold w-full'>등록 / 기타 정보</p>
         <article className='boxEdit w-full flexCol gap-y-4 lg:gap-y-8'>
           <div className='flexRow w-full justify-between'>
@@ -1199,7 +1206,6 @@ const PropertyUpload = () => {
             <div className='flexCol gap-y-4 w-full '>
               {images && images.length > 0 ? (
                 images.map((imagePath, index) => {
-                  console.log(`${apiUrl}${imagePath}`); // Check if these paths are correct
                   return (
                     <div key={index} className='flexRow w-full justify-between'>
                       <img

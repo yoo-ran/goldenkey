@@ -18,6 +18,7 @@ const ImportExcel = ({ onDataUpdate }) => {
   const [alertVisible, setAlertVisible] = useState(false);
   const [pendingResolve, setPendingResolve] = useState(null);
   const [alertData, setAlertData] = useState({
+    매물ID: 0,
     columnName: '',
     dbValue: '',
     excelValue: '',
@@ -54,7 +55,6 @@ const ImportExcel = ({ onDataUpdate }) => {
 
   const [columnDefs, setColumnDefs] = useState([
     { field: '순번', headerName: '순번', minWidth: 60 },
-    { field: '매물 아이디', headerName: '매물 아이디', minWidth: 90 },
     { field: '등록일자', headerName: '등록일자' },
     { field: '사용승인일자', headerName: '사용승인일자' },
     { field: '부동산구분', headerName: '부동산 구분', minWidth: 150 },
@@ -179,46 +179,45 @@ const ImportExcel = ({ onDataUpdate }) => {
     const firstSheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[firstSheetName];
     const columns = {
-      A: '순번',
-      B: '매물ID',
-      C: '등록일자',
-      D: '사용승인일자',
-      E: '부동산구분',
-      F: '거래방식',
-      G: '거래완료여부',
-      H: '거래완료일자',
-      I: '담당자',
-      J: '시군구',
-      K: '읍면동',
-      L: '리명',
-      M: '지번본번',
-      N: '지번부번',
-      O: '시군구',
-      P: '읍면',
-      Q: '도로명',
-      R: '상세주소',
-      S: '건물명',
-      T: '동',
-      U: '호수',
-      V: '보증금',
-      W: '월세',
-      X: '관리비',
-      Y: '전체m2',
-      Z: '전용m2',
-      AA: '전체평',
-      AB: '전용평',
-      AC: 'EV유무',
-      AD: '화장실개수',
-      AE: '층수',
-      AF: '주차가능대수',
-      AG: '비밀번호',
-      AH: '이름',
-      AI: '휴대폰번호',
-      AJ: '이름',
-      AK: '휴대폰번호',
-      AL: '이름',
-      AM: '휴대폰번호',
-      AN: '메모',
+      A: '매물ID',
+      B: '등록일자',
+      C: '사용승인일자',
+      D: '부동산구분',
+      E: '거래방식',
+      F: '거래완료여부',
+      G: '거래완료일자',
+      H: '담당자',
+      I: '시군구',
+      J: '읍면동',
+      K: '리명',
+      L: '지번본번',
+      M: '지번부번',
+      N: '시군구',
+      O: '읍면',
+      P: '도로명',
+      Q: '상세주소',
+      R: '건물명',
+      S: '동',
+      T: '호수',
+      U: '보증금',
+      V: '월세',
+      W: '관리비',
+      X: '전체m2',
+      Y: '전용m2',
+      Z: '전체평',
+      AA: '전용평',
+      AB: 'EV유무',
+      AC: '화장실개수',
+      AD: '층수',
+      AE: '주차가능대수',
+      AF: '비밀번호',
+      AG: '이름',
+      AH: '휴대폰번호',
+      AI: '이름',
+      AJ: '휴대폰번호',
+      AK: '이름',
+      AL: '휴대폰번호',
+      AM: '메모',
     };
 
     const excludedColumns = [
@@ -238,16 +237,9 @@ const ImportExcel = ({ onDataUpdate }) => {
     while (worksheet['A' + rowIndex]) {
       const row = {};
       const dbRow = {};
-      let propertyId = worksheet['B' + rowIndex]?.v;
-
+      let propertyId = worksheet['A' + rowIndex]?.v;
+      console.log(propertyId);
       // If property ID is missing or already exists in the database, generate a new one
-      if (
-        !propertyId ||
-        dbProperties.some((property) => property.매물ID === propertyId)
-      ) {
-        propertyId = generateRandomId();
-      }
-
       const contacts = {}; // Object to hold contact information
       let rolesMapping = null; // Initialize outside of the column loop
       let addressParams = {}; // Temporary object to hold one address at a time
@@ -285,30 +277,30 @@ const ImportExcel = ({ onDataUpdate }) => {
         if (columns[column] === '거래방식') {
           if (cellValue === '매매') {
             rolesMapping = {
-              AH: { role: '매도인', field: '이름' },
-              AI: { role: '매도인', field: '전화번호' },
-              AJ: { role: '매수인', field: '이름' },
-              AK: { role: '매수인', field: '전화번호' },
-              AL: { role: '부동산', field: '이름' },
-              AM: { role: '부동산', field: '전화번호' },
+              AG: { role: '매도인', field: '이름' },
+              AH: { role: '매도인', field: '전화번호' },
+              AI: { role: '매수인', field: '이름' },
+              AJ: { role: '매수인', field: '전화번호' },
+              AK: { role: '부동산', field: '이름' },
+              AL: { role: '부동산', field: '전화번호' },
             };
           } else if (cellValue === '월세') {
             rolesMapping = {
-              AH: { role: '임대인', field: '이름' },
-              AI: { role: '임대인', field: '전화번호' },
-              AJ: { role: '임차인', field: '이름' },
-              AK: { role: '임차인', field: '전화번호' },
-              AL: { role: '부동산', field: '이름' },
-              AM: { role: '부동산', field: '전화번호' },
+              AG: { role: '임대인', field: '이름' },
+              AH: { role: '임대인', field: '전화번호' },
+              AI: { role: '임차인', field: '이름' },
+              AJ: { role: '임차인', field: '전화번호' },
+              AK: { role: '부동산', field: '이름' },
+              AL: { role: '부동산', field: '전화번호' },
             };
           } else if (cellValue === '전세') {
             rolesMapping = {
-              AH: { role: '전대인', field: '이름' },
-              AI: { role: '전대인', field: '전화번호' },
-              AJ: { role: '전차인', field: '이름' },
-              AK: { role: '전차인', field: '전화번호' },
-              AL: { role: '부동산', field: '이름' },
-              AM: { role: '부동산', field: '전화번호' },
+              AG: { role: '전대인', field: '이름' },
+              AH: { role: '전대인', field: '전화번호' },
+              AI: { role: '전차인', field: '이름' },
+              AJ: { role: '전차인', field: '전화번호' },
+              AK: { role: '부동산', field: '이름' },
+              AL: { role: '부동산', field: '전화번호' },
             };
           }
         }
@@ -372,7 +364,7 @@ const ImportExcel = ({ onDataUpdate }) => {
           // Convert addressIds[0] to a number before assigning it
           dbRow['address_id'] = BigInt(addressIds[0]).toString(); // Convert BigInt to a string
         } else {
-          dbRow['address_id'] = 0; // No address found
+          dbRow['address_id'] = ''; // No address found
         }
       } catch (error) {
         console.error('Error fetching address ID:', error);
@@ -383,11 +375,9 @@ const ImportExcel = ({ onDataUpdate }) => {
       dbRowData.push(dbRow);
       rowIndex++;
     }
-
-    console.log('dbRowData', dbRowData);
-    console.log('rowData', rowData);
     return { dbRowData }; // Return both rowData and dbRowData as an object if needed
   };
+  console.log(rowData);
 
   const convertToDateOnly = (isoString) => {
     const date = new Date(isoString);
@@ -399,77 +389,107 @@ const ImportExcel = ({ onDataUpdate }) => {
 
   const compareAndUpdateColumns = async (dbProperties, excelProperties) => {
     const updatedRows = [];
-    console.log('compareAndUpdateColumns DB', dbProperties);
-    console.log('compareAndUpdateColumns Excel', excelProperties);
-    for (const excelRow of excelProperties) {
-      // Find the corresponding row in the DB
 
+    for (const excelRow of excelProperties) {
       const dbRow = dbProperties.find(
         (dbRow) => dbRow.매물ID === excelRow.매물ID
       );
 
-      if (dbRow) {
-        let rowUpdated = false;
+      if (!dbRow) continue;
 
-        // Create a deep copy of dbRow to avoid reference issues
-        const updatedRow = JSON.parse(JSON.stringify(dbRow));
+      let rowUpdated = false;
+      const updatedRow = { ...dbRow }; // Create a shallow copy to avoid reference issues
 
-        // Compare each column and prompt user for update
-        for (let key in excelRow) {
-          if (excelRow.hasOwnProperty(key) && dbRow.hasOwnProperty(key)) {
-            // Handle other fields with string/number normalization
-            let dbValue = dbRow[key];
-            let excelValue = excelRow[key];
+      for (const key in excelRow) {
+        if (!excelRow.hasOwnProperty(key) || !dbRow.hasOwnProperty(key))
+          continue;
 
-            console.log('dbValue', dbValue);
-            console.log('excelValue', excelValue);
-            // Normalize dates in excelRow if applicable
+        let dbValue = dbRow[key];
+        let excelValue = excelRow[key];
+
+        // Normalize dates
+        if (['등록일자', '거래완료일자', '사용승인일자'].includes(key)) {
+          dbValue = convertToDateOnly(dbValue);
+          excelValue = convertToDateOnly(excelValue);
+        }
+
+        // Handle 연락처 comparison separately
+        if (key === '연락처') {
+          let contactUpdated = false;
+
+          const dbContact =
+            typeof dbValue === 'string' ? JSON.parse(dbValue) : dbValue;
+          const excelContact =
+            typeof excelValue === 'string'
+              ? JSON.parse(excelValue)
+              : excelValue;
+
+          for (const contactType in dbContact) {
             if (
-              key === '등록일자' ||
-              key === '거래완료일자' ||
-              key === '사용승인일자'
-            ) {
-              dbValue = convertToDateOnly(excelValue);
-            }
+              !dbContact.hasOwnProperty(contactType) ||
+              !excelContact.hasOwnProperty(contactType)
+            )
+              continue;
 
-            // Skip if both values are empty (null, undefined, "")
-            if (
-              (dbValue == null || dbValue === '') &&
-              (excelValue == null || excelValue === '')
-            ) {
-              continue; // Skip comparison if both are empty
-            } else {
-              // Normalize number comparisons (convert stringified numbers to actual numbers)
-              if (!isNaN(dbValue) && !isNaN(excelValue)) {
-                dbValue = parseFloat(dbValue);
-                excelValue = parseFloat(excelValue);
-              }
+            const { 이름: dbName, 전화번호: dbPhone } = dbContact[contactType];
+            const { 이름: excelName, 전화번호: excelPhone } =
+              excelContact[contactType];
 
-              // Perform the comparison
-              if (dbValue !== excelValue) {
-                const userWantsToUpdate = await askUserForColumnUpdate(
-                  excelRow['매물ID'],
-                  key,
-                  dbValue,
-                  excelValue
-                );
-                if (userWantsToUpdate) {
-                  updatedRow[key] = excelRow[key]; // Update the column value
-                  rowUpdated = true; // Mark that the row has been updated
-                }
+            if (dbName !== excelName || dbPhone !== excelPhone) {
+              const userWantsToUpdate = await askUserForColumnUpdate(
+                excelRow.매물ID,
+                `${key} - ${contactType}`,
+                `이름: ${dbName}, 전화번호: ${dbPhone}`,
+                `이름: ${excelName}, 전화번호: ${excelPhone}`
+              );
+
+              if (userWantsToUpdate) {
+                // Update with the new contact info
+                updatedRow[key] = excelContact;
+                contactUpdated = true;
               }
             }
           }
+
+          if (contactUpdated) {
+            updatedRow[key] = JSON.stringify(excelContact); // Ensure 연락처 is stringified
+            rowUpdated = true;
+          }
+          continue; // Move to the next key as 연락처 is fully handled
         }
 
-        // Only push the row to updatedRows if it was modified
-        if (rowUpdated) {
-          updatedRows.push(updatedRow);
+        // Skip comparison if both values are empty
+        if (
+          (dbValue == null || dbValue === '') &&
+          (excelValue == null || excelValue === '')
+        )
+          continue;
+
+        // Normalize numbers for comparison
+        if (!isNaN(dbValue) && !isNaN(excelValue)) {
+          dbValue = parseFloat(dbValue);
+          excelValue = parseFloat(excelValue);
+        }
+
+        // If values are different, prompt for update
+        if (dbValue !== excelValue) {
+          const userWantsToUpdate = await askUserForColumnUpdate(
+            excelRow.매물ID,
+            key,
+            dbValue,
+            excelValue
+          );
+          if (userWantsToUpdate) {
+            updatedRow[key] = excelValue;
+            rowUpdated = true;
+          }
         }
       }
+
+      if (rowUpdated) updatedRows.push(updatedRow);
     }
 
-    return updatedRows; // Return only the updated rows
+    return updatedRows;
   };
 
   const askUserForColumnUpdate = (
@@ -599,12 +619,11 @@ const ImportExcel = ({ onDataUpdate }) => {
     a.click();
     window.URL.revokeObjectURL(url);
   };
-
   return (
     <div className='flexCol gap-y-4'>
       {alertVisible && (
         <AlertComponent
-          propertyId={alertData.매물ID}
+          propertyId={alertData.propertyId}
           columnName={alertData.columnName}
           dbValue={alertData.dbValue}
           excelValue={alertData.excelValue}

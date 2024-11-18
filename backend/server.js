@@ -77,6 +77,7 @@ app.use(
       '/logout',
       '/listing',
       '/get-propertyIDs',
+      '/import-csv',
       /^\/detail\/.*/, // Matches /detail/{any path}
       /^\/properties\/\d+\/images$/, // Matches /properties/{id}/images
       /^\/properties\/\d+\/images\/\d+$/,
