@@ -102,34 +102,39 @@ const PropertyUpload = () => {
   useEffect(() => {
     const fetchOptions = async () => {
       try {
+        // Fetch all dropdown options in parallel
         const [propertyTypesRes, transactionMethodsRes, transactionStatusRes] =
           await Promise.all([
             axios.get(`${apiUrl}/property-types`),
             axios.get(`${apiUrl}/transaction-methods`),
             axios.get(`${apiUrl}/transaction-status`),
           ]);
+
+        // Update state with fetched data
         setPropertyTypes(propertyTypesRes.data);
         setTransactionMethod(transactionMethodsRes.data);
         setTransactionStatus(transactionStatusRes.data);
       } catch (error) {
-        console.error('Error fetching dropdown data', error);
+        console.error('Error fetching dropdown data:', error);
       }
     };
 
-    const fetchPrpertyIDs = async () => {
+    const fetchPropertyIDs = async () => {
       try {
+        // Fetch existing property IDs
         const response = await axios.get(`${apiUrl}/get-propertyIDs`);
-        const propertyIDs = response.data.map((item) => item.매물ID); // Extract all existing IDs
+        const propertyIDs = response.data.map((item) => item.매물ID); // Extract existing IDs
 
-        // Function to generate a unique random ID
+        // Generate a unique random ID
         const generateUniqueID = () => {
           let newID;
           do {
-            newID = Math.floor(1000000000 + Math.random() * 9000000000); // Generate random 5-digit number
-          } while (propertyIDs.includes(newID)); // Check if it already exists in propertyIDs
+            newID = Math.floor(10000 + Math.random() * 90000); // Generate a 5-digit random ID
+          } while (propertyIDs.includes(newID)); // Ensure it is unique
           return newID;
         };
 
+        // Assign a new unique property ID
         const newPropertyID = generateUniqueID();
         setPropertyId(newPropertyID);
         setPropertyData((prev) => ({
@@ -137,11 +142,18 @@ const PropertyUpload = () => {
           매물ID: newPropertyID,
         }));
       } catch (error) {
-        console.error('Error fetching property Ids data', error);
+        console.error('Error fetching property IDs:', error);
       }
     };
-    fetchOptions();
-    fetchPrpertyIDs();
+
+    // Combined function to fetch options and property IDs
+    const fetchData = async () => {
+      await fetchOptions(); // Fetch dropdown data
+      await fetchPropertyIDs(); // Fetch property IDs and assign a new one
+    };
+
+    // Call the fetchData function
+    fetchData();
   }, []);
 
   // Focus handler to clear leading zero only if type is number

@@ -173,7 +173,10 @@ const House = ({ approvalDate, onOpen }) => {
 
   const fetchConstantVariable = useCallback(async () => {
     try {
+      // const response = await axios.get(`${apiUrl}/property-types`);
       const response = await axios.get(`${apiUrl}/transaction-methods`);
+      console.log('Transaction Methods Response:', response.data);
+
       setTransactionMethods(response.data);
     } catch (error) {
       console.error('Error fetching transaction methods:', error);
@@ -196,21 +199,22 @@ const House = ({ approvalDate, onOpen }) => {
                 <p className='mobile_4'>중복선택가능</p>
               </div>
               <div className='grid grid-cols-3 gap-x-2 mt-2 w-full z-50'>
-                {transactionMethods.map((method, index) => (
-                  <button
-                    key={index}
-                    name='transactionMethod'
-                    value={method}
-                    onClick={handleSelect}
-                    className={`py-2 text-center rounded mobile_5 ${
-                      filteringData.transactionMethod.includes(method)
-                        ? 'bg-secondary-yellow'
-                        : 'bg-secondary-blue'
-                    }`}
-                  >
-                    {method}
-                  </button>
-                ))}
+                {Array.isArray(transactionMethods) &&
+                  transactionMethods.map((method, index) => (
+                    <button
+                      key={index}
+                      name='transactionMethod'
+                      value={method}
+                      onClick={handleSelect}
+                      className={`py-2 text-center rounded mobile_5 ${
+                        filteringData.transactionMethod.includes(method)
+                          ? 'bg-secondary-yellow'
+                          : 'bg-secondary-blue'
+                      }`}
+                    >
+                      {method}
+                    </button>
+                  ))}
               </div>
             </div>
 

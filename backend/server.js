@@ -23,15 +23,24 @@ const {
   PROPERTY_TYPES,
   TRANSACTION_METHOD,
   TRANSACTION_STATUS,
-} = require('./constants'); // Import the constants
+} = require('./constants.js'); // Import the constants
 
 const cors = require('cors');
+const allowedOrigins = [
+  'http://localhost:5173', // Development
+  'https://goldenkey.yoorankim.com', // Production
+];
+
 const corsOptions = {
-  origin:
-    process.env.NODE_ENV === 'production'
-      ? 'https://goldenkey.yoorankim.com'
-      : 'http://localhost:5173',
-  credentials: true,
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like Postman or server-to-server calls)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true, // Allow cookies and authentication headers
 };
 
 const db = mysql.createPool({
@@ -42,7 +51,11 @@ const db = mysql.createPool({
   database: process.env.DB_NAME,
   port: process.env.DB_PORT,
 });
-const sessionStore = new MySQLStore({}, db);
+// const sessionStore = new MySQLStore({}, db);
+
+app.get('/', (req, res) => {
+  res.send('Backend is running');
+});
 
 app.use(express.json());
 app.use(cors(corsOptions));
@@ -50,11 +63,16 @@ app.use(bodyParser.json());
 app.use(cookieParser()); // Enables parsing of cookies
 
 if (process.env.NODE_ENV === 'production') {
+  // Serve static files from the frontend's dist folder
   app.use(express.static(path.join(__dirname, '../frontend/dist')));
-  app.get('*', (req, res) => {
-    res.sendFile(path.resolve(__dirname, '../frontend/dist', 'index.html'));
-  });
 }
+
+const sessionStore = new MySQLStore({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+});
 
 app.use(
   session({
@@ -104,7 +122,6 @@ app.get('/', (req, res) => {
 app.get('/property-types', (req, res) => {
   res.json(PROPERTY_TYPES); // Send the enum values to the frontend
 });
-
 app.get('/transaction-methods', (req, res) => {
   res.json(TRANSACTION_METHOD); // Send the enum values to the frontend
 });
@@ -1018,5 +1035,12 @@ app.get('/search-address', (req, res) => {
     }
   );
 });
+
+if (process.env.NODE_ENV === 'production') {
+  // Wildcard route to serve React frontend for all other paths
+  app.get('*', (req, res) => {
+    res.sendFile(path.resolve(__dirname, '../frontend/dist', 'index.html'));
+  });
+}
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
