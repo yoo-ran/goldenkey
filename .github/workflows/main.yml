@@ -1,0 +1,37 @@
+name: Deploy React App to Hostinger
+
+on:
+  push:
+    branches:
+      - main # Deploy when code is pushed to the main branch
+
+jobs:
+  deploy:
+    name: Deploy to Hostinger
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Step 2: Install dependencies and build React app
+      - name: Install and build
+        working-directory: ./frontend
+        run: |
+          npm ci
+          npm run build
+
+      # Step 3: Deploy to Hostinger
+      - name: Deploy to Hostinger
+        env:
+          HOSTINGER_IP: ${{ secrets.HOSTINGER_IP }}
+          HOSTINGER_PORT: ${{ secrets.HOSTINGER_PORT }}
+          HOSTINGER_USER: ${{ secrets.HOSTINGER_USER }}
+          HOSTINGER_PRIVATE_KEY: ${{ secrets.HOSTINGER_PRIVATE_KEY }}
+        run: |
+          echo "${{ secrets.HOSTINGER_PRIVATE_KEY }}" > private_key.pem
+          chmod 600 private_key.pem
+          ssh -o StrictHostKeyChecking=no -i private_key.pem -p $HOSTINGER_PORT $HOSTINGER_USER@$HOSTINGER_IP "rm -rf ~/public_html/*"
+          scp -i private_key.pem -P $HOSTINGER_PORT -r ./frontend/build/* $HOSTINGER_USER@$HOSTINGER_IP:~/public_html/
+          rm private_key.pem
