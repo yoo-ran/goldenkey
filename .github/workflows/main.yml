@@ -1,0 +1,45 @@
+name: Deploy Frontend and Backend
+
+on:
+  push:
+    branches:
+      - main # Trigger the workflow on push to the main branch
+
+jobs:
+  deploy-backend:
+    name: Deploy Backend to Heroku
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Login to Heroku
+        run: |
+          echo "$HEROKU_API_KEY" | docker login --username=_ --password-stdin registry.heroku.com
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+
+      - name: Deploy to Heroku
+        run: |
+          git remote add heroku https://git.heroku.com/${{ secrets.HEROKU_APP_NAME }}.git
+          git push heroku main --force
+
+  deploy-frontend:
+    name: Deploy Frontend to Hostinger
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Build React App
+        working-directory: ./frontend
+        run: npm ci && npm run build
+
+      - name: Deploy to Hostinger
+        run: |
+          ssh -o StrictHostKeyChecking=no -p ${{ secrets.HOSTINGER_PORT }} ${{ secrets.HOSTINGER_USER }}@${{ secrets.HOSTINGER_IP }} "rm -rf ~/public_html/*"
+          scp -P ${{ secrets.HOSTINGER_PORT }} -r ./frontend/dist/* ${{ secrets.HOSTINGER_USER }}@${{ secrets.HOSTINGER_IP }}:~/public_html/
+        env:
+          HOSTINGER_PORT: ${{ secrets.HOSTINGER_PORT }}
+          HOSTINGER_USER: ${{ secrets.HOSTINGER_USER }}
+          HOSTINGER_IP: ${{ secrets.HOSTINGER_IP }}
