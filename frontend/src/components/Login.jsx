@@ -5,8 +5,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleExclamation } from '@fortawesome/free-solid-svg-icons';
 
 function Login({ setIsAuthenticated }) {
-  const apiUrl = import.meta.env.VITE_API_URL;
-
   const [formData, setFormData] = useState({ email: '', pw: '' });
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(false);
@@ -22,7 +20,7 @@ function Login({ setIsAuthenticated }) {
     try {
       const { email, pw } = formData;
       const response = await axios.post(
-        `${apiUrl}/login`,
+        `/api/login`,
         { email, pw },
         { withCredentials: true }
       );
@@ -45,8 +43,6 @@ function Login({ setIsAuthenticated }) {
       setIsAuthenticated(false);
     }
   };
-
-  
 
   return (
     <div className='w-full flexCol h-screen border'>
