@@ -29,6 +29,7 @@ const cors = require('cors');
 const allowedOrigins = [
   'http://localhost:5173', // Development
   'https://goldenkey.yoorankim.com', // Production
+  'https://goldenkey.vercel.app', // Vercel preview (optional)
 ];
 
 const corsOptions = {
@@ -67,6 +68,20 @@ if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../frontend/dist')));
 }
 
+app.use(
+  cors({
+    origin(origin, cb) {
+      // allow non-browser (no origin) and your whitelisted origins
+      if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+      return cb(new Error('Not allowed by CORS'));
+    },
+    credentials: true, // if you use cookies/session
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
+app.options('*', cors());
+
 const sessionStore = new MySQLStore({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -82,6 +97,12 @@ app.use(
     cookie: { secure: process.env.NODE_ENV === 'production' }, // Secure cookies in production
   })
 );
+
+res.cookie('sid', token, {
+  httpOnly: true,
+  secure: true,
+  sameSite: 'none', // required for cross-site cookies
+});
 
 // JWT Middleware to protect routes
 app.use(
