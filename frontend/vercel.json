@@ -1,9 +1,5 @@
 {
   "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "https://goldenkey-8bff9c6a683c.herokuapp.com/:path*"
-    },
     { "source": "/((?!api|assets|.*\\..*).*)", "destination": "/index.html" }
   ],
   "headers": [
